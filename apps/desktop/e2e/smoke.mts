@@ -117,7 +117,18 @@ try {
   await win.waitForSelector('.lab', { timeout: 5000 }).catch(() => undefined);
   const hexBytes = await win.locator('.hex__byte').count();
   check(hexBytes > 40, `packet anatomy shows the frame (${String(hexBytes)} byte cells)`);
+  const layers = await win.locator('.encap__label').count();
+  const cells = await win.locator('.lcell').count();
+  check(
+    layers >= 4 && cells > 5,
+    `layers stacked (${String(layers)}) and a header drawn bit by bit (${String(cells)} cells)`,
+  );
+  await win.locator('.lcell').first().click();
+  await win.locator('.segmented button').nth(1).click();
+  const bits = (await win.locator('.lcell.is-focused .lcell__raw').first().textContent()) ?? '';
+  check(/^[01 ]+$/.test(bits), `binary view shows the pinned field's bits (${bits})`);
   await win.screenshot({ path: join(out, '6-packet-anatomy.png') });
+  await win.locator('.segmented button').nth(0).click();
 
   check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(' | ')}` : ''}`);
 } finally {

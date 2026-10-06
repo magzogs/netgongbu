@@ -132,23 +132,24 @@ export function dissect(packet: Packet, hint: { host?: string } = {}): Dissectio
   };
 
   // Encode innermost first: lengths and checksums need what is inside.
-  const encoded: (Encoded & { size: number })[] = [];
+  const encoded: Part[] = [];
   let payload: Uint8Array = new Uint8Array(0);
-  let inner: { bytes: Uint8Array; parts: (Encoded & { size: number })[] } | null = null;
+  let inner: { bytes: Uint8Array; parts: Part[] } | null = null;
   for (let i = given.length - 1; i >= 0; i--) {
     const slot = given[i];
     if (!slot) continue;
     const enc = ENCODERS[slot.kind](new Values(slot.layer), payload, ctx);
     const header = enc.header.toBytes();
+    const trailer = enc.trailer?.toBytes() ?? new Uint8Array(0);
     if (enc.ciphertext) {
       // What was encoded so far is the plaintext inside; on the wire it is ciphertext.
       inner = { bytes: payload, parts: [...encoded] };
       encoded.length = 0;
-      payload = concat(header, enc.ciphertext);
-    } else {
-      payload = concat(header, payload);
+      payload = enc.ciphertext;
     }
-    encoded.unshift({ ...enc, size: header.length });
+    const trailerAt = header.length + payload.length;
+    payload = concat(header, payload, trailer);
+    encoded.unshift({ ...enc, size: header.length, trailerAt, trailerSize: trailer.length });
   }
 
   return {
@@ -159,27 +160,35 @@ export function dissect(packet: Packet, hint: { host?: string } = {}): Dissectio
   };
 }
 
+/** An encoded layer with where its header ends and its trailer starts (relative to it). */
+type Part = Encoded & { size: number; trailerAt: number; trailerSize: number };
+
+function shifted(f: Field, bits: number): Field {
+  return {
+    ...f,
+    bitOffset: f.bitOffset + bits,
+    ...(f.children && { children: f.children.map((c) => shifted(c, bits)) }),
+  };
+}
+
 /** Gives layers their byte ranges (outermost first) and makes field offsets absolute. */
-function place(
-  parts: readonly (Encoded & { size: number })[],
-  encrypted: boolean,
-): DissectedLayer[] {
+function place(parts: readonly Part[], encrypted: boolean): DissectedLayer[] {
   let offset = 0;
   return parts.map((p) => {
     const start = offset;
     offset += p.size;
-    const shift = (f: Field): Field => ({
-      ...f,
-      bitOffset: f.bitOffset + start * 8,
-      ...(f.children && { children: f.children.map(shift) }),
-    });
+    const trailerStart = start + p.trailerAt;
     return {
       kind: p.kind,
       title: p.title,
       standard: p.standard,
       start,
       length: p.size,
-      fields: p.header.fields.map(shift),
+      ...(p.trailerSize > 0 && { trailer: { start: trailerStart, length: p.trailerSize } }),
+      fields: [
+        ...p.header.fields.map((f) => shifted(f, start * 8)),
+        ...(p.trailer?.fields ?? []).map((f) => shifted(f, trailerStart * 8)),
+      ],
       encrypted,
       ...(p.note && { note: p.note }),
     };

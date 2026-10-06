@@ -41,9 +41,12 @@ export interface DissectedLayer {
   title: string;
   /** Standard that defines it, e.g. "RFC 791". */
   standard: string;
-  /** Byte range of this layer's own header (and trailer) within its bytes. */
+  /** Byte range of this layer's header within its bytes. */
   start: number;
   length: number;
+  /** Byte range of what the layer adds after its payload (Ethernet padding and FCS), if any. */
+  trailer?: { start: number; length: number };
+  /** Header fields, then trailer fields. */
   fields: Field[];
   /** True for content carried encrypted: its bytes are the plaintext, not what is on the wire. */
   encrypted: boolean;

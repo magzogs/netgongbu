@@ -7,6 +7,7 @@ import {
   hpackEncode,
   hpackInteger,
   internetChecksum,
+  crc32,
   type Dissection,
   type Field,
 } from '../src';
@@ -68,6 +69,27 @@ describe('building blocks', () => {
   });
 });
 
+describe('frame trailer', () => {
+  it('computes the CRC-32 check value and an FCS the receiver verifies', () => {
+    expect(crc32(new TextEncoder().encode('123456789'))).toBe(0xcbf43926);
+    const d = dissect(packetOf(example, 'dns-query-lan'))!;
+    // The CRC over a frame that ends with its own FCS is the fixed residue 0x2144df1c.
+    expect(crc32(d.frame)).toBe(0x2144df1c);
+  });
+
+  it('pads a short frame to the 64-byte minimum', () => {
+    const arp = [...example.beats, ...demo.beats]
+      .flatMap((b) => b.hops)
+      .find((h) => h.packet.protocol === 'ARP')?.packet;
+    const d = dissect(arp!)!;
+    expect(d.frame.length).toBe(64);
+    const eth = d.layers[0]!;
+    expect(eth.trailer).toEqual({ start: 42, length: 22 });
+    expect(eth.fields.map((f) => f.key).slice(-2)).toEqual(['padding', 'fcs']);
+    expect(crc32(d.frame)).toBe(0x2144df1c);
+  });
+});
+
 describe('dissect', () => {
   it('builds a DNS query frame: Ethernet + IPv4 + UDP + DNS with correct lengths and checksums', () => {
     const d = dissect(packetOf(example, 'dns-query-lan'));
@@ -78,7 +100,9 @@ describe('dissect', () => {
       ['dns', 42, 29],
     ]);
     const frame = d?.frame ?? new Uint8Array();
-    expect(frame.length).toBe(71);
+    // 71 bytes of headers and question, then the Ethernet FCS (no padding: already over 60).
+    expect(frame.length).toBe(75);
+    expect(d?.layers[0]?.trailer).toEqual({ start: 71, length: 4 });
     expect(hexOf(frame, 12, 14)).toBe('08 00');
     // IPv4: total length 57, protocol 17, and the header checksum verifies to zero.
     expect(hexOf(frame, 16, 18)).toBe('00 39');
@@ -136,7 +160,7 @@ describe('dissect', () => {
     // Record length = plaintext + content type byte + 16-byte tag.
     const recordLength = (d.frame[tls.start + 3]! << 8) | d.frame[tls.start + 4]!;
     expect(recordLength).toBe((d.inner?.bytes.length ?? 0) + 17);
-    expect(d.frame.length).toBe(tls.start + 5 + recordLength);
+    expect(d.frame.length).toBe(tls.start + 5 + recordLength + 4);
     const h2 = d.inner!.layers[0]!;
     const block = field(h2.fields, 'hpack');
     expect(block?.children?.[0]?.name).toBe(':method: GET');
@@ -188,10 +212,15 @@ describe('dissect', () => {
       if (!d) continue;
       for (const l of [...d.layers, ...(d.inner?.layers ?? [])]) {
         let end = l.start * 8;
+        const trailer = l.trailer ? l.trailer.start * 8 : Infinity;
         for (const f of l.fields) {
           expect(f.bitOffset, `${l.title} ${f.name}`).toBeGreaterThanOrEqual(end);
           end = f.bitOffset + f.bitLength;
-          expect(end).toBeLessThanOrEqual((l.start + l.length) * 8);
+          if (f.bitOffset < trailer) expect(end).toBeLessThanOrEqual((l.start + l.length) * 8);
+          else
+            expect(end).toBeLessThanOrEqual(
+              ((l.trailer?.start ?? 0) + (l.trailer?.length ?? 0)) * 8,
+            );
         }
       }
     }

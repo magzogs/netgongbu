@@ -1,4 +1,4 @@
-import { BitWriter, hex } from '../bits';
+import { BitWriter, crc32, hex } from '../bits';
 import type { ByteSource } from '../model';
 import { macBytes, macOf, type Values } from '../values';
 import type { Encoded, EncodeContext } from './types';
@@ -6,6 +6,24 @@ import type { Encoded, EncodeContext } from './types';
 const ETHERTYPES: Record<number, string> = { 0x0800: 'IPv4', 0x0806: 'ARP', 0x86dd: 'IPv6' };
 const PLACEHOLDER_SRC = '02:00:00:00:00:01';
 const PLACEHOLDER_DST = '02:00:00:00:00:02';
+/** Shortest Ethernet frame without its FCS: shorter content is padded. */
+const MIN_FRAME = 60;
+
+/**
+ * The frame check sequence: CRC-32 over everything before it, sent lowest byte first so the
+ * receiver's CRC over the whole frame comes out at a fixed value.
+ */
+function fcs(trailer: BitWriter, ...covered: Uint8Array[]): void {
+  const crc = crc32(...covered);
+  trailer.bytes(Uint8Array.from([crc, crc >>> 8, crc >>> 16, crc >>> 24]), {
+    key: 'fcs',
+    name: 'Frame Check Sequence',
+    value: hex(crc, 8),
+    meaning:
+      '앞의 프레임 전체로 계산한 CRC-32. 받는 쪽 랜카드가 다시 계산해 다르면 프레임을 버립니다. 랜카드가 붙이고 떼므로 패킷 캡처에는 보통 보이지 않습니다.',
+    source: 'derived',
+  });
+}
 
 function mac(
   values: Values,
@@ -16,7 +34,7 @@ function mac(
 }
 
 /** Ethernet II (IEEE 802.3): the frame on a cable or after the access point. */
-export function ethernet(values: Values, _payload: Uint8Array, ctx: EncodeContext): Encoded {
+export function ethernet(values: Values, payload: Uint8Array, ctx: EncodeContext): Encoded {
   const w = new BitWriter();
   const dst = mac(values, ['dst', '목적지 MAC'], PLACEHOLDER_DST);
   const src = mac(values, ['src', '출발 MAC'], PLACEHOLDER_SRC);
@@ -42,20 +60,35 @@ export function ethernet(values: Values, _payload: Uint8Array, ctx: EncodeContex
     meaning: '안에 무엇이 들어 있는지: 0x0800이면 IPv4 패킷입니다.',
     source: 'derived',
   });
-  const wan = Object.keys(values.all).length === 0 || values.get('MAC 주소') !== undefined;
+  const trailer = new BitWriter();
+  const short = MIN_FRAME - w.byteLength - payload.length;
+  const padding = new Uint8Array(Math.max(0, short));
+  if (short > 0) {
+    trailer.bytes(padding, {
+      key: 'padding',
+      name: 'Padding',
+      value: `${String(short)}바이트 (0)`,
+      meaning: '이더넷 프레임은 FCS까지 최소 64바이트라야 해서, 내용이 짧으면 뒤를 0으로 채웁니다.',
+      source: 'spec',
+    });
+  }
+  fcs(trailer, w.toBytes(), payload, padding);
+  // Scenarios describe the provider's side of the link by the MAC the router uses there.
+  const wan = values.get('MAC 주소') !== undefined;
   return {
     kind: 'ethernet',
     title: 'Ethernet II',
     standard: 'IEEE 802.3',
     header: w,
+    trailer,
     note: wan
       ? '통신사 구간의 실제 2계층(광 회선의 GPON, PPPoE 등)은 측정할 수 없어 이더넷으로 보여 줍니다. MAC 주소는 라우터마다 새로 씁니다.'
-      : '맨 끝의 FCS(4바이트 오류 검사 값)는 랜카드가 붙이고 떼므로 여기에는 없습니다.',
+      : '선로에서는 이 프레임 앞에 프리앰블(7바이트)과 SFD(1바이트)가 붙습니다(물리 계층).',
   };
 }
 
 /** IEEE 802.11 data frame from a station to the access point, with the LLC/SNAP header. */
-export function wifi(values: Values, _payload: Uint8Array, ctx: EncodeContext): Encoded {
+export function wifi(values: Values, payload: Uint8Array, ctx: EncodeContext): Encoded {
   const w = new BitWriter();
   const start = w.bitLength;
   w.uint(0, 4, {
@@ -188,11 +221,14 @@ export function wifi(values: Values, _payload: Uint8Array, ctx: EncodeContext): 
     },
     llcStart,
   );
+  const trailer = new BitWriter();
+  fcs(trailer, w.toBytes(), payload);
   return {
     kind: 'wifi',
     title: '802.11 (Wi-Fi)',
     standard: 'IEEE 802.11',
     header: w,
+    trailer,
     note: '실제 무선 구간은 WPA2/WPA3로 암호화되어 CCMP 헤더(8바이트)와 MIC(8바이트)가 더 붙고, 그 안의 내용은 전파를 엿들어도 보이지 않습니다. 여기서는 구조를 보이려고 생략했습니다.',
   };
 }

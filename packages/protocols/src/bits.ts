@@ -101,6 +101,19 @@ export function internetChecksum(...parts: Uint8Array[]): number {
   return ~sum & 0xffff;
 }
 
+const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+
+/** CRC-32 of IEEE 802.3 (the Ethernet and Wi-Fi frame check sequence). */
+export function crc32(...parts: Uint8Array[]): number {
+  let c = 0xffffffff;
+  for (const part of parts) for (const b of part) c = (CRC_TABLE[(c ^ b) & 0xff] ?? 0) ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
 export function concat(...parts: Uint8Array[]): Uint8Array {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let offset = 0;

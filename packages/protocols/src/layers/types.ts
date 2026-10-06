@@ -24,6 +24,8 @@ export interface Encoded {
   header: BitWriter;
   /** For encryption layers: what goes on the wire instead of the inner bytes. */
   ciphertext?: Uint8Array;
+  /** Bits after the payload (Ethernet padding and FCS), offsets relative to the trailer. */
+  trailer?: BitWriter;
   note?: string;
 }
 
