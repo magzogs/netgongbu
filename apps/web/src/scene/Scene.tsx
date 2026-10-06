@@ -1,20 +1,31 @@
-import type { ReactElement } from 'react';
+import { useMemo, type ReactElement } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useViewer, type World } from '../store/viewer';
 import { CameraRig } from './CameraRig';
 import { Ground } from './Ground';
 import { LabelProjector } from './LabelProjector';
-import { LinkMesh } from './LinkMesh';
+import { LinkMesh, type LinkEmphasis } from './LinkMesh';
 import { NodeMesh } from './NodeMesh';
+import { Packets } from './Packets';
+import { PlaybackTicker } from './PlaybackTicker';
 import { SCENE_BACKGROUND } from './theme';
 
 function TopologyView({ world }: { world: World }): ReactElement {
   const selection = useViewer((s) => s.selection);
   const select = useViewer((s) => s.select);
+  const beat = useViewer((s) => s.timeline?.beats[s.beatIndex]);
+  const activeLinks = useMemo(
+    () => new Set(beat?.routes.flatMap((r) => r.segments.map((seg) => seg.linkId))),
+    [beat],
+  );
+  const emphasisOf = (linkId: string): LinkEmphasis => {
+    if (activeLinks.size === 0) return 'idle';
+    return activeLinks.has(linkId) ? 'active' : 'dim';
+  };
   return (
     <group>
       {[...world.curves.values()].map((lc) => (
-        <LinkMesh key={lc.link.id} linkCurve={lc} />
+        <LinkMesh key={lc.link.id} linkCurve={lc} emphasis={emphasisOf(lc.link.id)} />
       ))}
       {world.topology.nodes.map((node) => (
         <NodeMesh
@@ -26,6 +37,7 @@ function TopologyView({ world }: { world: World }): ReactElement {
           }}
         />
       ))}
+      <Packets />
     </group>
   );
 }
@@ -49,6 +61,7 @@ export function Scene(): ReactElement {
       <Ground zones={world?.topology.zones ?? []} />
       {world && <TopologyView world={world} />}
       <CameraRig />
+      <PlaybackTicker />
       <LabelProjector />
     </Canvas>
   );

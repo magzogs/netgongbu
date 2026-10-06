@@ -1,4 +1,4 @@
-import type { LinkMedium, NodeType } from '@magvirtualedu/schema';
+import type { LinkMedium, NodeType, Protocol } from '@magvirtualedu/schema';
 
 // Colours used inside the WebGL scene, where CSS custom properties do not reach.
 
@@ -26,4 +26,15 @@ export const MEDIUM_COLORS: Record<LinkMedium, string> = {
   fiber: '#fbbf24',
   internet: '#a78bfa',
   virtual: '#64748b',
+};
+
+export const PROTOCOL_COLORS: Record<Protocol, string> = {
+  ARP: '#cbd5e1',
+  DNS: '#facc15',
+  TCP: '#60a5fa',
+  UDP: '#22d3ee',
+  TLS: '#c084fc',
+  HTTP: '#4ade80',
+  ICMP: '#fb923c',
+  OTHER: '#f472b6',
 };

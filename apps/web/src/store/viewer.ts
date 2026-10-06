@@ -8,7 +8,9 @@ import {
   type ValidationIssue,
 } from '@magvirtualedu/schema';
 import { buildLinkCurves, type LinkCurve } from '../engine/curves';
+import { buildTimeline } from '../engine/timeline';
 import { fetchCatalog, fetchScenario, ScenarioLoadError } from '../data/load';
+import { createPlaybackSlice, type PlaybackSlice } from './playback';
 
 /** Topology plus everything derived from it once, shared by the scene and the engine. */
 export interface World {
@@ -27,7 +29,7 @@ export interface Selection {
   id: string;
 }
 
-export interface ViewerState {
+export interface ViewerState extends PlaybackSlice {
   catalog: readonly CatalogEntry[];
   entryId: string | null;
   status: Status;
@@ -56,7 +58,8 @@ function rememberInUrl(entryId: string): void {
 
 let openToken = 0;
 
-export const useViewer = create<ViewerState>()((set, get) => ({
+export const useViewer = create<ViewerState>()((set, get, api) => ({
+  ...createPlaybackSlice(set, get, api),
   catalog: [],
   entryId: null,
   status: { kind: 'loading' },
@@ -91,6 +94,7 @@ export const useViewer = create<ViewerState>()((set, get) => ({
         curves: buildLinkCurves(topology),
       };
       set({ world, scenario, selection: null, status: { kind: 'ready' } });
+      get().loadTimeline(buildTimeline(world, scenario));
       rememberInUrl(entryId);
     } catch (err) {
       if (token === openToken) set({ status: errorStatus(err) });

@@ -1,6 +1,9 @@
 import { useMemo, type ReactElement } from 'react';
 import { Vector3 } from 'three';
-import type { NetNode, Zone } from '@magvirtualedu/schema';
+import type { Hop, NetNode, Zone } from '@magvirtualedu/schema';
+import type { Route } from '../engine/timeline';
+import { currentPoint } from '../scene/Packets';
+import { PROTOCOL_COLORS } from '../scene/theme';
 import { NODE_HEIGHT } from '../scene/NodeShape';
 import { useLabelAnchor } from '../scene/labels';
 import { useViewer } from '../store/viewer';
@@ -35,6 +38,41 @@ function ZoneLabel({ zone }: { zone: Zone }): ReactElement {
   );
 }
 
+const PACKET_LABEL_LIFT = 0.65;
+
+function PacketLabel({ id, route, hop }: { id: string; route: Route; hop: Hop }): ReactElement {
+  const source = useMemo(() => {
+    const point = new Vector3();
+    return () => {
+      currentPoint(route, point).y += PACKET_LABEL_LIFT;
+      return point;
+    };
+  }, [route]);
+  const ref = useLabelAnchor(`packet:${id}`, source);
+  return (
+    <div ref={ref} className="anchor anchor--above">
+      <div className="packet-label" style={{ borderColor: PROTOCOL_COLORS[hop.packet.protocol] }}>
+        <span className="packet-label__protocol">{hop.packet.protocol}</span>
+        {hop.packet.summary}
+      </div>
+    </div>
+  );
+}
+
+function PacketLabels(): ReactElement | null {
+  const entry = useViewer((s) => s.timeline?.beats[s.beatIndex]);
+  if (!entry) return null;
+  return (
+    <>
+      {entry.routes.map((route, i) => {
+        const hop = entry.beat.hops[i];
+        const id = `${entry.beat.id}:${i}`;
+        return hop ? <PacketLabel key={id} id={id} route={route} hop={hop} /> : null;
+      })}
+    </>
+  );
+}
+
 /** HTML labels drawn over the canvas and positioned by LabelProjector. */
 export function SceneLabels(): ReactElement | null {
   const world = useViewer((s) => s.world);
@@ -52,6 +90,7 @@ export function SceneLabels(): ReactElement | null {
           selected={selection?.kind === 'node' && selection.id === node.id}
         />
       ))}
+      <PacketLabels />
     </div>
   );
 }
