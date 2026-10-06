@@ -63,7 +63,7 @@ body,
 
 .topbar {
   position: absolute;
-  top: var(--gutter);
+  top: calc(var(--gutter) + env(safe-area-inset-top));
   left: var(--gutter);
   right: var(--gutter);
   display: flex;
@@ -298,6 +298,7 @@ body,
 
 .controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
 }
@@ -731,4 +732,83 @@ body,
   width: 16px;
   height: 3px;
   border-radius: 2px;
+}
+
+/* ---- phones and narrow windows ---- */
+
+@media (max-width: 720px) {
+  .app {
+    --gutter: 12px;
+    --player-space: 290px;
+  }
+
+  .topbar__title {
+    display: none;
+  }
+
+  .picker {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .picker select {
+    width: 100%;
+    max-width: none;
+  }
+
+  .legend {
+    top: 60px;
+    z-index: 2;
+  }
+
+  /* Leave room on the left for the folded legend button. */
+  .inspector {
+    top: 60px;
+    left: calc(var(--gutter) + 72px);
+    right: var(--gutter);
+    width: auto;
+    max-height: calc(100% - 60px - var(--player-space));
+  }
+
+  .player {
+    width: calc(100% - 2 * var(--gutter));
+    padding: 12px 12px 8px;
+    gap: 10px;
+  }
+
+  .narration__text {
+    max-height: 6.4em;
+    min-height: 0;
+    overflow-y: auto;
+    font-size: 14px;
+  }
+
+  .scrubber {
+    height: 26px;
+    padding: 8px 0;
+  }
+
+  .controls__divider {
+    display: none;
+  }
+
+  /* Second row: pause toggle and speed. */
+  .controls__spacer {
+    flex-basis: 100%;
+    height: 0;
+  }
+
+  .node-label {
+    padding: 2px 6px;
+  }
+
+  .node-label__ip,
+  .zone-label {
+    display: none;
+  }
+
+  .bubble {
+    max-width: 200px;
+    font-size: 11px;
+  }
 }

@@ -1,11 +1,12 @@
-import { useState, type ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { useViewer } from '../store/viewer';
 import { NodeDetails } from './NodeDetails';
 import { PacketDetails } from './PacketDetails';
 
 /** Right-hand panel: the selected node, or else the headers of the packet now moving. */
 export function Inspector(): ReactElement | null {
-  const [open, setOpen] = useState(true);
+  const open = useViewer((s) => s.inspectorOpen);
+  const setOpen = useViewer((s) => s.setInspectorOpen);
   const selection = useViewer((s) => s.selection);
   const select = useViewer((s) => s.select);
   const ready = useViewer((s) => s.timeline !== null);

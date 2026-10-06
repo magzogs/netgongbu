@@ -1,7 +1,8 @@
 import { CameraControlsImpl } from '@react-three/drei';
 import { PerspectiveCamera, Vector3 } from 'three';
 import type { Topology, Vec3 } from '@magvirtualedu/schema';
-import { anchorOf, boundsOf } from '../engine/curves';
+import { anchorOf } from '../engine/curves';
+import { frame, framingPoints, type Insets } from '../engine/framing';
 import { ease, pointOnRoute } from '../engine/timeline';
 import type { ViewerState } from '../store/viewer';
 
@@ -12,8 +13,6 @@ import type { ViewerState } from '../store/viewer';
 
 const { ACTION } = CameraControlsImpl;
 
-/** Direction the camera looks from when framing a topology: above and in front. */
-const VIEW_DIRECTION = new Vector3(0, 0.8, 1).normalize();
 /** Camera distance when flying to a node or starting to follow a packet. */
 export const CLOSE_DISTANCE = 16;
 
@@ -23,22 +22,21 @@ export function registerControls(instance: CameraControlsImpl | null): void {
   controls = instance;
 }
 
-/** Distance at which a sphere of `radius` fits both the vertical and horizontal field of view. */
-function fitDistance(camera: PerspectiveCamera, radius: number): number {
-  const vHalf = (camera.fov * Math.PI) / 360;
-  const hHalf = Math.atan(Math.tan(vHalf) * camera.aspect);
-  return radius / Math.sin(Math.min(vHalf, hHalf));
-}
-
-/** Shows the whole topology from the default angle. */
-export function frameTopology(topology: Topology, animate: boolean): void {
+/**
+ * Shows the whole topology in the part of the screen not covered by `insets`. The focal offset
+ * stays, so later focus and follow moves also centre on that free area.
+ */
+export function frameTopology(topology: Topology, insets: Insets, animate: boolean): void {
   const ctl = controls;
   if (!ctl || !(ctl.camera instanceof PerspectiveCamera)) return;
-  const box = boundsOf(topology);
-  const center = box.getCenter(new Vector3());
-  const radius = box.getSize(new Vector3()).length() / 2;
-  const eye = center.clone().addScaledVector(VIEW_DIRECTION, fitDistance(ctl.camera, radius));
-  void ctl.setLookAt(eye.x, eye.y, eye.z, center.x, center.y, center.z, animate);
+  const { eye, target, focalOffset } = frame(
+    framingPoints(topology),
+    ctl.camera.fov,
+    ctl.camera.aspect,
+    insets,
+  );
+  void ctl.setFocalOffset(focalOffset.x, focalOffset.y, 0, animate);
+  void ctl.setLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, animate);
 }
 
 /** Flies to a node, keeping the current viewing angle. */

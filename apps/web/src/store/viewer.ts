@@ -38,13 +38,22 @@ export interface ViewerState extends PlaybackSlice {
   scenario: Scenario | null;
   selection: Selection | null;
   cameraMode: CameraMode;
+  inspectorOpen: boolean;
   init: () => Promise<void>;
   open: (entryId: string) => Promise<void>;
   select: (selection: Selection | null) => void;
   setCameraMode: (mode: CameraMode) => void;
+  setInspectorOpen: (open: boolean) => void;
 }
 
 const SCENARIO_PARAM = 's';
+
+/** Phones start with side panels folded so the 3D view and the player have room. */
+export const NARROW_QUERY = '(max-width: 720px)';
+
+function isNarrow(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia(NARROW_QUERY).matches;
+}
 
 function errorStatus(err: unknown): Status {
   if (err instanceof ScenarioLoadError) {
@@ -70,6 +79,7 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
   scenario: null,
   selection: null,
   cameraMode: 'orbit',
+  inspectorOpen: !isNarrow(),
 
   async init() {
     try {
@@ -106,10 +116,15 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
   },
 
   select(selection) {
-    set({ selection });
+    // Picking something opens the inspector so its details are visible, also on phones.
+    set(selection ? { selection, inspectorOpen: true } : { selection });
   },
 
   setCameraMode(cameraMode) {
     set({ cameraMode });
+  },
+
+  setInspectorOpen(inspectorOpen) {
+    set({ inspectorOpen });
   },
 }));

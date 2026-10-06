@@ -2,28 +2,29 @@ import { useEffect, useMemo, type ReactElement } from 'react';
 import { CameraControls, type CameraControlsImpl } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
+import { showAll } from '../commands';
 import { useViewer } from '../store/viewer';
-import {
-  approach,
-  followPoint,
-  frameTopology,
-  registerControls,
-  setPanEnabled,
-  trackPoint,
-} from './camera';
+import { approach, followPoint, registerControls, setPanEnabled, trackPoint } from './camera';
 
 /**
  * Orbit (left drag / one finger), pan (right drag / two fingers) and zoom (wheel / pinch).
  * Frames the whole topology when it opens; in follow mode keeps the current packet centred.
  */
 export function CameraRig(): ReactElement {
-  const world = useViewer((s) => s.world);
+  const timeline = useViewer((s) => s.timeline);
   const cameraMode = useViewer((s) => s.cameraMode);
   const scratch = useMemo(() => new Vector3(), []);
 
+  // Frame a newly opened scenario once the player card is on screen, so its height is known.
   useEffect(() => {
-    if (world) frameTopology(world.topology, false);
-  }, [world]);
+    if (!timeline) return;
+    const frameId = requestAnimationFrame(() => {
+      showAll(false);
+    });
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
+  }, [timeline]);
 
   useEffect(() => {
     const following = cameraMode === 'follow';

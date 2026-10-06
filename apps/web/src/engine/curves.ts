@@ -1,4 +1,4 @@
-import { Box3, QuadraticBezierCurve3, Vector3 } from 'three';
+import { QuadraticBezierCurve3, Vector3 } from 'three';
 import type { NetLink, Topology, Vec3 } from '@magvirtualedu/schema';
 
 /** Height above a node's base where links attach and packets travel. */
@@ -33,19 +33,4 @@ export function buildLinkCurves(topology: Topology): Map<string, LinkCurve> {
     curves.set(link.id, { link, curve, length: curve.getLength() });
   }
   return curves;
-}
-
-/** Box around every node and zone, used to frame the camera on a topology. */
-export function boundsOf(topology: Topology): Box3 {
-  const box = new Box3();
-  for (const node of topology.nodes) {
-    box.expandByPoint(new Vector3(...node.pos));
-    box.expandByPoint(anchorOf(node.pos).setY(2));
-  }
-  for (const zone of topology.zones ?? []) {
-    const [minX, minZ, maxX, maxZ] = zone.bounds;
-    box.expandByPoint(new Vector3(minX, 0, minZ));
-    box.expandByPoint(new Vector3(maxX, 0, maxZ));
-  }
-  return box;
 }

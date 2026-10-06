@@ -78,7 +78,14 @@ function Controls(): ReactElement {
       >
         따라가기
       </button>
-      <button type="button" className="pill-button" onClick={showAll} title="전체 보기 (R)">
+      <button
+        type="button"
+        className="pill-button"
+        onClick={() => {
+          showAll();
+        }}
+        title="전체 보기 (R)"
+      >
         전체 보기
       </button>
       <div className="controls__spacer" />

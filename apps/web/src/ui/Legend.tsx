@@ -1,12 +1,12 @@
 import { useMemo, useState, type ReactElement } from 'react';
 import type { LinkMedium, Protocol } from '@magvirtualedu/schema';
 import { MEDIUM_COLORS, PROTOCOL_COLORS } from '../scene/theme';
-import { useViewer } from '../store/viewer';
+import { NARROW_QUERY, useViewer } from '../store/viewer';
 import { MEDIUM_NAMES } from './names';
 
 /** Colour key for the protocols in this scenario and the link media in this topology. */
 export function Legend(): ReactElement | null {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(() => !window.matchMedia(NARROW_QUERY).matches);
   const scenario = useViewer((s) => s.scenario);
   const world = useViewer((s) => s.world);
 
