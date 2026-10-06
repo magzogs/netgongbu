@@ -101,3 +101,16 @@ export function pointOnRoute(route: Route, t: number, out: Vector3): RouteSegmen
   segment.curve.getPointAt(segment.reversed ? 1 - u : u, out);
   return segment;
 }
+
+/** Beat and progress at a fraction (0..1) of the whole scenario's playing time. */
+export function beatAt(
+  timeline: Timeline,
+  fraction: number,
+): { beatIndex: number; progress: number } {
+  const time = Math.min(1, Math.max(0, fraction)) * timeline.total;
+  const index = timeline.beats.findIndex((b) => time < b.start + b.duration);
+  const beatIndex = index === -1 ? timeline.beats.length - 1 : index;
+  const beat = timeline.beats[beatIndex];
+  if (!beat) return { beatIndex: 0, progress: 0 };
+  return { beatIndex, progress: Math.min(1, (time - beat.start) / beat.duration) };
+}

@@ -3,6 +3,7 @@ import { Vector3 } from 'three';
 import { indexTopology, type Scenario, type Topology } from '@magvirtualedu/schema';
 import { anchorOf, buildLinkCurves } from '../src/engine/curves';
 import {
+  beatAt,
   buildTimeline,
   defaultDuration,
   ease,
@@ -113,5 +114,23 @@ describe('ease', () => {
     expect(ease(0.5)).toBe(0.5);
     expect(ease(1)).toBe(1);
     expect(ease(1.5)).toBe(1);
+  });
+});
+
+describe('beatAt', () => {
+  const beats = [1, 3, 1].map((duration, i, all) => ({
+    beat: { id: `b${i}`, narration: 'x', hops: [] },
+    routes: [],
+    duration,
+    start: all.slice(0, i).reduce((a, b) => a + b, 0),
+  }));
+  const timeline = { beats, total: 5 };
+
+  it('maps a fraction of total playing time to a beat and progress within it', () => {
+    expect(beatAt(timeline, 0)).toEqual({ beatIndex: 0, progress: 0 });
+    expect(beatAt(timeline, 0.1)).toEqual({ beatIndex: 0, progress: 0.5 });
+    expect(beatAt(timeline, 0.5)).toEqual({ beatIndex: 1, progress: 0.5 });
+    expect(beatAt(timeline, 1)).toEqual({ beatIndex: 2, progress: 1 });
+    expect(beatAt(timeline, 7)).toEqual({ beatIndex: 2, progress: 1 });
   });
 });
