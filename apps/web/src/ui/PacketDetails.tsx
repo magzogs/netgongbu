@@ -53,6 +53,7 @@ export function PacketDetails(): ReactElement {
   const world = useViewer((s) => s.world);
   const selection = useViewer((s) => s.selection);
   const select = useViewer((s) => s.select);
+  const openPacketLab = useViewer((s) => s.openPacketLab);
 
   const entry = timeline?.beats[beatIndex];
   const hops = entry?.beat.hops ?? [];
@@ -99,6 +100,16 @@ export function PacketDetails(): ReactElement {
           {hop.packet.protocol}
         </span>
         <strong>{hop.packet.summary}</strong>
+        <button
+          type="button"
+          className="text-button packet-details__lab"
+          title="모든 계층을 실제 바이트와 비트 단위 필드로 보기 (P)"
+          onClick={() => {
+            openPacketLab(hopIndex);
+          }}
+        >
+          패킷 해부 ▸
+        </button>
       </div>
       <p className="packet-details__path">{hop.path.map(labelOf).join(' → ')}</p>
       {changes.size > 0 && changedAt && (

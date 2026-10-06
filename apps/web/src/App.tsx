@@ -5,6 +5,7 @@ import { AskPanel } from './ui/AskPanel';
 import { Inspector } from './ui/Inspector';
 import { BrowserButton, LaptopBrowser } from './ui/LaptopBrowser';
 import { Legend } from './ui/Legend';
+import { PacketLab } from './ui/PacketLab';
 import { Player } from './ui/Player';
 import { AskButton, ScenarioPicker } from './ui/ScenarioPicker';
 import { SceneLabels } from './ui/SceneLabels';
@@ -36,6 +37,7 @@ export function App(): ReactElement {
       <AskPanel />
       <LaptopBrowser />
       <SettingsPanel />
+      <PacketLab />
       <StatusOverlay />
     </div>
   );

@@ -42,11 +42,15 @@ export interface ViewerState extends PlaybackSlice, AskSlice, DesktopSlice {
   selection: Selection | null;
   cameraMode: CameraMode;
   inspectorOpen: boolean;
+  /** The packet shown in the anatomy view (beat and hop of the current scenario). */
+  packetLab: { beatIndex: number; hopIndex: number } | null;
   init: () => Promise<void>;
   open: (entryId: string) => Promise<void>;
   select: (selection: Selection | null) => void;
   setCameraMode: (mode: CameraMode) => void;
   setInspectorOpen: (open: boolean) => void;
+  /** Opens the anatomy view on a packet of the current beat (pausing playback), or closes it. */
+  openPacketLab: (hopIndex: number | null) => void;
 }
 
 const SCENARIO_PARAM = 's';
@@ -85,6 +89,7 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
   selection: null,
   cameraMode: 'orbit',
   inspectorOpen: !isNarrow(),
+  packetLab: null,
 
   async init() {
     void get().checkAi();
@@ -121,7 +126,7 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
         current?.topology.id === topology.id
           ? current
           : { topology, index: indexTopology(topology), curves: buildLinkCurves(topology) };
-      set({ world, scenario, selection: null, status: { kind: 'ready' } });
+      set({ world, scenario, selection: null, packetLab: null, status: { kind: 'ready' } });
       get().loadTimeline(buildTimeline(world, scenario));
       rememberInUrl(entryId);
     } catch (err) {
@@ -140,5 +145,13 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
 
   setInspectorOpen(inspectorOpen) {
     set({ inspectorOpen });
+  },
+
+  openPacketLab(hopIndex) {
+    if (hopIndex === null) {
+      set({ packetLab: null });
+      return;
+    }
+    set({ packetLab: { beatIndex: get().beatIndex, hopIndex }, playing: false });
   },
 }));

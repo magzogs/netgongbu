@@ -24,9 +24,14 @@ function Packet({ route, protocol, hopIndex }: PacketProps): ReactElement {
   const mesh = useRef<Mesh>(null);
   const color = PROTOCOL_COLORS[protocol];
   const select = useViewer((s) => s.select);
+  const openPacketLab = useViewer((s) => s.openPacketLab);
   const onClick = (e: ThreeEvent<MouseEvent>): void => {
     e.stopPropagation();
     select({ kind: 'packet', hopIndex });
+  };
+  const onDoubleClick = (e: ThreeEvent<MouseEvent>): void => {
+    e.stopPropagation();
+    openPacketLab(hopIndex);
   };
   // Start where playback currently is, so the trail does not streak in from the origin.
   const start = useMemo(() => currentPoint(route, new Vector3()), [route]);
@@ -37,7 +42,7 @@ function Packet({ route, protocol, hopIndex }: PacketProps): ReactElement {
 
   return (
     <Trail width={1.1} length={5} color={color} attenuation={(w) => w * w}>
-      <mesh ref={mesh} position={start} onClick={onClick}>
+      <mesh ref={mesh} position={start} onClick={onClick} onDoubleClick={onDoubleClick}>
         <sphereGeometry args={[0.28, 24, 16]} />
         <meshBasicMaterial color={color} toneMapped={false} />
         <mesh>

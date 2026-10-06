@@ -109,6 +109,16 @@ try {
   check(beats > 8, `scenario has ${String(beats)} steps`);
   await win.screenshot({ path: join(out, '5-measured-map.png') });
 
+  // Packet anatomy: jump to the HTTP request step and open it with P.
+  const box = await win.locator('.scrubber').boundingBox();
+  if (box) await win.mouse.click(box.x + box.width * 0.72, box.y + box.height / 2);
+  await win.locator('.narration__text').click();
+  await win.keyboard.press('p');
+  await win.waitForSelector('.lab', { timeout: 5000 }).catch(() => undefined);
+  const hexBytes = await win.locator('.hex__byte').count();
+  check(hexBytes > 40, `packet anatomy shows the frame (${String(hexBytes)} byte cells)`);
+  await win.screenshot({ path: join(out, '6-packet-anatomy.png') });
+
   check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(' | ')}` : ''}`);
 } finally {
   await app.close();

@@ -11,12 +11,16 @@ function isTyping(target: EventTarget | null): boolean {
 
 /**
  * Space play/pause, ← → previous/next step, Home back to the first step,
- * F follow the packet, R show the whole topology, Esc close the question panel.
+ * F follow the packet, R show the whole topology, P open the packet anatomy, Esc close panels.
  */
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const viewer = useViewer.getState();
+      if (e.key === 'Escape' && viewer.packetLab) {
+        viewer.openPacketLab(null);
+        return;
+      }
       if (e.key === 'Escape' && (viewer.askOpen || viewer.settingsOpen || viewer.browserOpen)) {
         viewer.setAskOpen(false);
         viewer.setSettingsOpen(false);
@@ -45,6 +49,14 @@ export function useKeyboardShortcuts(): void {
         case 'R':
           showAll();
           break;
+        case 'p':
+        case 'P': {
+          const hops = viewer.timeline?.beats[viewer.beatIndex]?.beat.hops.length ?? 0;
+          const selected = viewer.selection?.kind === 'packet' ? viewer.selection.hopIndex : 0;
+          if (hops > 0)
+            viewer.openPacketLab(viewer.packetLab ? null : Math.min(selected, hops - 1));
+          break;
+        }
         default:
           return;
       }

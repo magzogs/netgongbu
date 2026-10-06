@@ -1288,3 +1288,254 @@ body,
     display: none;
   }
 }
+
+/* ---- packet anatomy ---- */
+
+.packet-details__lab {
+  margin-left: auto;
+}
+
+.lab {
+  position: absolute;
+  inset: 64px var(--gutter) var(--gutter);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.6);
+}
+
+.lab__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.lab__title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.lab__path {
+  font-size: 13px;
+}
+
+.lab__close {
+  margin-left: auto;
+}
+
+.lab__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 0;
+}
+
+.lab__tabs .tabs {
+  margin: 0;
+}
+
+.lab__completed {
+  font-size: 12px;
+}
+
+.lab-overview {
+  padding: 10px 14px 6px;
+}
+
+.lab-overview__bar {
+  display: flex;
+  height: 22px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 22px;
+  color: #0b1220;
+  border-radius: 6px;
+}
+
+.lab-overview__bar > span {
+  flex-basis: 0;
+  min-width: 2px;
+  overflow: hidden;
+  padding: 0 6px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-right: 1px solid rgb(0 0 0 / 0.35);
+}
+
+.lab-overview__content {
+  color: var(--text);
+  background: repeating-linear-gradient(135deg, #334155 0 6px, #1e293b 6px 12px);
+}
+
+.lab-overview__text {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+
+.lab__body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 0;
+  border-top: 1px solid var(--panel-border);
+}
+
+.lab__fields {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 0 16px;
+}
+
+.lab__empty {
+  padding: 16px 20px;
+  line-height: 1.6;
+}
+
+.lab-layer {
+  margin: 6px 12px 12px;
+  border-left: 3px solid var(--layer);
+  border-radius: 4px;
+  background: rgb(148 163 184 / 0.04);
+}
+
+.lab-layer__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: baseline;
+  padding: 8px 10px 4px;
+  font-size: 13px;
+}
+
+.lab-layer__note {
+  margin: 0 10px 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.lab-field {
+  display: grid;
+  grid-template-columns: 44px 36px minmax(140px, 220px) minmax(120px, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  padding-right: 10px;
+  font-size: 12px;
+  cursor: default;
+}
+
+.lab-field.is-hovered {
+  background: rgb(250 204 21 / 0.14);
+}
+
+.lab-field__pos,
+.lab-field__size {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.lab-field__name {
+  font-weight: 600;
+}
+
+.lab-field__value {
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.lab-field__meaning {
+  grid-column: 3 / 5;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.lab-source--spec {
+  color: #e2e8f0 !important;
+  background: #475569 !important;
+}
+
+.hex {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  border-left: 1px solid var(--panel-border);
+}
+
+.hex__row {
+  display: flex;
+  gap: 12px;
+  white-space: pre;
+}
+
+.hex__offset {
+  color: var(--text-muted);
+}
+
+.hex__bytes {
+  display: grid;
+  grid-template-columns: repeat(16, 2.2ch);
+  column-gap: 0.6ch;
+}
+
+.hex__byte {
+  text-align: center;
+  border-bottom: 2px solid var(--layer);
+  border-radius: 2px;
+}
+
+.hex__byte.is-lit,
+.hex__ascii .is-lit {
+  color: #0b1220;
+  background: #facc15;
+}
+
+.hex__ascii {
+  color: var(--text-muted);
+}
+
+@media (max-width: 1100px) {
+  .lab__body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
+  }
+
+  .hex {
+    border-left: none;
+    border-top: 1px solid var(--panel-border);
+  }
+}
+
+@media (max-width: 720px) {
+  .lab {
+    inset: 56px 8px 8px;
+  }
+
+  .lab-field {
+    grid-template-columns: 38px 32px minmax(0, 1fr);
+  }
+
+  .lab-field__value {
+    grid-column: 3;
+  }
+
+  .lab-field__meaning {
+    grid-column: 1 / 4;
+  }
+
+  .hex {
+    font-size: 10px;
+  }
+}
