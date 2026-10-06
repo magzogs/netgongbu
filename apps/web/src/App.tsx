@@ -1,10 +1,11 @@
 import { useEffect, type ReactElement } from 'react';
 import { Scene } from './scene/Scene';
 import { useViewer } from './store/viewer';
+import { AskPanel } from './ui/AskPanel';
 import { Inspector } from './ui/Inspector';
 import { Legend } from './ui/Legend';
 import { Player } from './ui/Player';
-import { ScenarioPicker } from './ui/ScenarioPicker';
+import { AskButton, ScenarioPicker } from './ui/ScenarioPicker';
 import { SceneLabels } from './ui/SceneLabels';
 import { StatusOverlay } from './ui/StatusOverlay';
 import { useKeyboardShortcuts } from './ui/useKeyboardShortcuts';
@@ -23,10 +24,12 @@ export function App(): ReactElement {
       <header className="topbar">
         <h1 className="topbar__title">Network in 3D</h1>
         <ScenarioPicker />
+        <AskButton />
       </header>
       <Legend />
       <Inspector />
       <Player />
+      <AskPanel />
       <StatusOverlay />
     </div>
   );

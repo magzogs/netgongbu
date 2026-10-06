@@ -9,7 +9,10 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "dev": "pnpm --filter @magvirtualedu/web dev",
+    "dev": "pnpm --parallel --filter @magvirtualedu/web --filter @magvirtualedu/server dev",
+    "dev:web": "pnpm --filter @magvirtualedu/web dev",
+    "dev:server": "pnpm --filter @magvirtualedu/server dev",
+    "dev:fake": "pnpm --parallel --filter @magvirtualedu/web --filter @magvirtualedu/server dev:fake",
     "build": "pnpm --filter @magvirtualedu/web build",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",

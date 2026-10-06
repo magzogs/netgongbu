@@ -50,7 +50,7 @@ export default defineConfig(
   },
   {
     // The server's request log goes to stdout.
-    files: ['apps/server/src/index.ts'],
+    files: ['apps/server/src/index.ts', 'apps/server/scripts/**/*.ts'],
     rules: { 'no-console': 'off' },
   },
   {

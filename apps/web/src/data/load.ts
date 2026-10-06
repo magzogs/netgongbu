@@ -10,6 +10,10 @@ import {
   type Topology,
   type ValidationIssue,
 } from '@magvirtualedu/schema';
+import { fetchAiScenario } from './aiApi';
+
+/** A scenario in the picker: hand-written example data, or one the AI generated earlier. */
+export type ViewerEntry = CatalogEntry & { source: 'example' | 'ai'; question?: string };
 
 export class ScenarioLoadError extends Error {
   constructor(
@@ -38,10 +42,10 @@ export interface LoadedScenario {
 }
 
 /** Loads a scenario and its topology and refuses one that uses nodes or links that do not exist. */
-export async function fetchScenario(entry: CatalogEntry): Promise<LoadedScenario> {
+export async function fetchScenario(entry: ViewerEntry): Promise<LoadedScenario> {
   const [rawTopology, rawScenario] = await Promise.all([
     fetchJson(`topologies/${entry.topologyId}.json`),
-    fetchJson(`scenarios/${entry.id}.json`),
+    entry.source === 'ai' ? fetchAiScenario(entry.id) : fetchJson(`scenarios/${entry.id}.json`),
   ]);
   const topology = TopologySchema.parse(rawTopology);
   const scenario = ScenarioSchema.parse(rawScenario);

@@ -29,6 +29,27 @@ function Narration(): ReactElement | null {
   );
 }
 
+/** The question an AI scenario answers, and what the topology could not show. */
+function ScenarioNote(): ReactElement | null {
+  const scenario = useViewer((s) => s.scenario);
+  if (!scenario?.question && !scenario?.unsupported) return null;
+  return (
+    <div className="scenario-note">
+      {scenario.question && (
+        <p className="scenario-note__question" title={scenario.question}>
+          질문 · {scenario.question}
+        </p>
+      )}
+      {scenario.unsupported && (
+        <details className="scenario-note__gap">
+          <summary>이 지도로 보여 줄 수 없는 부분</summary>
+          <p>{scenario.unsupported}</p>
+        </details>
+      )}
+    </div>
+  );
+}
+
 function Controls(): ReactElement {
   const playing = useViewer((s) => s.playing);
   const atEnd = useViewer(
@@ -124,6 +145,7 @@ export function Player(): ReactElement | null {
   if (!timeline) return null;
   return (
     <section className="player panel" aria-label="재생">
+      <ScenarioNote />
       <Narration />
       <Scrubber timeline={timeline} />
       <Controls />

@@ -11,13 +11,17 @@ function isTyping(target: EventTarget | null): boolean {
 
 /**
  * Space play/pause, ← → previous/next step, Home back to the first step,
- * F follow the packet, R show the whole topology.
+ * F follow the packet, R show the whole topology, Esc close the question panel.
  */
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
       const viewer = useViewer.getState();
+      if (e.key === 'Escape' && viewer.askOpen) {
+        viewer.setAskOpen(false);
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
       switch (e.key) {
         case ' ':
           viewer.togglePlay();

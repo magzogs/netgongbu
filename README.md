@@ -1,16 +1,30 @@
 # magVirtualEdu: Network in 3D
 
 네트워크에서 메시지가 라우터와 서버를 거쳐 어떻게 전달되는지 3D 공간에서 단계별로 보여 주는 교육용 뷰어입니다.
-지금은 직접 작성한 시나리오를 재생합니다(MVP-1). 다음 단계(MVP-2)에서는 AI가 질문에 맞는 시나리오를 생성합니다.
+직접 작성한 예제 시나리오를 재생하고, **AI에게 질문**하면 Claude가 현재 지도의 장비만으로 답을 시나리오로 만들어 재생합니다.
 
 ## 실행
 
 ```bash
 pnpm install
-pnpm dev        # http://localhost:5180
+export ANTHROPIC_API_KEY=...   # AI 질문에 필요 (없으면 예제만 재생)
+pnpm dev        # 뷰어 http://localhost:5180 + AI 서버 :8787 (/api는 Vite가 프록시)
+pnpm dev:fake   # API 키 없이: 가짜 AI가 고정된 답(첫 답은 일부러 틀려서 수정 과정까지)을 돌려줌
 pnpm check      # lint + format + typecheck + test
-pnpm build      # apps/web/dist (정적 파일, 어느 경로에 올려도 동작)
+pnpm build      # apps/web/dist (정적 파일, 어느 경로에 올려도 동작; AI 질문은 서버 필요)
 ```
+
+AI 서버 환경변수: `SCENARIO_MODEL`(기본 `claude-opus-5-5`), `SCENARIO_EFFORT`(기본 `high`),
+`SCENARIO_MAX_ATTEMPTS`(기본 3), `SCENARIO_PORT`(기본 8787). 생성된 시나리오는 `apps/server/.data/`에 저장됩니다.
+
+## AI 시나리오가 만들어지는 과정
+
+1. 뷰어가 `POST /api/scenarios {topologyId, question}`을 보냅니다.
+2. 서버가 고정 지침과 토폴로지, 예제 시나리오를 시스템 프롬프트로 묶어 캐시하고, 질문만 바꿔 Claude에 보냅니다.
+   답은 구조화된 출력(`output_config.format`)으로 `ScenarioDraft` 스키마를 따릅니다.
+3. 답을 `validateScenario`로 검사합니다. 없는 링크를 지나가는 경로처럼 재생할 수 없는 부분이 있으면,
+   그 목록을 Claude에게 돌려보내 고친 시나리오를 다시 받습니다(최대 3회).
+4. 통과한 시나리오는 저장되고, 목록의 "AI가 만든 시나리오"에 추가되어 바로 재생됩니다(`?s=<id>`로 공유).
 
 ## 조작
 
@@ -26,13 +40,15 @@ pnpm build      # apps/web/dist (정적 파일, 어느 경로에 올려도 동�
 ## 구조
 
 ```
-packages/schema   토폴로지·시나리오 zod 스키마, 검증(validateScenario) — 뷰어와 AI 서버가 함께 쓰는 계약
+packages/schema   토폴로지·시나리오 zod 스키마, 검증(validateScenario), AI 초안 형식(ScenarioDraft)
+apps/server       Hono + Anthropic SDK: 질문 → Claude → 검증·재시도 → 저장
+  scripts/fake-ai 키 없이 UI를 개발할 때 쓰는 가짜 AI 서버
 apps/web          Vite + React + React Three Fiber 뷰어
   public/data     catalog.json, topologies/*.json, scenarios/*.json
   src/engine      경로·타임라인·패킷 위치·헤더 비교·카메라 프레이밍 (순수 함수, 테스트 대상)
-  src/store       zustand: 불러오기, 선택, 재생 상태
+  src/store       zustand: 불러오기, 선택, 재생, AI 질문 상태
   src/scene       3D 씬 (노드, 링크, 패킷, 카메라)
-  src/ui          플레이어, 인스펙터, 범례, 3D 위 DOM 라벨
+  src/ui          플레이어, 인스펙터, 범례, 질문 패널, 3D 위 DOM 라벨
 ```
 
 ## 시나리오 작성 규칙

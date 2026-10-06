@@ -26,7 +26,8 @@ function effortFrom(value: string | undefined): Effort {
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
   return {
-    port: Number(env.PORT ?? 8787),
+    // Not the generic PORT: dev tools set that for the web app, which proxies /api to here.
+    port: Number(env.SCENARIO_PORT ?? 8787),
     dataDir: resolve(env.DATA_DIR ?? resolve(appDir, '../web/public/data')),
     storeDir: resolve(env.STORE_DIR ?? resolve(appDir, '.data/scenarios')),
     model: env.SCENARIO_MODEL ?? 'claude-opus-5-5',

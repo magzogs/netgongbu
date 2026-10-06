@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:fake": "vite",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -18,6 +19,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "three": "0.186.1",
+    "zod": "4.6.5",
     "zustand": "5.0.15"
   },
   "devDependencies": {

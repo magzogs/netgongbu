@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import {
   indexTopology,
-  type CatalogEntry,
   type Scenario,
   type Topology,
   type TopologyIndex,
@@ -9,7 +8,9 @@ import {
 } from '@magvirtualedu/schema';
 import { buildLinkCurves, type LinkCurve } from '../engine/curves';
 import { buildTimeline } from '../engine/timeline';
-import { fetchCatalog, fetchScenario, ScenarioLoadError } from '../data/load';
+import { fetchAiCatalog } from '../data/aiApi';
+import { fetchCatalog, fetchScenario, ScenarioLoadError, type ViewerEntry } from '../data/load';
+import { createAskSlice, type AskSlice } from './ask';
 import { createPlaybackSlice, type PlaybackSlice } from './playback';
 
 /** Topology plus everything derived from it once, shared by the scene and the engine. */
@@ -30,8 +31,9 @@ export type Selection = { kind: 'node'; id: string } | { kind: 'packet'; hopInde
 /** orbit: the learner moves the camera freely; follow: it stays on the moving packet. */
 export type CameraMode = 'orbit' | 'follow';
 
-export interface ViewerState extends PlaybackSlice {
-  catalog: readonly CatalogEntry[];
+export interface ViewerState extends PlaybackSlice, AskSlice {
+  /** Hand-written examples, then AI scenarios newest first. */
+  catalog: readonly ViewerEntry[];
   entryId: string | null;
   status: Status;
   world: World | null;
@@ -72,6 +74,7 @@ let openToken = 0;
 
 export const useViewer = create<ViewerState>()((set, get, api) => ({
   ...createPlaybackSlice(set, get, api),
+  ...createAskSlice(set, get, api),
   catalog: [],
   entryId: null,
   status: { kind: 'loading' },
@@ -82,11 +85,16 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
   inspectorOpen: !isNarrow(),
 
   async init() {
+    void get().checkAi();
     try {
-      const catalog = await fetchCatalog();
-      set({ catalog: catalog.scenarios });
+      const [examples, generated] = await Promise.all([fetchCatalog(), fetchAiCatalog()]);
+      const catalog: ViewerEntry[] = [
+        ...examples.scenarios.map((e) => ({ ...e, source: 'example' as const })),
+        ...generated.map((e) => ({ ...e, source: 'ai' as const })),
+      ];
+      set({ catalog });
       const wanted = new URL(window.location.href).searchParams.get(SCENARIO_PARAM);
-      const first = catalog.scenarios.find((s) => s.id === wanted) ?? catalog.scenarios[0];
+      const first = catalog.find((s) => s.id === wanted) ?? catalog[0];
       if (first) await get().open(first.id);
       else set({ status: { kind: 'error', message: '시나리오가 없습니다.', issues: [] } });
     } catch (err) {
@@ -102,11 +110,12 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
     try {
       const { topology, scenario } = await fetchScenario(entry);
       if (token !== openToken) return;
-      const world: World = {
-        topology,
-        index: indexTopology(topology),
-        curves: buildLinkCurves(topology),
-      };
+      // Keep the scene (and camera) when the new scenario uses the same topology.
+      const current = get().world;
+      const world: World =
+        current?.topology.id === topology.id
+          ? current
+          : { topology, index: indexTopology(topology), curves: buildLinkCurves(topology) };
       set({ world, scenario, selection: null, status: { kind: 'ready' } });
       get().loadTimeline(buildTimeline(world, scenario));
       rememberInUrl(entryId);
