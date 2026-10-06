@@ -197,6 +197,12 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
 
+  packages/protocols:
+    dependencies:
+      '@magvirtualedu/schema':
+        specifier: workspace:*
+        version: link:../schema
+
   packages/schema:
     dependencies:
       zod:

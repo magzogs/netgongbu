@@ -1,0 +1,19 @@
+{
+  "name": "@magvirtualedu/protocols",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Builds a scenario packet into real protocol bytes, field by field (offsets, meaning, RFC, value source), for the packet anatomy view",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@magvirtualedu/schema": "workspace:*"
+  }
+}
