@@ -17,9 +17,10 @@ export function useKeyboardShortcuts(): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const viewer = useViewer.getState();
-      if (e.key === 'Escape' && (viewer.askOpen || viewer.settingsOpen)) {
+      if (e.key === 'Escape' && (viewer.askOpen || viewer.settingsOpen || viewer.browserOpen)) {
         viewer.setAskOpen(false);
         viewer.setSettingsOpen(false);
+        if (viewer.traceRun.kind !== 'running') viewer.setBrowserOpen(false);
         return;
       }
       if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;

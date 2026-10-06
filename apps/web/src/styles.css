@@ -1139,3 +1139,152 @@ body,
   margin: 12px 0 0;
   font-size: 12px;
 }
+
+/* ---- the laptop's browser (desktop app) ---- */
+
+.browser-button {
+  background: var(--panel);
+}
+
+.browser {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  z-index: 4;
+  width: min(1100px, calc(100% - 2 * var(--gutter)));
+  height: min(720px, calc(100% - 64px - var(--gutter)));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateX(-50%);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.55);
+}
+
+.browser__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.browser__dots {
+  display: flex;
+  gap: 6px;
+  margin-right: 6px;
+}
+
+.browser__dots i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #475569;
+}
+
+.browser__dots i:first-child {
+  background: #f87171;
+}
+
+.browser__dots i:nth-child(2) {
+  background: #fbbf24;
+}
+
+.browser__dots i:last-child {
+  background: #4ade80;
+}
+
+.browser__address {
+  flex: 1;
+}
+
+.browser__address input {
+  width: 100%;
+  padding: 7px 12px;
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  background: rgb(15 23 42 / 0.8);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+}
+
+.browser__address input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.browser__go {
+  padding: 6px 14px;
+}
+
+.browser__body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.browser__page {
+  flex: 1;
+  min-width: 0;
+  background: rgb(15 23 42 / 0.6);
+}
+
+.browser__intro {
+  max-width: 560px;
+  margin: 48px auto;
+  padding: 0 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.browser__intro strong {
+  font-size: 16px;
+}
+
+.browser__log {
+  width: 300px;
+  padding: 12px 14px;
+  overflow-y: auto;
+  font-size: 12px;
+  border-left: 1px solid var(--panel-border);
+}
+
+.browser__phase {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.hops {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hops li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  column-gap: 6px;
+}
+
+.hops__ttl {
+  grid-row: span 2;
+  font-family: var(--mono);
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.hops__ip {
+  font-family: var(--mono);
+}
+
+@media (max-width: 720px) {
+  .browser__log {
+    display: none;
+  }
+}

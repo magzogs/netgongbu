@@ -112,7 +112,39 @@ export function SettingsPanel(): ReactElement | null {
         키는 이 컴퓨터에만 저장되고, 질문할 때 Anthropic API로만 전송됩니다. 모델:{' '}
         {settings?.model ?? '…'}
       </p>
+      <GeoSection />
     </section>
+  );
+}
+
+function GeoSection(): ReactElement {
+  const geo = useViewer((s) => s.geoDownload);
+  const download = useViewer((s) => s.downloadGeo);
+  const mb = (n: number): string => `${(n / 1_000_000).toFixed(1)} MB`;
+  return (
+    <>
+      <h3 className="section-title">위치 데이터베이스</h3>
+      <p className="muted settings__status">
+        경로의 라우터를 지구본 위에 놓으려면 IP 위치 데이터베이스(DB-IP City Lite, 약 60 MB)가
+        필요합니다. 이 컴퓨터에 저장하고 오프라인으로 찾아보므로 라우터 주소를 외부 서비스에 보내지
+        않습니다.
+      </p>
+      {geo.kind === 'done' ? (
+        <p className="settings__status">
+          설치됨 ({geo.version}) · IP Geolocation by DB-IP (CC BY 4.0)
+        </p>
+      ) : geo.kind === 'running' ? (
+        <p className="settings__status" role="status">
+          내려받는 중… {mb(geo.received)}
+          {geo.total ? ` / ${mb(geo.total)}` : ''}
+        </p>
+      ) : (
+        <button type="button" className="primary-button" onClick={download}>
+          내려받기 (db-ip.com)
+        </button>
+      )}
+      {geo.kind === 'error' && <p className="ask__unavailable">{geo.message}</p>}
+    </>
   );
 }
 

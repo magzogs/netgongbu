@@ -15,7 +15,7 @@
       "id": "z-device",
       "label": "노트북 내부",
       "color": "#2563eb",
-      "bounds": [-9, 12.5, 6.5, 23.5],
+      "bounds": [-12, 15, 8.5, 29],
       "elevation": 14
     },
     {
@@ -31,7 +31,7 @@
       "id": "d-browser",
       "type": "browser",
       "label": "브라우저",
-      "pos": [-7, 14, 18],
+      "pos": [-9.799999999999999, 14, 22],
       "zone": "z-device",
       "description": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
     },
@@ -39,7 +39,7 @@
       "id": "d-resolver",
       "type": "os",
       "label": "OS DNS 리졸버",
-      "pos": [-4, 14, 14.5],
+      "pos": [-5.6, 14, 17.1],
       "zone": "z-device",
       "description": "운영체제가 이름을 주소로 바꾸는 부분. 설정된 DNS 서버: 192.168.4.1"
     },
@@ -47,7 +47,7 @@
       "id": "d-stack",
       "type": "os",
       "label": "TCP/IP 스택",
-      "pos": [-1.5, 14, 18],
+      "pos": [-2.0999999999999996, 14, 22],
       "zone": "z-device",
       "description": "커널 안의 네트워크 구현: 소켓, 포트 할당, TCP 세그먼트와 IP 패킷 조립"
     },
@@ -55,7 +55,7 @@
       "id": "d-route",
       "type": "os",
       "label": "라우팅 테이블",
-      "pos": [1.5, 14, 14.5],
+      "pos": [2.0999999999999996, 14, 17.1],
       "zone": "z-device",
       "description": "default → 192.168.4.1 (en1)"
     },
@@ -63,7 +63,7 @@
       "id": "d-arp",
       "type": "os",
       "label": "ARP 캐시",
-      "pos": [1.5, 14, 21.5],
+      "pos": [2.0999999999999996, 14, 26.9],
       "zone": "z-device",
       "description": "192.168.4.1 → 02:4c:a0:3d:05:0e"
     },
@@ -71,7 +71,7 @@
       "id": "d-nic",
       "type": "nic",
       "label": "Wi-Fi (en1)",
-      "pos": [4.5, 14, 18],
+      "pos": [6.3, 14, 22],
       "zone": "z-device",
       "description": "무선 랜카드: 프레임을 802.11 형식으로 전파에 실어 보냅니다",
       "interfaces": [
@@ -86,7 +86,7 @@
       "id": "h-router",
       "type": "router",
       "label": "공유기",
-      "pos": [2.5, 7, 9],
+      "pos": [-2.5, 7, 9],
       "zone": "z-home",
       "description": "기본 게이트웨이. 집 안의 사설 IP를 공인 IP로 바꾸는 NAT도 합니다.",
       "interfaces": [
@@ -101,7 +101,7 @@
       "id": "h-modem",
       "type": "modem",
       "label": "모뎀 / ONT",
-      "pos": [-2.5, 7, 9],
+      "pos": [2.5, 7, 9],
       "zone": "z-home",
       "source": "typical",
       "description": "통신사 회선(광케이블·동축)의 신호를 이더넷으로 바꾸는 장비. IP 라우터가 아니라서 traceroute에 나타나지 않습니다. 공유기와 한 기기인 경우도 많습니다."

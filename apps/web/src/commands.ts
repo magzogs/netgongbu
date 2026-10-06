@@ -1,5 +1,6 @@
 import { focusOn, frameTopology } from './scene/camera';
 import type { Insets } from './engine/framing';
+import { isDesktop } from './data/backend';
 import { NARROW_QUERY, useViewer } from './store/viewer';
 
 // User commands shared by buttons, double-clicks and keyboard shortcuts.
@@ -48,4 +49,15 @@ export function showAll(animate = true): void {
 export function toggleFollow(): void {
   const viewer = useViewer.getState();
   viewer.setCameraMode(viewer.cameraMode === 'follow' ? 'orbit' : 'follow');
+}
+
+/**
+ * Selects a node; in the desktop app the laptop (or its browser) also opens the laptop's real
+ * web browser.
+ */
+export function selectNode(id: string): void {
+  const viewer = useViewer.getState();
+  viewer.select({ kind: 'node', id });
+  const type = viewer.world?.index.nodes.get(id)?.type;
+  if (isDesktop && (type === 'client' || type === 'browser')) viewer.setBrowserOpen(true);
 }

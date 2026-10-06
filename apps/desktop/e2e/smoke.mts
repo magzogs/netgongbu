@@ -1,7 +1,7 @@
 // Launches the built desktop app (electron-vite build first) with a throw-away data folder and
 // the canned AI, checks the viewer works through the preload bridge, and saves screenshots to
 // e2e/out/. Run: pnpm --filter @magvirtualedu/desktop test:e2e
-import { mkdirSync, mkdtempSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -67,9 +67,55 @@ try {
 
   await win.locator('.settings-button').click();
   await win.waitForSelector('.settings');
-  const status = await win.locator('.settings__status').textContent();
+  const keyStatus = win.locator('.settings__status').first();
+  await win.waitForFunction(
+    () => document.querySelector('.settings__status')?.textContent !== '불러오는 중…',
+  );
+  const status = await keyStatus.textContent();
   check(status !== null && status.length > 0, `settings show key status: ${status ?? ''}`);
   await win.screenshot({ path: join(out, '3-settings.png') });
+
+  await win.keyboard.press('Escape');
+
+  // The laptop's browser: load a real page, trace the path, open the measured scenario.
+  await win.locator('.browser-button').click();
+  await win.locator('.browser__address input').fill('example.com');
+  await win.locator('.browser__address input').press('Enter');
+  await win.waitForSelector('.browser__log', { timeout: 10_000 });
+  await win.waitForFunction(() => document.querySelectorAll('.hops li').length > 0, undefined, {
+    timeout: 60_000,
+  });
+  await win.screenshot({ path: join(out, '4-browser-measuring.png') });
+  const pagePng = await app.evaluate(async ({ webContents, session }) => {
+    const lab = webContents
+      .getAllWebContents()
+      .find((wc) => wc.session === session.fromPartition('lab-browser'));
+    return lab ? (await lab.capturePage()).toPNG().toString('base64') : null;
+  });
+  check(pagePng !== null, 'laptop browser view rendered the page');
+  if (pagePng) writeFileSync(join(out, '4b-browser-page.png'), Buffer.from(pagePng, 'base64'));
+
+  await win.waitForFunction(
+    () =>
+      (document.querySelector('.picker select') as HTMLSelectElement | null)?.value.startsWith(
+        'trace-',
+      ),
+    undefined,
+    { timeout: 120_000 },
+  );
+  await win.waitForTimeout(1500);
+  const title = await win.locator('.picker select option:checked').textContent();
+  check(title?.includes('실측') ?? false, `measured scenario opened: ${title ?? ''}`);
+  const beats = await win.evaluate(
+    () =>
+      (
+        window as unknown as {
+          viewer?: { getState: () => { timeline: { beats: unknown[] } | null } };
+        }
+      ).viewer?.getState().timeline?.beats.length ?? -1,
+  );
+  check(beats === -1 || beats > 8, `scenario has steps (${String(beats)})`);
+  await win.screenshot({ path: join(out, '5-measured-map.png') });
 
   check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(' | ')}` : ''}`);
 } finally {

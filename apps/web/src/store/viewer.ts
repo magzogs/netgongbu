@@ -95,8 +95,11 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
         ...generated.map((e) => ({ ...e, source: 'ai' as const })),
       ];
       set({ catalog });
+      // Desktop app: measured page loads join the list before the URL's scenario is looked up.
+      await get().connectDesktop();
+      const all = get().catalog;
       const wanted = new URL(window.location.href).searchParams.get(SCENARIO_PARAM);
-      const first = catalog.find((s) => s.id === wanted) ?? catalog[0];
+      const first = all.find((s) => s.id === wanted) ?? all[0];
       if (first) await get().open(first.id);
       else set({ status: { kind: 'error', message: '시나리오가 없습니다.', issues: [] } });
     } catch (err) {

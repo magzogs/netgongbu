@@ -39,7 +39,13 @@ const GLOBE_RADIUS = 40;
 // On a globe the computer and the home float above the globe, in front of (south of) the
 // learner's place so they do not hide the hops there when seen from above.
 const DEVICE_ELEVATION = 14;
-const DEVICE_SOUTH = 18;
+const DEVICE_SOUTH = 22;
+/** Spacing of the parts inside the computer, so their labels do not overlap. */
+const DEVICE_SPREAD = 1.4;
+/** Flat layout: internet hops snake in rows of this many. */
+const ROW = 5;
+const COL_GAP = 8;
+const ROW_GAP = 9;
 const HOME_ELEVATION = 7;
 const HOME_SOUTH = 9;
 
@@ -272,7 +278,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
         : '유선 랜카드: 이더넷 프레임을 케이블로 보냅니다',
     ],
   ];
-  const dx = globe ? 0 : -22;
+  const dx = globe ? 0 : -30;
   const dz = globe ? DEVICE_SOUTH : 0;
   const deviceY = globe ? DEVICE_ELEVATION : 0;
   for (const [nid, type, label, [x, z], description] of device) {
@@ -280,7 +286,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       id: nid,
       type,
       label,
-      pos: [x + dx, deviceY, z + dz],
+      pos: [x * DEVICE_SPREAD + dx, deviceY, z * DEVICE_SPREAD + dz],
       zone: 'z-device',
       description,
     });
@@ -304,14 +310,15 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
 
   // Home: router (observed gateway) and the modem traceroute cannot see.
   const homeY = globe ? HOME_ELEVATION : 0;
-  const hx = globe ? 0 : -8;
+  // Router towards the computer, modem towards the internet, so the chain does not fold back.
+  const hx = globe ? 0 : -12;
   const hz = globe ? HOME_SOUTH : 0;
   nodes.push(
     {
       id: 'h-router',
       type: 'router',
       label: '공유기',
-      pos: [hx + 2.5, homeY, hz],
+      pos: [hx - 2.5, homeY, hz],
       zone: 'z-home',
       description: '기본 게이트웨이. 집 안의 사설 IP를 공인 IP로 바꾸는 NAT도 합니다.',
       ...(local.gateway && {
@@ -328,7 +335,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       id: 'h-modem',
       type: 'modem',
       label: '모뎀 / ONT',
-      pos: [hx - 2.5, homeY, hz],
+      pos: [hx + 2.5, homeY, hz],
       zone: 'z-home',
       source: 'typical',
       description:
@@ -426,7 +433,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
         id: 'z-device',
         label: '노트북 내부',
         color: '#2563eb',
-        bounds: [-9, DEVICE_SOUTH - 5.5, 6.5, DEVICE_SOUTH + 5.5],
+        bounds: [-12, DEVICE_SOUTH - 7, 8.5, DEVICE_SOUTH + 7],
         elevation: DEVICE_ELEVATION,
       },
       {
@@ -438,17 +445,25 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       },
     ];
   } else {
-    order.forEach((nid, i) => {
-      positions.set(nid, nid === 'n-dns' ? [4, 0, -8] : [4 + i * 5, 0, 0]);
+    // Rows of ROW hops, alternating direction, so long paths stay compact.
+    const chainOrder = order.filter((nid) => nid !== 'n-dns');
+    chainOrder.forEach((nid, i) => {
+      const row = Math.floor(i / ROW);
+      const col = i % ROW;
+      positions.set(nid, [(row % 2 === 0 ? col : ROW - 1 - col) * COL_GAP, 0, row * ROW_GAP]);
     });
+    const hasDns = order.includes('n-dns');
+    if (hasDns) positions.set('n-dns', [0, 0, -ROW_GAP]);
+    const rows = Math.ceil(chainOrder.length / ROW);
+    const width = (Math.min(chainOrder.length, ROW) - 1) * COL_GAP;
     zones = [
-      { id: 'z-device', label: '노트북 내부', color: '#2563eb', bounds: [-31, -5.5, -15.5, 5.5] },
-      { id: 'z-home', label: '집', color: '#2f6f4f', bounds: [-13, -2.5, -3.5, 2.5] },
+      { id: 'z-device', label: '노트북 내부', color: '#2563eb', bounds: [-42, -7, -21.5, 7] },
+      { id: 'z-home', label: '집', color: '#2f6f4f', bounds: [-17.5, -2.5, -6.5, 2.5] },
       {
         id: 'z-internet',
         label: '인터넷 (위치 정보 없음)',
         color: '#5c5470',
-        bounds: [1, -10.5, 7 + (order.length - 1) * 5, 3],
+        bounds: [-3, hasDns ? -ROW_GAP - 3 : -3.5, width + 3, (rows - 1) * ROW_GAP + 3.5],
       },
     ];
     for (const n of nodes) if (order.includes(n.id)) n.zone = 'z-internet';

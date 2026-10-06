@@ -1,7 +1,7 @@
 import { useMemo, type ReactElement } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useViewer, type World } from '../store/viewer';
-import { focusNode } from '../commands';
+import { focusNode, selectNode } from '../commands';
 import { CameraRig } from './CameraRig';
 import { GlobeView } from './GlobeView';
 import { Ground } from './Ground';
@@ -14,7 +14,6 @@ import { SCENE_BACKGROUND } from './theme';
 
 function TopologyView({ world }: { world: World }): ReactElement {
   const selection = useViewer((s) => s.selection);
-  const select = useViewer((s) => s.select);
   const beat = useViewer((s) => s.timeline?.beats[s.beatIndex]);
   const activeLinks = useMemo(
     () => new Set(beat?.routes.flatMap((r) => r.segments.map((seg) => seg.linkId))),
@@ -36,9 +35,7 @@ function TopologyView({ world }: { world: World }): ReactElement {
           node={node}
           selected={selection?.kind === 'node' && selection.id === node.id}
           busy={busyNodes.has(node.id)}
-          onSelect={(id) => {
-            select({ kind: 'node', id });
-          }}
+          onSelect={selectNode}
           onFocus={focusNode}
         />
       ))}

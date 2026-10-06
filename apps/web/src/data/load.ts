@@ -10,10 +10,14 @@ import {
   type Topology,
   type ValidationIssue,
 } from '@magvirtualedu/schema';
-import { backend } from './backend';
+import { buildFromReport } from '@magvirtualedu/trace';
+import { backend, lab } from './backend';
 
-/** A scenario in the picker: hand-written example data, or one the AI generated earlier. */
-export type ViewerEntry = CatalogEntry & { source: 'example' | 'ai'; question?: string };
+/**
+ * A scenario in the picker: hand-written example data, one the AI generated, or one built from a
+ * page load measured by the desktop app.
+ */
+export type ViewerEntry = CatalogEntry & { source: 'example' | 'ai' | 'trace'; question?: string };
 
 export class ScenarioLoadError extends Error {
   constructor(
@@ -43,6 +47,7 @@ export interface LoadedScenario {
 
 /** Loads a scenario and its topology and refuses one that uses nodes or links that do not exist. */
 export async function fetchScenario(entry: ViewerEntry): Promise<LoadedScenario> {
+  if (entry.source === 'trace') return traceScenario(entry);
   const [rawTopology, rawScenario] = await Promise.all([
     fetchJson(`topologies/${entry.topologyId}.json`),
     entry.source === 'ai' ? backend.aiScenario(entry.id) : fetchJson(`scenarios/${entry.id}.json`),
@@ -52,6 +57,21 @@ export async function fetchScenario(entry: ViewerEntry): Promise<LoadedScenario>
   const issues = [...validateTopology(topology), ...validateScenario(topology, scenario)];
   if (issues.length > 0) {
     throw new ScenarioLoadError(`"${entry.title}" 시나리오에 문제가 있습니다.`, issues);
+  }
+  return { topology, scenario };
+}
+
+/** A measured page load, rebuilt into a topology and scenario from its saved report. */
+async function traceScenario(entry: ViewerEntry): Promise<LoadedScenario> {
+  const report = lab ? await lab.trace.get(entry.id) : null;
+  if (!report) throw new ScenarioLoadError('측정 기록을 찾을 수 없습니다.');
+  const { topology, scenario } = buildFromReport(report, entry.id);
+  const issues = [...validateTopology(topology), ...validateScenario(topology, scenario)];
+  if (issues.length > 0) {
+    throw new ScenarioLoadError(
+      `"${entry.title}" 측정 기록으로 시나리오를 만들지 못했습니다.`,
+      issues,
+    );
   }
   return { topology, scenario };
 }
