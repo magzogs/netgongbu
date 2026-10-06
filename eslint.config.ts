@@ -49,6 +49,11 @@ export default defineConfig(
     extends: [reactHooks.configs.flat.recommended],
   },
   {
+    // The server's request log goes to stdout.
+    files: ['apps/server/src/index.ts'],
+    rules: { 'no-console': 'off' },
+  },
+  {
     files: ['**/*.test.ts', '**/*.test.tsx'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',

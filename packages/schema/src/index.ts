@@ -3,3 +3,4 @@ export * from './scenario';
 export * from './graph';
 export * from './validate';
 export * from './catalog';
+export * from './draft';

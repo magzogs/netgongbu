@@ -1,0 +1,23 @@
+{
+  "name": "@magvirtualedu/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Asks Claude for a scenario that answers a network question on a topology, validates it and stores it",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.131.0",
+    "@hono/node-server": "2.1.3",
+    "@magvirtualedu/schema": "workspace:*",
+    "hono": "4.13.13",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "tsx": "4.23.15"
+  }
+}
