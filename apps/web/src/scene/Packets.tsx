@@ -2,6 +2,7 @@ import { useMemo, useRef, type ReactElement } from 'react';
 import { Trail } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { Vector3, type Mesh } from 'three';
+import type { ThreeEvent } from '@react-three/fiber';
 import type { Protocol } from '@magvirtualedu/schema';
 import { ease, pointOnRoute, type Route } from '../engine/timeline';
 import { useViewer } from '../store/viewer';
@@ -10,6 +11,7 @@ import { PROTOCOL_COLORS } from './theme';
 interface PacketProps {
   route: Route;
   protocol: Protocol;
+  hopIndex: number;
 }
 
 /** Where a packet on `route` is right now, from the live playback progress. */
@@ -18,9 +20,14 @@ export function currentPoint(route: Route, out: Vector3): Vector3 {
   return out;
 }
 
-function Packet({ route, protocol }: PacketProps): ReactElement {
+function Packet({ route, protocol, hopIndex }: PacketProps): ReactElement {
   const mesh = useRef<Mesh>(null);
   const color = PROTOCOL_COLORS[protocol];
+  const select = useViewer((s) => s.select);
+  const onClick = (e: ThreeEvent<MouseEvent>): void => {
+    e.stopPropagation();
+    select({ kind: 'packet', hopIndex });
+  };
   // Start where playback currently is, so the trail does not streak in from the origin.
   const start = useMemo(() => currentPoint(route, new Vector3()), [route]);
 
@@ -30,7 +37,7 @@ function Packet({ route, protocol }: PacketProps): ReactElement {
 
   return (
     <Trail width={1.1} length={5} color={color} attenuation={(w) => w * w}>
-      <mesh ref={mesh} position={start}>
+      <mesh ref={mesh} position={start} onClick={onClick}>
         <sphereGeometry args={[0.28, 24, 16]} />
         <meshBasicMaterial color={color} toneMapped={false} />
         <mesh>
@@ -52,7 +59,12 @@ export function Packets(): ReactElement | null {
         const hop = entry.beat.hops[i];
         if (!hop) return null;
         return (
-          <Packet key={`${entry.beat.id}:${i}`} route={route} protocol={hop.packet.protocol} />
+          <Packet
+            key={`${entry.beat.id}:${i}`}
+            route={route}
+            protocol={hop.packet.protocol}
+            hopIndex={i}
+          />
         );
       })}
     </group>

@@ -1,18 +1,21 @@
 import { useMemo, type ReactElement } from 'react';
 import { Vector3 } from 'three';
-import type { Hop, NetNode, Zone } from '@magvirtualedu/schema';
+import type { Hop, NetNode, NodeAction, Zone } from '@magvirtualedu/schema';
 import type { Route } from '../engine/timeline';
 import { currentPoint } from '../scene/Packets';
 import { PROTOCOL_COLORS } from '../scene/theme';
 import { NODE_HEIGHT } from '../scene/NodeShape';
 import { useLabelAnchor } from '../scene/labels';
 import { useViewer } from '../store/viewer';
+import { ACTION_NAMES } from './names';
+
+/** Just above a node's shape, where its label and action bubbles sit. */
+function nodeTop(node: NetNode): Vector3 {
+  return new Vector3(node.pos[0], node.pos[1] + NODE_HEIGHT[node.type] + 0.35, node.pos[2]);
+}
 
 function NodeLabel({ node, selected }: { node: NetNode; selected: boolean }): ReactElement {
-  const point = useMemo(
-    () => new Vector3(node.pos[0], node.pos[1] + NODE_HEIGHT[node.type] + 0.35, node.pos[2]),
-    [node],
-  );
+  const point = useMemo(() => nodeTop(node), [node]);
   const ref = useLabelAnchor(`node:${node.id}`, point);
   const ip = node.interfaces?.find((i) => i.ip)?.ip;
   return (
@@ -35,6 +38,35 @@ function ZoneLabel({ zone }: { zone: Zone }): ReactElement {
         {zone.label}
       </div>
     </div>
+  );
+}
+
+function ActionBubble({ node, action }: { node: NetNode; action: NodeAction }): ReactElement {
+  const point = useMemo(() => nodeTop(node), [node]);
+  const ref = useLabelAnchor(`action:${node.id}:${action.text}`, point);
+  return (
+    <div ref={ref} className="anchor anchor--above">
+      <div className="bubble">
+        {action.kind && <span className="bubble__kind">{ACTION_NAMES[action.kind]}</span>}
+        {action.text}
+      </div>
+    </div>
+  );
+}
+
+function ActionBubbles(): ReactElement | null {
+  const actions = useViewer((s) => s.timeline?.beats[s.beatIndex]?.beat.nodeActions);
+  const world = useViewer((s) => s.world);
+  if (!actions || !world) return null;
+  return (
+    <>
+      {actions.map((action) => {
+        const node = world.index.nodes.get(action.node);
+        return node ? (
+          <ActionBubble key={`${action.node}:${action.text}`} node={node} action={action} />
+        ) : null;
+      })}
+    </>
   );
 }
 
@@ -91,6 +123,7 @@ export function SceneLabels(): ReactElement | null {
         />
       ))}
       <PacketLabels />
+      <ActionBubbles />
     </div>
   );
 }

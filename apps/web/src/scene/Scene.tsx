@@ -18,6 +18,7 @@ function TopologyView({ world }: { world: World }): ReactElement {
     () => new Set(beat?.routes.flatMap((r) => r.segments.map((seg) => seg.linkId))),
     [beat],
   );
+  const busyNodes = useMemo(() => new Set(beat?.beat.nodeActions?.map((a) => a.node)), [beat]);
   const emphasisOf = (linkId: string): LinkEmphasis => {
     if (activeLinks.size === 0) return 'idle';
     return activeLinks.has(linkId) ? 'active' : 'dim';
@@ -32,6 +33,7 @@ function TopologyView({ world }: { world: World }): ReactElement {
           key={node.id}
           node={node}
           selected={selection?.kind === 'node' && selection.id === node.id}
+          busy={busyNodes.has(node.id)}
           onSelect={(id) => {
             select({ kind: 'node', id });
           }}

@@ -24,10 +24,8 @@ export type Status =
   | { kind: 'ready' }
   | { kind: 'error'; message: string; issues: readonly ValidationIssue[] };
 
-export interface Selection {
-  kind: 'node';
-  id: string;
-}
+/** A node, or one of the current beat's packets (by hop index). */
+export type Selection = { kind: 'node'; id: string } | { kind: 'packet'; hopIndex: number };
 
 export interface ViewerState extends PlaybackSlice {
   catalog: readonly CatalogEntry[];

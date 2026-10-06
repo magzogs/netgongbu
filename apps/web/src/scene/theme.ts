@@ -4,6 +4,8 @@ import type { LinkMedium, NodeType, Protocol } from '@magvirtualedu/schema';
 
 export const SCENE_BACKGROUND = '#0b0f17';
 export const ACCENT = '#5eead4';
+/** Ring around a node that acts in the current beat; matches the bubble colour. */
+export const BUSY = '#fbbf24';
 
 export const NODE_COLORS: Record<NodeType, string> = {
   client: '#93c5fd',

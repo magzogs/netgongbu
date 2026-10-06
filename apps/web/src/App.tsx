@@ -1,6 +1,7 @@
 import { useEffect, type ReactElement } from 'react';
 import { Scene } from './scene/Scene';
 import { useViewer } from './store/viewer';
+import { Inspector } from './ui/Inspector';
 import { Player } from './ui/Player';
 import { ScenarioPicker } from './ui/ScenarioPicker';
 import { SceneLabels } from './ui/SceneLabels';
@@ -22,6 +23,7 @@ export function App(): ReactElement {
         <h1 className="topbar__title">Network in 3D</h1>
         <ScenarioPicker />
       </header>
+      <Inspector />
       <Player />
       <StatusOverlay />
     </div>
