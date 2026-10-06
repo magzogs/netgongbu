@@ -1,0 +1,57 @@
+import { useMemo, type ReactElement } from 'react';
+import { Vector3 } from 'three';
+import type { NetNode, Zone } from '@magvirtualedu/schema';
+import { NODE_HEIGHT } from '../scene/NodeShape';
+import { useLabelAnchor } from '../scene/labels';
+import { useViewer } from '../store/viewer';
+
+function NodeLabel({ node, selected }: { node: NetNode; selected: boolean }): ReactElement {
+  const point = useMemo(
+    () => new Vector3(node.pos[0], node.pos[1] + NODE_HEIGHT[node.type] + 0.35, node.pos[2]),
+    [node],
+  );
+  const ref = useLabelAnchor(`node:${node.id}`, point);
+  const ip = node.interfaces?.find((i) => i.ip)?.ip;
+  return (
+    <div ref={ref} className="anchor anchor--above">
+      <div className={`node-label${selected ? ' is-selected' : ''}`}>
+        <span className="node-label__name">{node.label}</span>
+        {ip && <span className="node-label__ip">{ip}</span>}
+      </div>
+    </div>
+  );
+}
+
+function ZoneLabel({ zone }: { zone: Zone }): ReactElement {
+  const [minX, , , maxZ] = zone.bounds;
+  const point = useMemo(() => new Vector3(minX + 0.3, 0, maxZ - 0.3), [minX, maxZ]);
+  const ref = useLabelAnchor(`zone:${zone.id}`, point);
+  return (
+    <div ref={ref} className="anchor anchor--corner">
+      <div className="zone-label" style={{ borderColor: zone.color }}>
+        {zone.label}
+      </div>
+    </div>
+  );
+}
+
+/** HTML labels drawn over the canvas and positioned by LabelProjector. */
+export function SceneLabels(): ReactElement | null {
+  const world = useViewer((s) => s.world);
+  const selection = useViewer((s) => s.selection);
+  if (!world) return null;
+  return (
+    <div className="label-layer" aria-hidden="true">
+      {(world.topology.zones ?? []).map((zone) => (
+        <ZoneLabel key={zone.id} zone={zone} />
+      ))}
+      {world.topology.nodes.map((node) => (
+        <NodeLabel
+          key={node.id}
+          node={node}
+          selected={selection?.kind === 'node' && selection.id === node.id}
+        />
+      ))}
+    </div>
+  );
+}
