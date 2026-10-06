@@ -1,0 +1,1 @@
+192.168.1.1 dev wlp2s0 lladdr 02:00:5e:aa:bb:cc REACHABLE

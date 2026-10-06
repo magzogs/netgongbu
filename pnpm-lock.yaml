@@ -140,6 +140,18 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
 
+  packages/trace:
+    dependencies:
+      '@magvirtualedu/schema':
+        specifier: workspace:*
+        version: link:../schema
+      devtools-protocol:
+        specifier: 0.0.1710668
+        version: 0.0.1710668
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+
 packages:
 
   '@anthropic-ai/sdk@0.131.0':
@@ -1041,6 +1053,9 @@ packages:
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
+
+  devtools-protocol@0.0.1710668:
+    resolution: {integrity: sha512-4Sa+7eeBP65AZxWzoKsm8PNeFLgVDp5oXMS638H3NTAFfMAOCqqAPKaDNvVr/lFem2uwmwhmPkQ4ndyRxuHGmA==}
 
   draco3d@1.5.7:
     resolution: {integrity: sha512-m6WCKt/erDXcw+70IJXnG7M3awwQPAsZvJGX5zY7beBqpELw6RDGkYVU0W43AFxye4pDZ5i2Lbyc/NNGqwjUVQ==}
@@ -2642,6 +2657,8 @@ snapshots:
       webgl-constants: 1.1.1
 
   detect-libc@2.1.2: {}
+
+  devtools-protocol@0.0.1710668: {}
 
   draco3d@1.5.7: {}
 
