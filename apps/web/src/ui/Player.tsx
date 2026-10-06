@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { showAll, toggleFollow } from '../commands';
 import { PROTOCOL_COLORS } from '../scene/theme';
 import { SPEEDS } from '../store/playback';
 import { useViewer } from '../store/viewer';
@@ -35,6 +36,7 @@ function Controls(): ReactElement {
   );
   const speed = useViewer((s) => s.speed);
   const pauseBetweenBeats = useViewer((s) => s.pauseBetweenBeats);
+  const following = useViewer((s) => s.cameraMode === 'follow');
   const { togglePlay, prev, next, setSpeed, setPauseBetweenBeats } = useViewer.getState();
 
   let playLabel = '재생 (Space)';
@@ -65,6 +67,19 @@ function Controls(): ReactElement {
       <button type="button" className="icon-button" onClick={next} title="다음 단계 (→)">
         <NextIcon />
         <span className="visually-hidden">다음 단계</span>
+      </button>
+      <div className="controls__divider" />
+      <button
+        type="button"
+        className="pill-button"
+        aria-pressed={following}
+        onClick={toggleFollow}
+        title="카메라가 움직이는 패킷을 따라갑니다 (F)"
+      >
+        따라가기
+      </button>
+      <button type="button" className="pill-button" onClick={showAll} title="전체 보기 (R)">
+        전체 보기
       </button>
       <div className="controls__spacer" />
       <label className="toggle" title="각 단계가 끝나면 멈춰서 설명을 읽을 수 있게 합니다">

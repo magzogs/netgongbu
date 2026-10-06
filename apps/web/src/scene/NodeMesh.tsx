@@ -11,9 +11,11 @@ interface Props {
   /** The node does something in the current beat (NAT, lookup, …). */
   busy: boolean;
   onSelect: (id: string) => void;
+  /** Double-click: fly the camera to the node. */
+  onFocus: (id: string) => void;
 }
 
-export function NodeMesh({ node, selected, busy, onSelect }: Props): ReactElement {
+export function NodeMesh({ node, selected, busy, onSelect, onFocus }: Props): ReactElement {
   const [hovered, setHovered] = useState(false);
   useCursor(hovered);
 
@@ -27,6 +29,10 @@ export function NodeMesh({ node, selected, busy, onSelect }: Props): ReactElemen
       <group
         scale={hovered ? 1.06 : 1}
         onClick={handleClick}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          onFocus(node.id);
+        }}
         onPointerOver={(e) => {
           e.stopPropagation();
           setHovered(true);

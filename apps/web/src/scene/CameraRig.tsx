@@ -1,42 +1,48 @@
-import { useEffect, useRef, type ReactElement } from 'react';
-import { CameraControls } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
-import { PerspectiveCamera, Vector3 } from 'three';
-import { boundsOf } from '../engine/curves';
+import { useEffect, useMemo, type ReactElement } from 'react';
+import { CameraControls, type CameraControlsImpl } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+import { Vector3 } from 'three';
 import { useViewer } from '../store/viewer';
-
-/** Direction the camera looks from when a topology opens: above and in front. */
-const VIEW_DIRECTION = new Vector3(0, 0.8, 1).normalize();
-
-/** Distance at which a sphere of `radius` fits both the vertical and horizontal field of view. */
-function fitDistance(camera: PerspectiveCamera, radius: number): number {
-  const vHalf = (camera.fov * Math.PI) / 360;
-  const hHalf = Math.atan(Math.tan(vHalf) * camera.aspect);
-  return radius / Math.sin(Math.min(vHalf, hHalf));
-}
+import {
+  approach,
+  followPoint,
+  frameTopology,
+  registerControls,
+  setPanEnabled,
+  trackPoint,
+} from './camera';
 
 /**
  * Orbit (left drag / one finger), pan (right drag / two fingers) and zoom (wheel / pinch).
- * Frames the whole topology whenever a new one opens.
+ * Frames the whole topology when it opens; in follow mode keeps the current packet centred.
  */
 export function CameraRig(): ReactElement {
-  const controls = useRef<CameraControls>(null);
   const world = useViewer((s) => s.world);
-  const camera = useThree((s) => s.camera);
+  const cameraMode = useViewer((s) => s.cameraMode);
+  const scratch = useMemo(() => new Vector3(), []);
 
   useEffect(() => {
-    const ctl = controls.current;
-    if (!world || !ctl || !(camera instanceof PerspectiveCamera)) return;
-    const box = boundsOf(world.topology);
-    const center = box.getCenter(new Vector3());
-    const radius = box.getSize(new Vector3()).length() / 2;
-    const eye = center.clone().addScaledVector(VIEW_DIRECTION, fitDistance(camera, radius));
-    void ctl.setLookAt(eye.x, eye.y, eye.z, center.x, center.y, center.z, false);
-  }, [world, camera]);
+    if (world) frameTopology(world.topology, false);
+  }, [world]);
+
+  useEffect(() => {
+    const following = cameraMode === 'follow';
+    setPanEnabled(!following);
+    if (following) approach();
+  }, [cameraMode]);
+
+  useFrame(() => {
+    const state = useViewer.getState();
+    if (state.cameraMode !== 'follow') return;
+    const point = followPoint(state, scratch);
+    if (point) trackPoint(point);
+  });
 
   return (
     <CameraControls
-      ref={controls}
+      ref={(instance: CameraControlsImpl | null) => {
+        registerControls(instance);
+      }}
       makeDefault
       minDistance={3}
       maxDistance={220}

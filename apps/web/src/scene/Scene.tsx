@@ -1,6 +1,7 @@
 import { useMemo, type ReactElement } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useViewer, type World } from '../store/viewer';
+import { focusNode } from '../commands';
 import { CameraRig } from './CameraRig';
 import { Ground } from './Ground';
 import { LabelProjector } from './LabelProjector';
@@ -37,6 +38,7 @@ function TopologyView({ world }: { world: World }): ReactElement {
           onSelect={(id) => {
             select({ kind: 'node', id });
           }}
+          onFocus={focusNode}
         />
       ))}
       <Packets />

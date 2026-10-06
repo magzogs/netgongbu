@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { useViewer } from '../store/viewer';
+import { focusNode } from '../commands';
 import { MEDIUM_NAMES, NODE_TYPE_NAMES } from './names';
 
 /** What a node is, its interfaces and what it connects to. */
@@ -18,6 +19,15 @@ export function NodeDetails({ id }: { id: string }): ReactElement | null {
           <span className="muted">{NODE_TYPE_NAMES[node.type]}</span>
         )}
       </div>
+      <button
+        type="button"
+        className="text-button node-details__focus"
+        onClick={() => {
+          focusNode(node.id);
+        }}
+      >
+        이 장비로 이동
+      </button>
       {node.description && <p className="node-details__desc">{node.description}</p>}
       {node.interfaces && node.interfaces.length > 0 && (
         <table className="kv-table">

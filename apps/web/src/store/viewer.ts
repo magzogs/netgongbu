@@ -27,6 +27,9 @@ export type Status =
 /** A node, or one of the current beat's packets (by hop index). */
 export type Selection = { kind: 'node'; id: string } | { kind: 'packet'; hopIndex: number };
 
+/** orbit: the learner moves the camera freely; follow: it stays on the moving packet. */
+export type CameraMode = 'orbit' | 'follow';
+
 export interface ViewerState extends PlaybackSlice {
   catalog: readonly CatalogEntry[];
   entryId: string | null;
@@ -34,9 +37,11 @@ export interface ViewerState extends PlaybackSlice {
   world: World | null;
   scenario: Scenario | null;
   selection: Selection | null;
+  cameraMode: CameraMode;
   init: () => Promise<void>;
   open: (entryId: string) => Promise<void>;
   select: (selection: Selection | null) => void;
+  setCameraMode: (mode: CameraMode) => void;
 }
 
 const SCENARIO_PARAM = 's';
@@ -64,6 +69,7 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
   world: null,
   scenario: null,
   selection: null,
+  cameraMode: 'orbit',
 
   async init() {
     try {
@@ -101,5 +107,9 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
 
   select(selection) {
     set({ selection });
+  },
+
+  setCameraMode(cameraMode) {
+    set({ cameraMode });
   },
 }));

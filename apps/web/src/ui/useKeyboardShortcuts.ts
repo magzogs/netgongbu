@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useViewer } from '../store/viewer';
+import { showAll, toggleFollow } from '../commands';
 
 function isTyping(target: EventTarget | null): boolean {
   return (
@@ -8,7 +9,10 @@ function isTyping(target: EventTarget | null): boolean {
   );
 }
 
-/** Space play/pause, ← → previous/next step, Home back to the first step. */
+/**
+ * Space play/pause, ← → previous/next step, Home back to the first step,
+ * F follow the packet, R show the whole topology.
+ */
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -26,6 +30,14 @@ export function useKeyboardShortcuts(): void {
           break;
         case 'Home':
           viewer.seek(0, 0);
+          break;
+        case 'f':
+        case 'F':
+          toggleFollow();
+          break;
+        case 'r':
+        case 'R':
+          showAll();
           break;
         default:
           return;
