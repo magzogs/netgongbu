@@ -1,0 +1,39 @@
+{
+  "name": "magvirtualedu",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Ask how a message travels through a network and watch it move between 3D routers and servers",
+  "packageManager": "pnpm@9.12.3",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @magvirtualedu/web dev",
+    "build": "pnpm --filter @magvirtualedu/web build",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "vitest run",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.6",
+    "eslint": "10.11.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.12.0",
+    "jiti": "2.7.0",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.1",
+    "vitest": "4.1.11"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
