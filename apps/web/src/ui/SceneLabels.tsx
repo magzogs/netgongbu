@@ -1,6 +1,8 @@
 import { useMemo, type ReactElement } from 'react';
 import { Vector3 } from 'three';
-import type { Hop, NetNode, NodeAction, Zone } from '@magvirtualedu/schema';
+import type { Globe, Hop, NetNode, NodeAction, Zone } from '@magvirtualedu/schema';
+import { above } from '../engine/curves';
+import { zonePlacer } from '../engine/zones';
 import type { Route } from '../engine/timeline';
 import { currentPoint } from '../scene/Packets';
 import { PROTOCOL_COLORS } from '../scene/theme';
@@ -10,12 +12,13 @@ import { useViewer } from '../store/viewer';
 import { ACTION_NAMES } from './names';
 
 /** Just above a node's shape, where its label and action bubbles sit. */
-function nodeTop(node: NetNode): Vector3 {
-  return new Vector3(node.pos[0], node.pos[1] + NODE_HEIGHT[node.type] + 0.35, node.pos[2]);
+function nodeTop(node: NetNode, globe?: Globe): Vector3 {
+  return above(node.pos, NODE_HEIGHT[node.type] + 0.35, globe);
 }
 
 function NodeLabel({ node, selected }: { node: NetNode; selected: boolean }): ReactElement {
-  const point = useMemo(() => nodeTop(node), [node]);
+  const globe = useViewer((s) => s.world?.topology.globe);
+  const point = useMemo(() => nodeTop(node, globe), [node, globe]);
   const ref = useLabelAnchor(`node:${node.id}`, point);
   const ip = node.interfaces?.find((i) => i.ip)?.ip;
   return (
@@ -29,9 +32,11 @@ function NodeLabel({ node, selected }: { node: NetNode; selected: boolean }): Re
 }
 
 function ZoneLabel({ zone }: { zone: Zone }): ReactElement {
-  const [minX, , , maxZ] = zone.bounds;
-  const y = zone.elevation ?? 0;
-  const point = useMemo(() => new Vector3(minX + 0.3, y, maxZ - 0.3), [minX, y, maxZ]);
+  const globe = useViewer((s) => s.world?.topology.globe);
+  const point = useMemo(() => {
+    const [minX, , , maxZ] = zone.bounds;
+    return zonePlacer(zone, globe)(minX + 0.3, maxZ - 0.3);
+  }, [zone, globe]);
   const ref = useLabelAnchor(`zone:${zone.id}`, point);
   return (
     <div ref={ref} className="anchor anchor--corner">
@@ -43,7 +48,8 @@ function ZoneLabel({ zone }: { zone: Zone }): ReactElement {
 }
 
 function ActionBubble({ node, action }: { node: NetNode; action: NodeAction }): ReactElement {
-  const point = useMemo(() => nodeTop(node), [node]);
+  const globe = useViewer((s) => s.world?.topology.globe);
+  const point = useMemo(() => nodeTop(node, globe), [node, globe]);
   const ref = useLabelAnchor(`action:${node.id}:${action.text}`, point);
   return (
     <div ref={ref} className="anchor anchor--above">

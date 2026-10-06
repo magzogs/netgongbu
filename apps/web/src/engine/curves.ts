@@ -11,8 +11,20 @@ export interface LinkCurve {
   length: number;
 }
 
-export function anchorOf(pos: Vec3): Vector3 {
-  return new Vector3(pos[0], pos[1] + ANCHOR_HEIGHT, pos[2]);
+/** Which way is up at a node: away from the globe's centre on a globe, else +y. */
+export function upAt(pos: Vec3, globe?: Globe): Vector3 {
+  if (!globe) return new Vector3(0, 1, 0);
+  const v = new Vector3(...pos).sub(new Vector3(...globe.center));
+  return v.lengthSq() > 0 ? v.normalize() : new Vector3(0, 1, 0);
+}
+
+/** A point `height` above a node's base, along its up. */
+export function above(pos: Vec3, height: number, globe?: Globe): Vector3 {
+  return new Vector3(...pos).addScaledVector(upAt(pos, globe), height);
+}
+
+export function anchorOf(pos: Vec3, globe?: Globe): Vector3 {
+  return above(pos, ANCHOR_HEIGHT, globe);
 }
 
 /** A gentle arc between two nodes; longer links arc higher so crossings stay readable. */
@@ -41,9 +53,10 @@ export function buildLinkCurves(topology: Topology): Map<string, LinkCurve> {
     const a = nodes.get(link.a);
     const b = nodes.get(link.b);
     if (!a || !b) continue;
-    const globe = a.geo && b.geo ? topology.globe : undefined;
+    // On a globe everything lies on its surface, so every link arcs over it.
+    const globe = topology.globe;
     const curve = globe
-      ? arcOverGlobe(anchorOf(a.pos), anchorOf(b.pos), globe)
+      ? arcOverGlobe(anchorOf(a.pos, globe), anchorOf(b.pos, globe), globe)
       : arcBetween(anchorOf(a.pos), anchorOf(b.pos));
     curves.set(link.id, { link, curve, length: curve.getLength() });
   }

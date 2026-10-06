@@ -68,6 +68,55 @@ export function geoToPosition(globe: Globe, lat: number, lon: number, lift = 0):
   return [globe.center[0] + d[0] * r, globe.center[1] + d[1] * r, globe.center[2] + d[2] * r];
 }
 
+/**
+ * A small map laid onto the globe around a place: `place(x, z)` takes x east and z south of it
+ * (in globe units, as on a flat floor) and wraps the point onto the surface, `lift` above it.
+ * Used for things with no real location of their own, such as the inside of the computer.
+ */
+export function surfacePatch(
+  globe: Globe,
+  anchor: { lat: number; lon: number },
+  lift = 0,
+): { place: (x: number, z: number, height?: number) => Vec3; up: V } {
+  const t = globeTransform(globe.focus);
+  const up = t.direction(anchor.lat, anchor.lon);
+  // Local north: towards a slightly higher latitude, made perpendicular to up.
+  const ahead = t.direction(Math.min(anchor.lat + 0.01, 89.999), anchor.lon);
+  const toward: V = [ahead[0] - up[0], ahead[1] - up[1], ahead[2] - up[2]];
+  const along = dot(toward, up);
+  const north = normalize([
+    toward[0] - up[0] * along,
+    toward[1] - up[1] * along,
+    toward[2] - up[2] * along,
+  ]);
+  const east = cross(north, up);
+  const [cx, cy, cz] = globe.center;
+  return {
+    up,
+    place: (x, z, height = 0) => {
+      const r = globe.radius;
+      const d = normalize([
+        up[0] * r + east[0] * x - north[0] * z,
+        up[1] * r + east[1] * x - north[1] * z,
+        up[2] * r + east[2] * x - north[2] * z,
+      ]);
+      const h = r + lift + height;
+      return [cx + d[0] * h, cy + d[1] * h, cz + d[2] * h];
+    },
+  };
+}
+
+/** The place `units` (globe units along the surface) due south of `from`. */
+export function southOf(
+  globe: Globe,
+  from: { lat: number; lon: number },
+  units: number,
+): { lat: number; lon: number } {
+  const lat = from.lat - (units / globe.radius) * (180 / Math.PI);
+  // Past the South Pole the route continues up the other side of the Earth.
+  return lat >= -90 ? { lat, lon: from.lon } : { lat: -180 - lat, lon: from.lon + 180 };
+}
+
 /** Great-circle distance in kilometres. */
 export function distanceKm(
   a: { lat: number; lon: number },

@@ -94,6 +94,10 @@ export type NetLink = z.infer<typeof NetLinkSchema>;
 /**
  * A labelled floor area such as "Home" or "Data center". bounds = [minX, minZ, maxX, maxZ] on the
  * plane y = elevation (default 0).
+ *
+ * On a globe a zone can lie on the surface instead: `anchor` is the place it is centred on,
+ * bounds are then east (x) and south (z) offsets from it in globe units, and elevation is the
+ * height above the surface.
  */
 export const ZoneSchema = z.object({
   id: IdSchema,
@@ -101,6 +105,7 @@ export const ZoneSchema = z.object({
   color: z.string().min(1),
   bounds: z.tuple([z.number(), z.number(), z.number(), z.number()]),
   elevation: z.number().optional(),
+  anchor: z.object({ lat: z.number(), lon: z.number() }).optional(),
 });
 export type Zone = z.infer<typeof ZoneSchema>;
 

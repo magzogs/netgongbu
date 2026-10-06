@@ -12,7 +12,7 @@ export function focusNode(id: string): void {
   if (!node) return;
   viewer.setCameraMode('orbit');
   viewer.select({ kind: 'node', id });
-  focusOn(node.pos);
+  focusOn(node.pos, viewer.world?.topology.globe);
 }
 
 /**

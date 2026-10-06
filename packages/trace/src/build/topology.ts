@@ -1,5 +1,7 @@
 import {
   geoToPosition,
+  southOf,
+  surfacePatch,
   type Geo,
   type Globe,
   type NetLink,
@@ -39,10 +41,10 @@ export interface BuiltTopology {
 }
 
 const GLOBE_RADIUS = 40;
-// On a globe the computer and the home float above the globe, in front of (south of) the
-// learner's place so they do not hide the hops there when seen from above.
-const DEVICE_ELEVATION = 14;
-const DEVICE_SOUTH = 22;
+// On a globe the computer and the home lie on the surface just south of the learner's place
+// (towards the bottom of the screen from above), so they do not hide the hops there. Distances
+// are along the surface, in globe units.
+const DEVICE_SOUTH = 17;
 /** Spacing of the parts inside the computer, so their labels do not overlap (flat layout). */
 const DEVICE_SPREAD = 1.4;
 /** On a globe the computer is a small inset: the globe and the route are the main picture. */
@@ -51,8 +53,9 @@ const DEVICE_SPREAD_GLOBE = 0.8;
 const ROW = 5;
 const COL_GAP = 8;
 const ROW_GAP = 9;
-const HOME_ELEVATION = 7;
-const HOME_SOUTH = 9;
+const HOME_SOUTH = 7;
+/** Height of nodes and zones above the globe surface. */
+const SURFACE_LIFT = 0.3;
 
 /** Well-known response headers that reveal a CDN in front of the origin. */
 const CDN_MARKERS: readonly [header: string, name: string][] = [
@@ -153,7 +156,7 @@ function spread(positions: Map<string, Vec3>, order: readonly string[], globe: G
         const c = globe.center;
         const v: Vec3 = [candidate[0] - c[0], candidate[1] - c[1], candidate[2] - c[2]];
         const len = Math.hypot(...v) || 1;
-        const r = globe.radius + 0.3;
+        const r = globe.radius + SURFACE_LIFT;
         candidate = [c[0] + (v[0] / len) * r, c[1] + (v[1] / len) * r, c[2] + (v[2] / len) * r];
       }
     }
@@ -200,7 +203,7 @@ function fillGaps(
       const c = globe.center;
       const v: Vec3 = [p[0] - c[0], p[1] - c[1], p[2] - c[2]];
       const len = Math.hypot(...v) || 1;
-      const r = globe.radius + 0.3;
+      const r = globe.radius + SURFACE_LIFT;
       p = [c[0] + (v[0] / len) * r, c[1] + (v[1] / len) * r, c[2] + (v[2] / len) * r];
     }
     positions.set(id, p);
@@ -297,16 +300,19 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
         : '유선 랜카드: 이더넷 프레임을 케이블로 보냅니다',
     ],
   ];
-  const dx = globe ? 0 : -30;
-  const dz = globe ? DEVICE_SOUTH : 0;
-  const deviceY = globe ? DEVICE_ELEVATION : 0;
+  // On a globe the computer and the home are small maps wrapped onto the surface.
+  const deviceAnchor = globe ? southOf(globe, globe.focus, DEVICE_SOUTH) : null;
+  const homeAnchor = globe ? southOf(globe, globe.focus, HOME_SOUTH) : null;
+  const onDevice =
+    globe && deviceAnchor ? surfacePatch(globe, deviceAnchor, SURFACE_LIFT).place : null;
+  const onHome = globe && homeAnchor ? surfacePatch(globe, homeAnchor, SURFACE_LIFT).place : null;
   const spreadBy = globe ? DEVICE_SPREAD_GLOBE : DEVICE_SPREAD;
   for (const [nid, type, label, [x, z], description] of device) {
     nodes.push({
       id: nid,
       type,
       label,
-      pos: [x * spreadBy + dx, deviceY, z * spreadBy + dz],
+      pos: onDevice ? onDevice(x * spreadBy, z * spreadBy) : [x * spreadBy - 30, 0, z * spreadBy],
       zone: 'z-device',
       description,
     });
@@ -329,16 +335,14 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
   link('d-stack', 'd-nic', 'virtual');
 
   // Home: router (observed gateway) and the modem traceroute cannot see.
-  const homeY = globe ? HOME_ELEVATION : 0;
   // Router towards the computer, modem towards the internet, so the chain does not fold back.
-  const hx = globe ? 0 : -12;
-  const hz = globe ? HOME_SOUTH : 0;
+  const homeAt = (x: number): Vec3 => (onHome ? onHome(x, 0) : [x - 12, 0, 0]);
   nodes.push(
     {
       id: 'h-router',
       type: 'router',
       label: '공유기',
-      pos: [hx - 2.5, homeY, hz],
+      pos: homeAt(-2.5),
       zone: 'z-home',
       description: '기본 게이트웨이. 집 안의 사설 IP를 공인 IP로 바꾸는 NAT도 합니다.',
       ...(local.gateway && {
@@ -355,7 +359,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       id: 'h-modem',
       type: 'modem',
       label: '모뎀 / ONT',
-      pos: [hx + 2.5, homeY, hz],
+      pos: homeAt(2.5),
       zone: 'z-home',
       source: 'typical',
       description:
@@ -445,24 +449,31 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
   if (globe) {
     for (const nid of order) {
       const g = geoOf.get(nid);
-      if (g) positions.set(nid, geoToPosition(globe, g.lat, g.lon, 0.3));
+      if (g) positions.set(nid, geoToPosition(globe, g.lat, g.lon, SURFACE_LIFT));
     }
-    fillGaps(positions, order, geoToPosition(globe, globe.focus.lat, globe.focus.lon, 0.3), globe);
+    fillGaps(
+      positions,
+      order,
+      geoToPosition(globe, globe.focus.lat, globe.focus.lon, SURFACE_LIFT),
+      globe,
+    );
     spread(positions, order, globe);
     zones = [
       {
         id: 'z-device',
         label: '노트북 내부',
         color: '#2563eb',
-        bounds: [-7.5, DEVICE_SOUTH - 4.5, 5.5, DEVICE_SOUTH + 4.5],
-        elevation: DEVICE_ELEVATION,
+        bounds: [-7.5, -4.5, 5.5, 4.5],
+        elevation: SURFACE_LIFT,
+        ...(deviceAnchor && { anchor: deviceAnchor }),
       },
       {
         id: 'z-home',
         label: '집',
         color: '#2f6f4f',
-        bounds: [-4.5, HOME_SOUTH - 2.5, 4.5, HOME_SOUTH + 2.5],
-        elevation: HOME_ELEVATION,
+        bounds: [-4.5, -2.5, 4.5, 2.5],
+        elevation: SURFACE_LIFT,
+        ...(homeAnchor && { anchor: homeAnchor }),
       },
     ];
   } else {

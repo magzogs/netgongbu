@@ -47,12 +47,15 @@ export function frameTopology(topology: Topology, insets: Insets, animate: boole
 }
 
 /** Flies to a node, keeping the current viewing angle. */
-export function focusOn(pos: Vec3, distance = CLOSE_DISTANCE): void {
+export function focusOn(pos: Vec3, globe?: Globe, distance = CLOSE_DISTANCE): void {
   const ctl = controls;
   if (!ctl) return;
-  const target = anchorOf(pos);
+  const target = anchorOf(pos, globe);
+  // On a globe, look from above the node's own place (it may be on the far side).
   const direction = ctl.getPosition(new Vector3()).sub(ctl.getTarget(new Vector3())).normalize();
-  const eye = target.clone().addScaledVector(direction, distance);
+  const eye = globe
+    ? globeFollowEye(target, globe, distance)
+    : target.clone().addScaledVector(direction, distance);
   void ctl.setLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, true);
 }
 
@@ -83,7 +86,7 @@ export function followPoint(state: ViewerState, out: Vector3): Vector3 | null {
   }
   const actor = entry.beat.nodeActions?.[0]?.node;
   const node = actor ? state.world?.index.nodes.get(actor) : undefined;
-  return node ? out.copy(anchorOf(node.pos)) : null;
+  return node ? out.copy(anchorOf(node.pos, state.world?.topology.globe)) : null;
 }
 
 /** Called every frame while following. */

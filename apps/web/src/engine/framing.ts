@@ -1,6 +1,7 @@
 import { Box3, PerspectiveCamera, Vector3 } from 'three';
 import type { Globe, Topology } from '@magvirtualedu/schema';
-import { anchorOf } from './curves';
+import { above } from './curves';
+import { zonePlacer } from './zones';
 
 /** Fractions of the screen covered by overlays: top/bottom of the height, left/right of the width. */
 export interface Insets {
@@ -30,17 +31,18 @@ const PORTRAIT_ASPECT = 0.85;
 export function framingPoints(topology: Topology): Vector3[] {
   const points: Vector3[] = [];
   for (const node of topology.nodes) {
-    points.push(new Vector3(...node.pos), anchorOf(node.pos).setY(node.pos[1] + 2.5));
+    points.push(new Vector3(...node.pos), above(node.pos, 2.5, topology.globe));
   }
   for (const zone of topology.zones ?? []) {
     const [minX, minZ, maxX, maxZ] = zone.bounds;
-    const y = zone.elevation ?? 0;
-    points.push(
-      new Vector3(minX, y, minZ),
-      new Vector3(maxX, y, minZ),
-      new Vector3(minX, y, maxZ),
-      new Vector3(maxX, y, maxZ),
-    );
+    const at = zonePlacer(zone, topology.globe);
+    const corners: [number, number][] = [
+      [minX, minZ],
+      [maxX, minZ],
+      [minX, maxZ],
+      [maxX, maxZ],
+    ];
+    points.push(...corners.map(([x, z]) => at(x, z)));
   }
   return points;
 }
@@ -133,15 +135,15 @@ export function globeDirection(topology: Topology): Vector3 | undefined {
 
 /**
  * Camera position for following a packet over a globe: above the point, out along the surface
- * normal with a little extra height, at `distance`. Points well above the surface (the computer
- * and home floating over the learner's place) are looked at from above the learner's place.
+ * normal with a little extra height, at `distance`. Everything (the computer and the home
+ * included) lies on the surface, and packets arc over it, so the normal under the point works
+ * everywhere.
  */
 export function globeFollowEye(point: Vector3, globe: Globe, distance: number): Vector3 {
   const center = new Vector3(...globe.center);
-  const out = point.clone().sub(center);
-  const aboveSurface = out.length() > globe.radius + 2;
-  const normal = aboveSurface ? new Vector3(0, 1, 0.45) : out.normalize();
-  const direction = normal
+  const direction = point
+    .clone()
+    .sub(center)
     .normalize()
     .add(new Vector3(0, 0.25, 0))
     .normalize();

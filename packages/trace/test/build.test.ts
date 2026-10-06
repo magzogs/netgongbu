@@ -35,14 +35,22 @@ describe('buildFromReport on a located trace', () => {
     expect(scenario.question).toBe('example.org');
   });
 
-  it('puts the internet on a globe turned to the learner, with the computer and home above', () => {
+  it('puts the internet on a globe turned to the learner, with the computer and home on its surface', () => {
     expect(topology.globe?.focus).toEqual({ lat: 37.57, lon: 126.98 });
-    expect(topology.zones?.map((z) => [z.id, z.elevation])).toEqual([
-      ['z-device', 14],
-      ['z-home', 7],
+    const zones = topology.zones ?? [];
+    expect(zones.map((z) => [z.id, z.elevation])).toEqual([
+      ['z-device', 0.3],
+      ['z-home', 0.3],
     ]);
+    // Just south of the learner: the home first, then the computer.
+    const [device, home] = zones.map((z) => z.anchor);
+    expect(home?.lon).toBe(126.98);
+    expect(home?.lat).toBeLessThan(37.57);
+    expect(device?.lat).toBeLessThan(home?.lat ?? 0);
     const center = topology.globe?.center ?? [0, 0, 0];
-    for (const id of ['n-hop-2', 'n-hop-3', 'n-hop-4', 'n-hop-8', 'n-server']) {
+    const onSurface = ['n-hop-2', 'n-hop-3', 'n-hop-4', 'n-hop-8', 'n-server'];
+    onSurface.push('d-browser', 'd-stack', 'd-nic', 'h-router', 'h-modem');
+    for (const id of onSurface) {
       const p = node(id)?.pos ?? [0, 0, 0];
       expect(Math.hypot(p[0] - center[0], p[1] - center[1], p[2] - center[2])).toBeCloseTo(40.3, 5);
     }

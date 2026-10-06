@@ -33,6 +33,7 @@ function TopologyView({ world }: { world: World }): ReactElement {
         <NodeMesh
           key={node.id}
           node={node}
+          globe={world.topology.globe}
           selected={selection?.kind === 'node' && selection.id === node.id}
           busy={busyNodes.has(node.id)}
           onSelect={selectNode}
@@ -62,7 +63,7 @@ export function Scene(): ReactElement {
       <fog attach="fog" args={[SCENE_BACKGROUND, fogNear, fogNear * 2.2]} />
       <hemisphereLight args={['#dbeafe', '#0f172a', 0.9]} />
       <directionalLight position={[30, 50, 25]} intensity={1.4} />
-      <Ground zones={world?.topology.zones ?? []} grid={!world?.topology.globe} />
+      <Ground zones={world?.topology.zones ?? []} globe={world?.topology.globe} />
       {world?.topology.globe && <GlobeView globe={world.topology.globe} />}
       {world && <TopologyView world={world} />}
       <CameraRig />
