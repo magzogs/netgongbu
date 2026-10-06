@@ -49,7 +49,14 @@ export function framingPoints(topology: Topology): Vector3[] {
  * Where to look from. Landscape screens see the topology from the front; on portrait screens the
  * camera looks along the topology's longer horizontal axis so it runs up the screen.
  */
-export function viewDirection(points: readonly Vector3[], aspect: number): Vector3 {
+export function viewDirection(
+  points: readonly Vector3[],
+  aspect: number,
+  northUp = false,
+): Vector3 {
+  // A globe keeps north up (geography reads wrong when turned) and is seen from high above, so
+  // the learner's place on top of it is in the middle rather than on the horizon.
+  if (northUp) return new Vector3(0, 1, 0.45).normalize();
   if (aspect >= PORTRAIT_ASPECT) return new Vector3(0, 0.8, 1).normalize();
   const size = new Box3().setFromPoints([...points]).getSize(new Vector3());
   return size.x >= size.z
@@ -86,10 +93,11 @@ export function frame(
   fov: number,
   aspect: number,
   insets: Insets,
+  northUp = false,
 ): Framing {
   const target = new Box3().setFromPoints([...points]).getCenter(new Vector3());
 
-  const direction = viewDirection(points, aspect);
+  const direction = viewDirection(points, aspect, northUp);
   const x = band(insets.left, insets.right);
   const y = band(insets.bottom, insets.top);
 

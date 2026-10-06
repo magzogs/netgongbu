@@ -38,8 +38,8 @@ describe('buildFromReport on a located trace', () => {
   it('puts the internet on a globe turned to the learner, with the computer and home above', () => {
     expect(topology.globe?.focus).toEqual({ lat: 37.57, lon: 126.98 });
     expect(topology.zones?.map((z) => [z.id, z.elevation])).toEqual([
-      ['z-device', 18],
-      ['z-home', 9],
+      ['z-device', 14],
+      ['z-home', 7],
     ]);
     const center = topology.globe?.center ?? [0, 0, 0];
     for (const id of ['n-hop-2', 'n-hop-3', 'n-hop-4', 'n-hop-8', 'n-server']) {

@@ -23,6 +23,10 @@ describe('viewDirection', () => {
     expect(viewDirection(points, 1.6).x).toBe(0);
   });
 
+  it('keeps north up for a globe even on portrait screens', () => {
+    expect(viewDirection(points, 0.46, true).x).toBe(0);
+  });
+
   it('looks along the long axis on portrait screens so the layout runs up the screen', () => {
     const d = viewDirection(points, 0.46);
     expect(Math.abs(d.x)).toBeGreaterThan(Math.abs(d.z));

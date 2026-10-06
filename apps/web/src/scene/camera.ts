@@ -34,6 +34,7 @@ export function frameTopology(topology: Topology, insets: Insets, animate: boole
     ctl.camera.fov,
     ctl.camera.aspect,
     insets,
+    topology.globe !== undefined,
   );
   void ctl.setFocalOffset(focalOffset.x, focalOffset.y, 0, animate);
   void ctl.setLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, animate);

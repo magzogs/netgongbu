@@ -36,8 +36,12 @@ export interface BuiltTopology {
 }
 
 const GLOBE_RADIUS = 40;
-const DEVICE_ELEVATION = 18;
-const HOME_ELEVATION = 9;
+// On a globe the computer and the home float above the globe, in front of (south of) the
+// learner's place so they do not hide the hops there when seen from above.
+const DEVICE_ELEVATION = 14;
+const DEVICE_SOUTH = 18;
+const HOME_ELEVATION = 7;
+const HOME_SOUTH = 9;
 
 /** Well-known response headers that reveal a CDN in front of the origin. */
 const CDN_MARKERS: readonly [header: string, name: string][] = [
@@ -269,9 +273,17 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
     ],
   ];
   const dx = globe ? 0 : -22;
+  const dz = globe ? DEVICE_SOUTH : 0;
   const deviceY = globe ? DEVICE_ELEVATION : 0;
   for (const [nid, type, label, [x, z], description] of device) {
-    nodes.push({ id: nid, type, label, pos: [x + dx, deviceY, z], zone: 'z-device', description });
+    nodes.push({
+      id: nid,
+      type,
+      label,
+      pos: [x + dx, deviceY, z + dz],
+      zone: 'z-device',
+      description,
+    });
   }
   const nic = nodes.find((n) => n.id === 'd-nic');
   if (nic && local.interface) {
@@ -293,12 +305,13 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
   // Home: router (observed gateway) and the modem traceroute cannot see.
   const homeY = globe ? HOME_ELEVATION : 0;
   const hx = globe ? 0 : -8;
+  const hz = globe ? HOME_SOUTH : 0;
   nodes.push(
     {
       id: 'h-router',
       type: 'router',
       label: '공유기',
-      pos: [hx + 2.5, homeY, 0],
+      pos: [hx + 2.5, homeY, hz],
       zone: 'z-home',
       description: '기본 게이트웨이. 집 안의 사설 IP를 공인 IP로 바꾸는 NAT도 합니다.',
       ...(local.gateway && {
@@ -315,7 +328,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       id: 'h-modem',
       type: 'modem',
       label: '모뎀 / ONT',
-      pos: [hx - 2.5, homeY, 0],
+      pos: [hx - 2.5, homeY, hz],
       zone: 'z-home',
       source: 'typical',
       description:
@@ -413,14 +426,14 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
         id: 'z-device',
         label: '노트북 내부',
         color: '#2563eb',
-        bounds: [-9, -5.5, 6.5, 5.5],
+        bounds: [-9, DEVICE_SOUTH - 5.5, 6.5, DEVICE_SOUTH + 5.5],
         elevation: DEVICE_ELEVATION,
       },
       {
         id: 'z-home',
         label: '집',
         color: '#2f6f4f',
-        bounds: [-4.5, -2.5, 4.5, 2.5],
+        bounds: [-4.5, HOME_SOUTH - 2.5, 4.5, HOME_SOUTH + 2.5],
         elevation: HOME_ELEVATION,
       },
     ];
