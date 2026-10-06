@@ -8,6 +8,8 @@
   네트워크 설정·서버까지의 경로를 측정해 그 결과로 지도와 시나리오를 새로 만듭니다. Enter를 누른 순간부터 브라우저,
   OS DNS 리졸버, TCP/IP 스택, 라우팅 테이블, ARP 캐시, 랜카드, 공유기, 모뎀, 통신사 라우터, 서버까지 한 단계씩 보여 주고,
   모든 헤더 값에 **관측 / 계산 / 전형값** 출처를 표시합니다.
+- **패킷 해부:** 단계마다 움직이는 패킷을 Ethernet부터 HTTP까지 실제 바이트로 만들어, 필드 하나하나의 위치·크기·값·의미를
+  16진수 덤프와 함께 보여 줍니다. 암호화된 단계는 선로 위의 바이트와 암호화 전 내용을 나눠 보여 줍니다.
 
 ## 실행
 
@@ -17,8 +19,13 @@ pnpm dev:desktop   # 데스크톱 앱 (Electron): 뷰어 + 노트북 브라우�
 pnpm dev           # 웹 뷰어 http://localhost:5180 + AI 서버 :8787 (/api는 Vite가 프록시)
 pnpm dev:fake      # 웹, API 키 없이: 가짜 AI가 고정된 답(첫 답은 일부러 틀려서 수정 과정까지)을 돌려줌
 pnpm check         # lint + format + typecheck + test
-pnpm --filter @magvirtualedu/desktop test:e2e   # 데스크톱 앱을 띄워 질문·실측까지 자동 확인 (e2e/out에 스크린샷)
+pnpm --filter @magvirtualedu/desktop test:e2e   # 데스크톱 앱을 띄워 질문·실측·패킷 해부까지 자동 확인 (e2e/out에 스크린샷)
+pnpm --filter @magvirtualedu/desktop measure -- example.com info.cern.ch   # 빌드된 앱으로 실제 측정 후 스크린샷
 ```
+
+`measure`는 `test:e2e`가 만든 빌드를 씁니다. 옵션: `--download-geo`(위치 DB가 없으면 먼저 내려받기),
+`--open <측정 id>`(저장된 측정 다시 열기), `--tour`(따라가기 카메라로 재생하며 몇 초마다 스크린샷),
+`--user-data <폴더>`(기본은 앱 데이터 폴더라 측정 기록과 위치 DB가 유지됨).
 
 - **API 키:** 데스크톱 앱은 설정(⚙)에서 입력하면 OS 키체인으로 암호화해 저장합니다(`ANTHROPIC_API_KEY` 환경변수도 사용).
   웹은 서버의 `ANTHROPIC_API_KEY`를 씁니다. `MAGVE_FAKE_AI=1`이면 데스크톱 앱도 가짜 AI를 씁니다.
@@ -34,7 +41,7 @@ pnpm --filter @magvirtualedu/desktop test:e2e   # 데스크톱 앱을 띄워 질
 | traceroute·라우팅 테이블·ARP·DNS 설정 | 메인 프로세스가 OS 도구를 셸 없이 실행해 파싱 (macOS, Linux)                                                                                                       |
 | 다른 사이트를 iframe으로 열기, CORS   | iframe이 아닌 별도 웹 뷰라 해당 없음                                                                                                                               |
 | API 키·별도 서버                      | 메인 프로세스가 Claude를 직접 호출, 키는 OS 키체인으로 암호화 저장                                                                                                 |
-| 실제 패킷 바이트                      | 관리자 권한이 필요해 아직 미지원 → 값마다 관측/계산/전형값으로 표시                                                                                                |
+| 실제 패킷 바이트                      | 캡처는 관리자 권한이 필요해 아직 미지원 → 측정값으로 규격대로 바이트를 만들고(패킷 해부) 값마다 관측/계산/전형값/규격으로 표시                                     |
 
 ## 측정 한 번에 일어나는 일 (데스크톱)
 
@@ -43,6 +50,8 @@ pnpm --filter @magvirtualedu/desktop test:e2e   # 데스크톱 앱을 띄워 질
 3. 기본 경로의 인터페이스·게이트웨이 IP와 MAC·DNS 서버를 읽고, 페이지의 호스트를 그 DNS 서버로 다시 조회합니다(TTL 포함).
 4. 응답한 서버까지 traceroute를 돌리며 홉마다 역방향 DNS 이름, 운영 사업자(Team Cymru ASN, DNS로 조회), 위치(오프라인 DB)를 붙여 실시간으로 보여 줍니다.
 5. 결과(`TraceReport`)를 저장하고, 빌더가 지도(노트북 내부 → 집 → 지구본의 인터넷)와 단계별 시나리오를 결정적으로 만듭니다.
+   위치 DB의 좌표는 왕복 시간으로 검사합니다. 빛은 광섬유에서 1 ms에 약 200 km를 가므로 왕복 r ms인 장비는 r × 100 km 안에
+   있어야 합니다. 그보다 멀다고 나오면(애니캐스트 주소, DB 오류) 그 좌표는 배치에 쓰지 않고 장비 설명에 이유를 적습니다.
 
 라우터 주소는 외부 웹 서비스로 보내지 않습니다(위치는 내려받은 DB에서, 사업자는 DNS로 조회). 측정 기록은 이 컴퓨터의 앱 데이터 폴더에만 저장됩니다.
 
@@ -54,6 +63,21 @@ pnpm --filter @magvirtualedu/desktop test:e2e   # 데스크톱 앱을 띄워 질
 3. 답을 `validateScenario`로 검사합니다. 재생할 수 없는 부분이 있으면 그 목록을 Claude에게 돌려보내 고친 시나리오를 다시 받습니다(최대 3회).
 4. 통과한 시나리오는 저장되고 목록의 "AI가 만든 시나리오"에 추가되어 바로 재생됩니다(`?s=<id>`로 공유).
 
+## 패킷 해부
+
+인스펙터의 "패킷 해부 ▸", 패킷 더블클릭, 또는 `P`로 엽니다. 시나리오의 패킷을 첫 구간의 선로 위에 실리는 모습 그대로
+바이트로 만듭니다.
+
+- **안쪽부터 인코딩:** 길이·체크섬(IPv4 헤더, TCP/UDP 의사 헤더 포함)이 안에 든 내용으로 실제 계산됩니다.
+  DNS 이름 압축, TLS 1.3 ClientHello(SNI·ALPN·key_share), HTTP/2 HEADERS의 HPACK(정적 테이블, Huffman 없이),
+  QUIC Initial까지 규격대로 씁니다.
+- **필드마다:** 바이트(.비트) 위치, 크기, 값, 뜻, 출처(**관측** 이 컴퓨터에서 측정 / **계산** 다른 값에서 계산 /
+  **전형값** 볼 수 없어 넣은 일반적인 값 / **규격** 프로토콜이 정한 고정값). 필드나 16진수 바이트에 마우스를 올리면 서로를 강조합니다.
+- **두 화면:** "선로 위"는 실제로 나가는 바이트(암호화 구간은 암호문), "🔒 암호화 전 내용"은 TLS 안에 든 HTTP 등입니다.
+- 시나리오에 없던 아래 계층(예: Ethernet)은 전형값으로 채우고 그렇다고 표시합니다. 한 컴퓨터 안의 호출(getaddrinfo 등)은
+  선로에 바이트가 없으므로 호출 내용만 보여 줍니다.
+- HTTP/3는 QUIC 1-RTT 패킷까지 만들고, 그 안의 HTTP/3 프레임은 설명으로만 보여 줍니다.
+
 ## 조작
 
 | 동작                       | 마우스 / 터치                                | 키    |
@@ -64,6 +88,7 @@ pnpm --filter @magvirtualedu/desktop test:e2e   # 데스크톱 앱을 띄워 질
 | 패킷 따라가기              | 따라가기                                     | F     |
 | 전체 보기                  | 전체 보기                                    | R     |
 | 장비 정보 / 그 장비로 이동 | 클릭 / 더블클릭                              |       |
+| 패킷 해부                  | 인스펙터의 "패킷 해부 ▸", 패킷 더블클릭      | P     |
 | 노트북 브라우저 (데스크톱) | 노트북 클릭 또는 "노트북 브라우저"           |       |
 | 패널 닫기                  |                                              | Esc   |
 
@@ -74,6 +99,7 @@ packages/schema   토폴로지·시나리오 스키마와 검증, AI 초안 형�
 packages/trace    TraceReport(측정 결과), OS 도구·DevTools 이벤트 파서, 측정 결과 → 지도·시나리오 빌더
 packages/ai       Claude 호출, 검증·수정 재시도, 저장 (ScenarioService: 서버와 데스크톱이 공유)
 packages/bridge   데스크톱 메인 프로세스 ↔ 뷰어 IPC 계약 (window.lab)
+packages/protocols 시나리오 패킷 → 규격대로 인코딩한 바이트와 필드 해설 (Ethernet·802.11·IPv4·ARP·ICMP·UDP·TCP·DNS·TLS 1.3·HTTP/1.1·HTTP/2·QUIC)
 apps/web          Vite + React + React Three Fiber 뷰어 (데스크톱 앱의 화면이기도 함)
   public/data     catalog.json, topologies/*.json, scenarios/*.json (trace-demo는 빌더로 생성한 데모)
 apps/server       웹용 HTTP API (Hono)
