@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint';
 
 export default defineConfig(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', '**/*.config.ts'],
+    ignores: ['**/node_modules/**', '**/dist/**', '**/out/**', '**/coverage/**', '**/*.config.ts'],
   },
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
@@ -49,8 +49,13 @@ export default defineConfig(
     extends: [reactHooks.configs.flat.recommended],
   },
   {
-    // The server's request log goes to stdout.
-    files: ['apps/server/src/index.ts', '**/scripts/**/*.ts'],
+    // Server and desktop main process logs, scripts and e2e output go to stdout.
+    files: [
+      'apps/server/src/index.ts',
+      'apps/desktop/src/main/**/*.ts',
+      '**/scripts/**/*.ts',
+      '**/e2e/**/*.ts',
+    ],
     rules: { 'no-console': 'off' },
   },
   {

@@ -10,7 +10,7 @@ import {
   type Topology,
   type ValidationIssue,
 } from '@magvirtualedu/schema';
-import { fetchAiScenario } from './aiApi';
+import { backend } from './backend';
 
 /** A scenario in the picker: hand-written example data, or one the AI generated earlier. */
 export type ViewerEntry = CatalogEntry & { source: 'example' | 'ai'; question?: string };
@@ -45,7 +45,7 @@ export interface LoadedScenario {
 export async function fetchScenario(entry: ViewerEntry): Promise<LoadedScenario> {
   const [rawTopology, rawScenario] = await Promise.all([
     fetchJson(`topologies/${entry.topologyId}.json`),
-    entry.source === 'ai' ? fetchAiScenario(entry.id) : fetchJson(`scenarios/${entry.id}.json`),
+    entry.source === 'ai' ? backend.aiScenario(entry.id) : fetchJson(`scenarios/${entry.id}.json`),
   ]);
   const topology = TopologySchema.parse(rawTopology);
   const scenario = ScenarioSchema.parse(rawScenario);

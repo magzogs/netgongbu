@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactElement, type SyntheticEvent } from 'react';
 import type { AiStatus } from '../data/aiApi';
+import { backend, isDesktop } from '../data/backend';
 import { useViewer } from '../store/viewer';
 
 const EXAMPLES = [
@@ -10,9 +11,11 @@ const EXAMPLES = [
 ];
 
 const UNAVAILABLE: Partial<Record<AiStatus, string>> = {
-  checking: 'AI 서버 상태를 확인하는 중입니다…',
-  offline: 'AI 서버가 실행 중이 아닙니다. 저장소 루트에서 pnpm dev로 함께 실행하세요.',
-  'no-key': 'AI 서버에 ANTHROPIC_API_KEY가 설정되어 있지 않습니다.',
+  checking: 'AI 상태를 확인하는 중입니다…',
+  offline: isDesktop
+    ? 'AI 기능을 불러오지 못했습니다.'
+    : 'AI 서버가 실행 중이 아닙니다. 저장소 루트에서 pnpm dev로 함께 실행하세요.',
+  'no-key': backend.noKeyHint,
 };
 
 /** Seconds since `startedAt`, updated every second while mounted. */

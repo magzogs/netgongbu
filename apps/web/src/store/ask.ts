@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand';
 import type { ValidationIssue } from '@magvirtualedu/schema';
-import { askScenario, AskError, fetchAiStatus, type AiStatus } from '../data/aiApi';
+import { AskError, type AiStatus } from '../data/aiApi';
+import { backend } from '../data/backend';
 import type { ViewerState } from './viewer';
 
 export type AskState =
@@ -24,7 +25,7 @@ export const createAskSlice: StateCreator<ViewerState, [], [], AskSlice> = (set,
   askOpen: false,
 
   async checkAi() {
-    set({ aiStatus: await fetchAiStatus() });
+    set({ aiStatus: await backend.aiStatus() });
   },
 
   setAskOpen(askOpen) {
@@ -36,7 +37,7 @@ export const createAskSlice: StateCreator<ViewerState, [], [], AskSlice> = (set,
     if (!topologyId || get().ask.kind === 'pending') return;
     set({ ask: { kind: 'pending', question, startedAt: Date.now() } });
     try {
-      const { entry } = await askScenario(topologyId, question);
+      const { entry } = await backend.ask(topologyId, question);
       set((s) => ({
         catalog: [{ ...entry, source: 'ai' as const }, ...s.catalog],
         ask: { kind: 'idle' },

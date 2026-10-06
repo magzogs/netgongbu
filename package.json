@@ -13,6 +13,7 @@
     "dev:web": "pnpm --filter @magvirtualedu/web dev",
     "dev:server": "pnpm --filter @magvirtualedu/server dev",
     "dev:fake": "pnpm --parallel --filter @magvirtualedu/web --filter @magvirtualedu/server dev:fake",
+    "dev:desktop": "pnpm --filter @magvirtualedu/desktop dev",
     "build": "pnpm --filter @magvirtualedu/web build",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
@@ -36,6 +37,7 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "electron",
       "esbuild"
     ]
   }

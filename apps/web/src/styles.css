@@ -1110,3 +1110,32 @@ body,
   margin: 0;
   overflow-wrap: anywhere;
 }
+
+/* ---- desktop settings ---- */
+
+.settings-button {
+  margin-left: auto;
+  background: var(--panel);
+}
+
+.settings__status {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.settings__row {
+  display: flex;
+  gap: 8px;
+}
+
+.settings__key {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 13px;
+  resize: none;
+}
+
+.settings__note {
+  margin: 12px 0 0;
+  font-size: 12px;
+}

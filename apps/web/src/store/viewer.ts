@@ -8,9 +8,10 @@ import {
 } from '@magvirtualedu/schema';
 import { buildLinkCurves, type LinkCurve } from '../engine/curves';
 import { buildTimeline } from '../engine/timeline';
-import { fetchAiCatalog } from '../data/aiApi';
+import { backend } from '../data/backend';
 import { fetchCatalog, fetchScenario, ScenarioLoadError, type ViewerEntry } from '../data/load';
 import { createAskSlice, type AskSlice } from './ask';
+import { createDesktopSlice, type DesktopSlice } from './desktop';
 import { createPlaybackSlice, type PlaybackSlice } from './playback';
 
 /** Topology plus everything derived from it once, shared by the scene and the engine. */
@@ -31,7 +32,7 @@ export type Selection = { kind: 'node'; id: string } | { kind: 'packet'; hopInde
 /** orbit: the learner moves the camera freely; follow: it stays on the moving packet. */
 export type CameraMode = 'orbit' | 'follow';
 
-export interface ViewerState extends PlaybackSlice, AskSlice {
+export interface ViewerState extends PlaybackSlice, AskSlice, DesktopSlice {
   /** Hand-written examples, then AI scenarios newest first. */
   catalog: readonly ViewerEntry[];
   entryId: string | null;
@@ -75,6 +76,7 @@ let openToken = 0;
 export const useViewer = create<ViewerState>()((set, get, api) => ({
   ...createPlaybackSlice(set, get, api),
   ...createAskSlice(set, get, api),
+  ...createDesktopSlice(set, get, api),
   catalog: [],
   entryId: null,
   status: { kind: 'loading' },
@@ -87,7 +89,7 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
   async init() {
     void get().checkAi();
     try {
-      const [examples, generated] = await Promise.all([fetchCatalog(), fetchAiCatalog()]);
+      const [examples, generated] = await Promise.all([fetchCatalog(), backend.aiCatalog()]);
       const catalog: ViewerEntry[] = [
         ...examples.scenarios.map((e) => ({ ...e, source: 'example' as const })),
         ...generated.map((e) => ({ ...e, source: 'ai' as const })),

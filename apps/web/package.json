@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@magvirtualedu/bridge": "workspace:^",
     "@magvirtualedu/schema": "workspace:*",
     "@react-three/drei": "10.7.9",
     "@react-three/fiber": "9.8.1",
