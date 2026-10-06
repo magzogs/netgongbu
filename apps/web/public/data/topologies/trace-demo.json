@@ -1,0 +1,406 @@
+{
+  "id": "trace-demo",
+  "title": "실측 경로 예시 (데모 데이터)",
+  "description": "example.org을(를) 열 때 이 컴퓨터에서 측정한 경로",
+  "globe": {
+    "center": [0, -40, 0],
+    "radius": 40,
+    "focus": {
+      "lat": 37.57,
+      "lon": 126.98
+    }
+  },
+  "zones": [
+    {
+      "id": "z-device",
+      "label": "노트북 내부",
+      "color": "#2563eb",
+      "bounds": [-9, -5.5, 6.5, 5.5],
+      "elevation": 18
+    },
+    {
+      "id": "z-home",
+      "label": "집",
+      "color": "#2f6f4f",
+      "bounds": [-4.5, -2.5, 4.5, 2.5],
+      "elevation": 9
+    }
+  ],
+  "nodes": [
+    {
+      "id": "d-browser",
+      "type": "browser",
+      "label": "브라우저",
+      "pos": [-7, 18, 0],
+      "zone": "z-device",
+      "description": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+    },
+    {
+      "id": "d-resolver",
+      "type": "os",
+      "label": "OS DNS 리졸버",
+      "pos": [-4, 18, -3.5],
+      "zone": "z-device",
+      "description": "운영체제가 이름을 주소로 바꾸는 부분. 설정된 DNS 서버: 192.168.4.1"
+    },
+    {
+      "id": "d-stack",
+      "type": "os",
+      "label": "TCP/IP 스택",
+      "pos": [-1.5, 18, 0],
+      "zone": "z-device",
+      "description": "커널 안의 네트워크 구현: 소켓, 포트 할당, TCP 세그먼트와 IP 패킷 조립"
+    },
+    {
+      "id": "d-route",
+      "type": "os",
+      "label": "라우팅 테이블",
+      "pos": [1.5, 18, -3.5],
+      "zone": "z-device",
+      "description": "default → 192.168.4.1 (en1)"
+    },
+    {
+      "id": "d-arp",
+      "type": "os",
+      "label": "ARP 캐시",
+      "pos": [1.5, 18, 3.5],
+      "zone": "z-device",
+      "description": "192.168.4.1 → 02:4c:a0:3d:05:0e"
+    },
+    {
+      "id": "d-nic",
+      "type": "nic",
+      "label": "Wi-Fi (en1)",
+      "pos": [4.5, 18, 0],
+      "zone": "z-device",
+      "description": "무선 랜카드: 프레임을 802.11 형식으로 전파에 실어 보냅니다",
+      "interfaces": [
+        {
+          "name": "en1",
+          "ip": "192.168.4.23",
+          "mac": "02:00:5e:10:00:02"
+        }
+      ]
+    },
+    {
+      "id": "h-router",
+      "type": "router",
+      "label": "공유기",
+      "pos": [2.5, 9, 0],
+      "zone": "z-home",
+      "description": "기본 게이트웨이. 집 안의 사설 IP를 공인 IP로 바꾸는 NAT도 합니다.",
+      "interfaces": [
+        {
+          "name": "lan",
+          "ip": "192.168.4.1",
+          "mac": "02:4c:a0:3d:05:0e"
+        }
+      ]
+    },
+    {
+      "id": "h-modem",
+      "type": "modem",
+      "label": "모뎀 / ONT",
+      "pos": [-2.5, 9, 0],
+      "zone": "z-home",
+      "source": "typical",
+      "description": "통신사 회선(광케이블·동축)의 신호를 이더넷으로 바꾸는 장비. IP 라우터가 아니라서 traceroute에 나타나지 않습니다. 공유기와 한 기기인 경우도 많습니다."
+    },
+    {
+      "id": "n-hop-2",
+      "type": "hop",
+      "label": "라우터 #2",
+      "pos": [-4.414005700576321e-16, 0.29999999999999716, -3.132793153013516e-15],
+      "description": "traceroute 2번째 홉. 통신사 내부 주소(공인 IP가 아님)라 위치와 소유자를 알 수 없습니다.",
+      "interfaces": [
+        {
+          "name": "ip",
+          "ip": "100.112.0.1"
+        }
+      ],
+      "rttMs": 3.1
+    },
+    {
+      "id": "n-hop-3",
+      "type": "hop",
+      "label": "DEMO #3",
+      "pos": [0.998770811229915, 0.25046369256558165, 1.729921790166994],
+      "description": "traceroute 3번째 홉.",
+      "interfaces": [
+        {
+          "name": "ip",
+          "ip": "203.0.113.164"
+        }
+      ],
+      "asn": {
+        "number": 64500,
+        "name": "DEMO-ISP-KR"
+      },
+      "geo": {
+        "lat": 37.57,
+        "lon": 126.98,
+        "accuracyKm": 20,
+        "place": "Seoul, KR"
+      },
+      "rttMs": 3.4
+    },
+    {
+      "id": "n-hop-4",
+      "type": "hop",
+      "label": "응답 없음 #4",
+      "pos": [-0.9987708112299153, 0.25046369256558165, 1.7299217901669945],
+      "description": "이 라우터는 traceroute에 응답하지 않았습니다(ICMP 응답을 막거나 줄이는 설정). 패킷 자체는 정상적으로 지나갑니다."
+    },
+    {
+      "id": "n-hop-5",
+      "type": "hop",
+      "label": "DEMO #5",
+      "pos": [-1.9975416224598308, 0.25046369256558165, -2.8843140634399295e-15],
+      "description": "traceroute 5번째 홉.",
+      "interfaces": [
+        {
+          "name": "ip",
+          "ip": "203.0.113.248"
+        }
+      ],
+      "asn": {
+        "number": 64500,
+        "name": "DEMO-ISP-KR"
+      },
+      "geo": {
+        "lat": 37.57,
+        "lon": 126.98,
+        "accuracyKm": 20,
+        "place": "Seoul, KR"
+      },
+      "rttMs": 3.7
+    },
+    {
+      "id": "n-hop-6",
+      "type": "hop",
+      "label": "DEMO #6",
+      "pos": [7.202277013137814, -0.35770510290555535, 0.840036378871078],
+      "description": "traceroute 6번째 홉.",
+      "interfaces": [
+        {
+          "name": "ip",
+          "ip": "198.51.100.7"
+        }
+      ],
+      "hostname": "ae-1.r01.tokyo.demo-transit.example",
+      "asn": {
+        "number": 64501,
+        "name": "DEMO-TRANSIT"
+      },
+      "geo": {
+        "lat": 35.68,
+        "lon": 139.69,
+        "accuracyKm": 50,
+        "place": "Tokyo, JP"
+      },
+      "rttMs": 35.2
+    },
+    {
+      "id": "n-hop-7",
+      "type": "hop",
+      "label": "DEMO #7",
+      "pos": [8.148977804867458, -0.6153046607662347, 2.5553735091988674],
+      "description": "traceroute 7번째 홉.",
+      "interfaces": [
+        {
+          "name": "ip",
+          "ip": "198.51.100.9"
+        }
+      ],
+      "hostname": "ae-2.r02.tokyo.demo-transit.example",
+      "asn": {
+        "number": 64501,
+        "name": "DEMO-TRANSIT"
+      },
+      "geo": {
+        "lat": 35.68,
+        "lon": 139.69,
+        "accuracyKm": 50,
+        "place": "Tokyo, JP"
+      },
+      "rttMs": 36
+    },
+    {
+      "id": "n-hop-8",
+      "type": "hop",
+      "label": "DEMO #8",
+      "pos": [30.316063237989535, -37.33434857073454, -26.41818714839977],
+      "description": "traceroute 8번째 홉.",
+      "interfaces": [
+        {
+          "name": "ip",
+          "ip": "198.51.100.45"
+        }
+      ],
+      "hostname": "ae-5.r02.lax.demo-transit.example",
+      "asn": {
+        "number": 64501,
+        "name": "DEMO-TRANSIT"
+      },
+      "geo": {
+        "lat": 34.05,
+        "lon": -118.24,
+        "accuracyKm": 50,
+        "place": "Los Angeles, US"
+      },
+      "rttMs": 132.4
+    },
+    {
+      "id": "n-hop-9",
+      "type": "hop",
+      "label": "DEMO #9",
+      "pos": [29.886276733568394, -34.250674863009976, -26.416769739575333],
+      "description": "traceroute 9번째 홉.",
+      "interfaces": [
+        {
+          "name": "ip",
+          "ip": "192.0.2.1"
+        }
+      ],
+      "asn": {
+        "number": 64502,
+        "name": "DEMO-HOSTING"
+      },
+      "geo": {
+        "lat": 37.34,
+        "lon": -121.89,
+        "accuracyKm": 20,
+        "place": "San Jose, US"
+      },
+      "rttMs": 138.9
+    },
+    {
+      "id": "n-server",
+      "type": "server",
+      "label": "example.org",
+      "pos": [31.15345727483406, -34.20094054847073, -24.89825313757408],
+      "description": "페이지를 보낸 서버 192.0.2.10. 프로토콜 h2.",
+      "interfaces": [
+        {
+          "name": "ip",
+          "ip": "192.0.2.10"
+        }
+      ],
+      "geo": {
+        "lat": 37.34,
+        "lon": -121.89,
+        "accuracyKm": 20,
+        "place": "San Jose, US"
+      },
+      "rttMs": 139.5,
+      "asn": {
+        "number": 64502,
+        "name": "DEMO-HOSTING"
+      }
+    }
+  ],
+  "links": [
+    {
+      "id": "l-d-browser--d-resolver",
+      "a": "d-browser",
+      "b": "d-resolver",
+      "medium": "virtual"
+    },
+    {
+      "id": "l-d-browser--d-stack",
+      "a": "d-browser",
+      "b": "d-stack",
+      "medium": "virtual"
+    },
+    {
+      "id": "l-d-resolver--d-stack",
+      "a": "d-resolver",
+      "b": "d-stack",
+      "medium": "virtual"
+    },
+    {
+      "id": "l-d-stack--d-route",
+      "a": "d-stack",
+      "b": "d-route",
+      "medium": "virtual"
+    },
+    {
+      "id": "l-d-stack--d-arp",
+      "a": "d-stack",
+      "b": "d-arp",
+      "medium": "virtual"
+    },
+    {
+      "id": "l-d-stack--d-nic",
+      "a": "d-stack",
+      "b": "d-nic",
+      "medium": "virtual"
+    },
+    {
+      "id": "l-d-nic--h-router",
+      "a": "d-nic",
+      "b": "h-router",
+      "medium": "wifi"
+    },
+    {
+      "id": "l-h-router--h-modem",
+      "a": "h-router",
+      "b": "h-modem",
+      "medium": "ethernet"
+    },
+    {
+      "id": "l-h-modem--n-hop-2",
+      "a": "h-modem",
+      "b": "n-hop-2",
+      "medium": "fiber"
+    },
+    {
+      "id": "l-n-hop-2--n-hop-3",
+      "a": "n-hop-2",
+      "b": "n-hop-3",
+      "medium": "internet"
+    },
+    {
+      "id": "l-n-hop-3--n-hop-4",
+      "a": "n-hop-3",
+      "b": "n-hop-4",
+      "medium": "internet"
+    },
+    {
+      "id": "l-n-hop-4--n-hop-5",
+      "a": "n-hop-4",
+      "b": "n-hop-5",
+      "medium": "internet"
+    },
+    {
+      "id": "l-n-hop-5--n-hop-6",
+      "a": "n-hop-5",
+      "b": "n-hop-6",
+      "medium": "internet"
+    },
+    {
+      "id": "l-n-hop-6--n-hop-7",
+      "a": "n-hop-6",
+      "b": "n-hop-7",
+      "medium": "internet"
+    },
+    {
+      "id": "l-n-hop-7--n-hop-8",
+      "a": "n-hop-7",
+      "b": "n-hop-8",
+      "medium": "internet"
+    },
+    {
+      "id": "l-n-hop-8--n-hop-9",
+      "a": "n-hop-8",
+      "b": "n-hop-9",
+      "medium": "internet"
+    },
+    {
+      "id": "l-n-hop-9--n-server",
+      "a": "n-hop-9",
+      "b": "n-server",
+      "medium": "internet"
+    }
+  ]
+}

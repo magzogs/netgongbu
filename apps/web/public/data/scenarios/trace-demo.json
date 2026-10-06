@@ -1,0 +1,1057 @@
+{
+  "id": "trace-demo",
+  "topologyId": "trace-demo",
+  "title": "실측 예시: 서울에서 미국 서버까지 (데모 데이터)",
+  "question": "example.org",
+  "beats": [
+    {
+      "id": "b-1",
+      "narration": "주소창에 \"example.org\"을(를) 입력하고 Enter를 눌렀습니다. 브라우저는 먼저 주소를 해석해 프로토콜(https), 호스트(example.org), 포트(443), 경로(/)로 나눕니다.",
+      "hops": [],
+      "nodeActions": [
+        {
+          "node": "d-browser",
+          "text": "URL 해석: https://example.org:443/",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "b-2",
+      "narration": "이 사이트는 HSTS(항상 HTTPS로만 접속하라는 약속)가 등록되어 있어서, 브라우저가 서버에 묻지도 않고 http://example.org/을(를) https://example.org/(으)로 바꿉니다. 암호화되지 않은 요청은 아예 나가지 않습니다.",
+      "hops": [],
+      "nodeActions": [
+        {
+          "node": "d-browser",
+          "text": "HSTS: http → https (실측)",
+          "kind": "rewrite"
+        }
+      ]
+    },
+    {
+      "id": "b-3",
+      "narration": "브라우저가 운영체제에 \"example.org의 IP 주소가 뭐지?\"라고 묻습니다. 이름을 주소로 바꾸는 일은 OS의 DNS 리졸버가 맡습니다.",
+      "hops": [
+        {
+          "path": ["d-browser", "d-resolver"],
+          "packet": {
+            "protocol": "LOCAL",
+            "summary": "getaddrinfo(example.org)",
+            "layers": [
+              {
+                "name": "함수 호출",
+                "fields": {
+                  "함수": "getaddrinfo",
+                  "이름": "example.org",
+                  "요청": "IPv4·IPv6 주소"
+                },
+                "sources": {
+                  "함수": "typical",
+                  "이름": "observed",
+                  "요청": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "d-resolver",
+          "text": "OS DNS 캐시 확인 → 없음, DNS 서버에 질의",
+          "kind": "lookup"
+        }
+      ]
+    },
+    {
+      "id": "b-4",
+      "narration": "리졸버가 DNS 서버 192.168.4.1에 UDP 53번 포트로 질의를 보냅니다. 목적지 IP는 DNS 서버지만, 첫 구간의 목적지 MAC은 공유기입니다.",
+      "hops": [
+        {
+          "path": ["d-resolver", "d-stack", "d-nic", "h-router"],
+          "packet": {
+            "protocol": "DNS",
+            "summary": "example.org A?",
+            "layers": [
+              {
+                "name": "802.11 (Wi-Fi)",
+                "fields": {
+                  "주소1 (AP)": "공유기의 무선 MAC",
+                  "주소2 (보낸 쪽)": "02:00:5e:10:00:02",
+                  "주소3 (목적지)": "02:4c:a0:3d:05:0e"
+                },
+                "sources": {
+                  "주소1 (AP)": "typical",
+                  "주소2 (보낸 쪽)": "observed",
+                  "주소3 (목적지)": "observed"
+                }
+              },
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.168.4.23",
+                  "dst": "192.168.4.1",
+                  "ttl": "64",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "UDP",
+                "fields": {
+                  "srcPort": "임시 포트",
+                  "dstPort": "53"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "typical"
+                }
+              },
+              {
+                "name": "DNS",
+                "fields": {
+                  "질문": "example.org A",
+                  "id": "임의의 16비트 값"
+                },
+                "sources": {
+                  "질문": "observed",
+                  "id": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "h-router",
+          "text": "공유기의 DNS 전달 기능이 통신사 DNS에 대신 물어봄",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "b-5",
+      "narration": "DNS 서버가 example.org = 192.0.2.10이라고 답합니다. 브라우저가 실제로 기다린 DNS 시간은 18.2 ms입니다.",
+      "hops": [
+        {
+          "path": ["h-router", "d-nic", "d-stack", "d-resolver"],
+          "packet": {
+            "protocol": "DNS",
+            "summary": "example.org = 192.0.2.10",
+            "layers": [
+              {
+                "name": "UDP",
+                "fields": {
+                  "srcPort": "53",
+                  "dstPort": "임시 포트"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "typical"
+                }
+              },
+              {
+                "name": "DNS",
+                "fields": {
+                  "답": "192.0.2.10",
+                  "TTL": "300초 동안 캐시 가능"
+                },
+                "sources": {
+                  "답": "observed",
+                  "TTL": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-6",
+      "narration": "리졸버가 주소 목록을 브라우저에 돌려줍니다. 브라우저는 192.0.2.10에 연결하기로 합니다.",
+      "hops": [
+        {
+          "path": ["d-resolver", "d-browser"],
+          "packet": {
+            "protocol": "LOCAL",
+            "summary": "주소 목록",
+            "layers": [
+              {
+                "name": "함수 결과",
+                "fields": {
+                  "주소": "192.0.2.10",
+                  "선택": "192.0.2.10"
+                },
+                "sources": {
+                  "주소": "observed",
+                  "선택": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-7",
+      "narration": "브라우저가 운영체제에 소켓을 열어 192.0.2.10:443에 연결해 달라고 요청합니다(connect() 시스템 호출). 이제부터는 커널의 TCP/IP 스택이 패킷을 만듭니다.",
+      "hops": [
+        {
+          "path": ["d-browser", "d-stack"],
+          "packet": {
+            "protocol": "LOCAL",
+            "summary": "connect(192.0.2.10:443)",
+            "layers": [
+              {
+                "name": "시스템 호출",
+                "fields": {
+                  "호출": "connect",
+                  "목적지": "192.0.2.10:443"
+                },
+                "sources": {
+                  "호출": "typical",
+                  "목적지": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-8",
+      "narration": "커널은 목적지로 가는 길을 라우팅 테이블에서 찾고(기본 경로 → 게이트웨이 192.168.4.1), 게이트웨이의 MAC 주소를 ARP 캐시에서 찾습니다. 둘 다 이 컴퓨터에서 실제로 읽은 값입니다.",
+      "hops": [
+        {
+          "path": ["d-stack", "d-route"],
+          "packet": {
+            "protocol": "LOCAL",
+            "summary": "경로 조회",
+            "layers": [
+              {
+                "name": "조회",
+                "fields": {
+                  "목적지": "192.0.2.10",
+                  "결과": "default → 192.168.4.1 (en1)"
+                },
+                "sources": {
+                  "목적지": "observed",
+                  "결과": "observed"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "path": ["d-stack", "d-arp"],
+          "packet": {
+            "protocol": "LOCAL",
+            "summary": "MAC 조회",
+            "layers": [
+              {
+                "name": "조회",
+                "fields": {
+                  "IP": "192.168.4.1",
+                  "MAC": "02:4c:a0:3d:05:0e"
+                },
+                "sources": {
+                  "IP": "observed",
+                  "MAC": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "d-route",
+          "text": "default → 192.168.4.1 (en1)",
+          "kind": "lookup"
+        },
+        {
+          "node": "d-arp",
+          "text": "192.168.4.1 → 02:4c:a0:3d:05:0e",
+          "kind": "lookup"
+        }
+      ]
+    },
+    {
+      "id": "b-9",
+      "narration": "TCP 연결의 첫 단계 SYN을 보냅니다. Wi-Fi 프레임(802.11)은 주소 칸이 셋이라 AP·보낸 쪽·목적지를 따로 적습니다.",
+      "hops": [
+        {
+          "path": ["d-stack", "d-nic", "h-router"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN",
+            "layers": [
+              {
+                "name": "802.11 (Wi-Fi)",
+                "fields": {
+                  "주소1 (AP)": "공유기의 무선 MAC",
+                  "주소2 (보낸 쪽)": "02:00:5e:10:00:02",
+                  "주소3 (목적지)": "02:4c:a0:3d:05:0e"
+                },
+                "sources": {
+                  "주소1 (AP)": "typical",
+                  "주소2 (보낸 쪽)": "observed",
+                  "주소3 (목적지)": "observed"
+                }
+              },
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.168.4.23",
+                  "dst": "192.0.2.10",
+                  "ttl": "64",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "임시 포트 (49152~65535)",
+                  "dstPort": "443",
+                  "flags": "SYN",
+                  "seq": "임의의 초기값"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed",
+                  "seq": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-10",
+      "narration": "공유기가 NAT로 출발지를 공인 IP로 바꾸고, 모뎀을 거쳐 DEMO-ISP-KR 망으로 들어갑니다. 라우터 4개를 지납니다 (Seoul, KR). 여기까지 왕복 3.7 ms(traceroute 실측).",
+      "hops": [
+        {
+          "path": ["h-router", "h-modem", "n-hop-2", "n-hop-3", "n-hop-4", "n-hop-5"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN",
+            "layers": [
+              {
+                "name": "L2 (통신사 구간)",
+                "fields": {
+                  "MAC 주소": "라우터를 지날 때마다 새로 씀"
+                },
+                "sources": {
+                  "MAC 주소": "typical"
+                }
+              },
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "공인 IP (NAT 후)",
+                  "dst": "192.0.2.10",
+                  "ttl": "64 − 5 = 59",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "typical",
+                  "dst": "observed",
+                  "ttl": "derived",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "임시 포트 (49152~65535)",
+                  "dstPort": "443",
+                  "flags": "SYN",
+                  "seq": "임의의 초기값"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed",
+                  "seq": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "h-router",
+          "text": "NAT: 192.168.4.23 → 공인 IP",
+          "kind": "rewrite"
+        },
+        {
+          "node": "h-modem",
+          "text": "전기 신호 ↔ 광 신호 변환",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "b-11",
+      "narration": "DEMO-TRANSIT 망을 지납니다(라우터 3개) (Los Angeles, US). 여기까지 왕복 132 ms(traceroute 실측). 이 구간은 약 9586 km라 빛이 광섬유로 가는 데만 편도 48 ms 이상 걸립니다.",
+      "hops": [
+        {
+          "path": ["n-hop-5", "n-hop-6", "n-hop-7", "n-hop-8"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN",
+            "layers": [
+              {
+                "name": "L2 (통신사 구간)",
+                "fields": {
+                  "MAC 주소": "라우터를 지날 때마다 새로 씀"
+                },
+                "sources": {
+                  "MAC 주소": "typical"
+                }
+              },
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "공인 IP (NAT 후)",
+                  "dst": "192.0.2.10",
+                  "ttl": "64 − 8 = 56",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "typical",
+                  "dst": "observed",
+                  "ttl": "derived",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "임시 포트 (49152~65535)",
+                  "dstPort": "443",
+                  "flags": "SYN",
+                  "seq": "임의의 초기값"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed",
+                  "seq": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-12",
+      "narration": "DEMO-HOSTING 망을 지납니다(라우터 1개) (San Jose, US). 여기까지 왕복 139 ms(traceroute 실측).",
+      "hops": [
+        {
+          "path": ["n-hop-8", "n-hop-9"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN",
+            "layers": [
+              {
+                "name": "L2 (통신사 구간)",
+                "fields": {
+                  "MAC 주소": "라우터를 지날 때마다 새로 씀"
+                },
+                "sources": {
+                  "MAC 주소": "typical"
+                }
+              },
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "공인 IP (NAT 후)",
+                  "dst": "192.0.2.10",
+                  "ttl": "64 − 9 = 55",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "typical",
+                  "dst": "observed",
+                  "ttl": "derived",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "임시 포트 (49152~65535)",
+                  "dstPort": "443",
+                  "flags": "SYN",
+                  "seq": "임의의 초기값"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed",
+                  "seq": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-13",
+      "narration": "마지막 구간을 지나 example.org 서버(192.0.2.10) (San Jose, US)에 도착합니다. 여기까지 왕복 140 ms(traceroute 실측).",
+      "hops": [
+        {
+          "path": ["n-hop-9", "n-server"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN",
+            "layers": [
+              {
+                "name": "L2 (통신사 구간)",
+                "fields": {
+                  "MAC 주소": "라우터를 지날 때마다 새로 씀"
+                },
+                "sources": {
+                  "MAC 주소": "typical"
+                }
+              },
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "공인 IP (NAT 후)",
+                  "dst": "192.0.2.10",
+                  "ttl": "64 − 9 = 55",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "typical",
+                  "dst": "observed",
+                  "ttl": "derived",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "임시 포트 (49152~65535)",
+                  "dstPort": "443",
+                  "flags": "SYN",
+                  "seq": "임의의 초기값"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed",
+                  "seq": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-14",
+      "narration": "서버가 SYN-ACK으로 답하고, 패킷은 같은 길을 거꾸로 돌아옵니다. 공유기는 NAT 표를 보고 노트북으로 되돌려 보냅니다.",
+      "hops": [
+        {
+          "path": [
+            "n-server",
+            "n-hop-9",
+            "n-hop-8",
+            "n-hop-7",
+            "n-hop-6",
+            "n-hop-5",
+            "n-hop-4",
+            "n-hop-3",
+            "n-hop-2",
+            "h-modem",
+            "h-router",
+            "d-nic",
+            "d-stack"
+          ],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN-ACK",
+            "layers": [
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.0.2.10",
+                  "dst": "192.168.4.23",
+                  "ttl": "서버가 정함",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "임시 포트 (49152~65535)",
+                  "dstPort": "443",
+                  "flags": "SYN, ACK"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "h-router",
+          "text": "NAT 역변환: 공인 IP → 노트북",
+          "kind": "rewrite"
+        }
+      ]
+    },
+    {
+      "id": "b-15",
+      "narration": "노트북이 ACK을 보내면 TCP 3-way handshake가 끝납니다. 측정한 TCP 연결 시간은 140 ms입니다(왕복 1회).",
+      "hops": [
+        {
+          "path": [
+            "d-stack",
+            "d-nic",
+            "h-router",
+            "h-modem",
+            "n-hop-2",
+            "n-hop-3",
+            "n-hop-4",
+            "n-hop-5",
+            "n-hop-6",
+            "n-hop-7",
+            "n-hop-8",
+            "n-hop-9",
+            "n-server"
+          ],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "ACK",
+            "layers": [
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.168.4.23",
+                  "dst": "192.0.2.10",
+                  "ttl": "64",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "임시 포트 (49152~65535)",
+                  "dstPort": "443",
+                  "flags": "ACK"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-16",
+      "narration": "이제 암호화 채널을 만듭니다. 브라우저가 ClientHello에 접속할 이름(SNI: example.org)과 지원하는 암호 방식, 키 교환 값을 담아 보냅니다.",
+      "hops": [
+        {
+          "path": [
+            "d-stack",
+            "d-nic",
+            "h-router",
+            "h-modem",
+            "n-hop-2",
+            "n-hop-3",
+            "n-hop-4",
+            "n-hop-5",
+            "n-hop-6",
+            "n-hop-7",
+            "n-hop-8",
+            "n-hop-9",
+            "n-server"
+          ],
+          "packet": {
+            "protocol": "TLS",
+            "summary": "ClientHello",
+            "layers": [
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.168.4.23",
+                  "dst": "192.0.2.10",
+                  "ttl": "64",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "임시 포트 (49152~65535)",
+                  "dstPort": "443",
+                  "flags": "PSH, ACK"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed"
+                }
+              },
+              {
+                "name": "TLS",
+                "fields": {
+                  "메시지": "ClientHello",
+                  "SNI": "example.org",
+                  "ALPN": "h2, http/1.1",
+                  "키 교환 그룹": "X25519MLKEM768"
+                },
+                "sources": {
+                  "메시지": "typical",
+                  "SNI": "observed",
+                  "ALPN": "typical",
+                  "키 교환 그룹": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-17",
+      "narration": "서버가 TLS 1.3로 응답하고 인증서(example.org, 발급자 Demo Issuing CA)를 보냅니다. 브라우저가 인증서를 확인하고 세션 키를 계산합니다. TLS에 걸린 시간 141 ms(실측).",
+      "hops": [
+        {
+          "path": [
+            "n-server",
+            "n-hop-9",
+            "n-hop-8",
+            "n-hop-7",
+            "n-hop-6",
+            "n-hop-5",
+            "n-hop-4",
+            "n-hop-3",
+            "n-hop-2",
+            "h-modem",
+            "h-router",
+            "d-nic",
+            "d-stack"
+          ],
+          "packet": {
+            "protocol": "TLS",
+            "summary": "ServerHello",
+            "layers": [
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.0.2.10",
+                  "dst": "192.168.4.23",
+                  "ttl": "서버가 정함",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "임시 포트 (49152~65535)",
+                  "dstPort": "443",
+                  "flags": "ACK"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed"
+                }
+              },
+              {
+                "name": "TLS",
+                "fields": {
+                  "메시지": "ServerHello, Certificate, Finished",
+                  "버전": "TLS 1.3",
+                  "암호": "AES_128_GCM",
+                  "인증서": "example.org",
+                  "발급자": "Demo Issuing CA",
+                  "만료": "2027-03-01"
+                },
+                "sources": {
+                  "메시지": "typical",
+                  "버전": "observed",
+                  "암호": "observed",
+                  "인증서": "observed",
+                  "발급자": "observed",
+                  "만료": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "d-browser",
+          "text": "인증서 확인: example.org ← Demo Issuing CA",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "b-18",
+      "narration": "브라우저가 HTTP 요청을 보냅니다. HTTP/2에서는 요청이 이진 프레임(HEADERS)으로 바뀌고 헤더는 압축(HPACK)되어 암호화된 TLS 안에 담깁니다. 중간 라우터는 IP·포트만 볼 수 있습니다.",
+      "hops": [
+        {
+          "path": [
+            "d-browser",
+            "d-stack",
+            "d-nic",
+            "h-router",
+            "h-modem",
+            "n-hop-2",
+            "n-hop-3",
+            "n-hop-4",
+            "n-hop-5",
+            "n-hop-6",
+            "n-hop-7",
+            "n-hop-8",
+            "n-hop-9",
+            "n-server"
+          ],
+          "packet": {
+            "protocol": "HTTP",
+            "summary": "GET /",
+            "layers": [
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.168.4.23",
+                  "dst": "192.0.2.10",
+                  "ttl": "64",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "임시 포트 (49152~65535)",
+                  "dstPort": "443",
+                  "flags": "PSH, ACK"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed"
+                }
+              },
+              {
+                "name": "TLS",
+                "fields": {
+                  "레코드": "Application Data",
+                  "참고": "아래 내용은 암호화되어 있음"
+                },
+                "sources": {
+                  "레코드": "typical",
+                  "참고": "typical"
+                }
+              },
+              {
+                "name": "HTTP",
+                "fields": {
+                  "요청 줄": "GET / (h2 HEADERS 프레임)",
+                  ":method": "GET",
+                  ":path": "/",
+                  ":authority": "example.org",
+                  ":scheme": "https",
+                  "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, li…",
+                  "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                  "accept-language": "ko-KR,ko;q=0.9",
+                  "accept-encoding": "gzip, deflate, br, zstd",
+                  "(그 밖의 헤더)": "1개"
+                },
+                "sources": {
+                  "요청 줄": "observed",
+                  ":method": "observed",
+                  ":path": "observed",
+                  ":authority": "observed",
+                  ":scheme": "observed",
+                  "user-agent": "observed",
+                  "accept": "observed",
+                  "accept-language": "observed",
+                  "accept-encoding": "observed",
+                  "(그 밖의 헤더)": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-19",
+      "narration": "서버가 요청을 처리합니다. 요청을 보낸 뒤 첫 응답 바이트가 올 때까지 142 ms(실측) 걸렸습니다.",
+      "hops": [],
+      "nodeActions": [
+        {
+          "node": "n-server",
+          "text": "응답 준비 (대기 142 ms)",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "b-20",
+      "narration": "응답 200 이(가) 돌아옵니다. 압축된 크기 1.2 KB, 받는 데 1.2 ms.",
+      "hops": [
+        {
+          "path": [
+            "n-server",
+            "n-hop-9",
+            "n-hop-8",
+            "n-hop-7",
+            "n-hop-6",
+            "n-hop-5",
+            "n-hop-4",
+            "n-hop-3",
+            "n-hop-2",
+            "h-modem",
+            "h-router",
+            "d-nic",
+            "d-stack",
+            "d-browser"
+          ],
+          "packet": {
+            "protocol": "HTTP",
+            "summary": "200 OK",
+            "layers": [
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.0.2.10",
+                  "dst": "192.168.4.23",
+                  "ttl": "서버가 정함",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TLS",
+                "fields": {
+                  "레코드": "Application Data"
+                },
+                "sources": {
+                  "레코드": "typical"
+                }
+              },
+              {
+                "name": "HTTP",
+                "fields": {
+                  "상태": "200",
+                  ":status": "200",
+                  "content-type": "text/html; charset=UTF-8",
+                  "content-encoding": "gzip",
+                  "server": "demo-origin",
+                  "cache-control": "max-age=3600",
+                  "age": "120",
+                  "alt-svc": "h3=\":443\"; ma=86400"
+                },
+                "sources": {
+                  "상태": "observed",
+                  ":status": "observed",
+                  "content-type": "observed",
+                  "content-encoding": "observed",
+                  "server": "observed",
+                  "cache-control": "observed",
+                  "age": "observed",
+                  "alt-svc": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-21",
+      "narration": "브라우저가 HTML을 읽으며 필요한 파일을 추가로 요청합니다: 2개(Image 1, Script 1). 그중 1개는 이미 열린 연결을 다시 썼고, 다른 서버는 2곳입니다.",
+      "hops": [],
+      "nodeActions": [
+        {
+          "node": "d-browser",
+          "text": "추가 요청 2개 · 연결 재사용 1개 (실측)",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "b-22",
+      "narration": "브라우저가 받은 내용을 화면에 그립니다. 여기까지가 Enter를 누른 순간부터 페이지가 보이기까지 네트워크에서 일어난 일입니다.",
+      "hops": [],
+      "nodeActions": [
+        {
+          "node": "d-browser",
+          "text": "렌더링",
+          "kind": "process"
+        }
+      ]
+    }
+  ]
+}

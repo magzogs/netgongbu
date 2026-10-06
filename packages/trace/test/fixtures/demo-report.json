@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "input": "example.org",
+  "startedAt": "2026-10-07T09:30:00.000Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
+  "local": {
+    "platform": "darwin",
+    "interface": {
+      "name": "en1",
+      "kind": "wifi",
+      "ipv4": "192.168.4.23",
+      "mac": "02:00:5e:10:00:02",
+      "netmask": "255.255.255.0"
+    },
+    "gateway": { "ip": "192.168.4.1", "mac": "02:4c:a0:3d:05:0e" },
+    "defaultRoute": "default → 192.168.4.1 (en1)",
+    "dnsServers": ["192.168.4.1"]
+  },
+  "requests": [
+    {
+      "id": "R1",
+      "url": "http://example.org/",
+      "method": "GET",
+      "resourceType": "Document",
+      "status": 307,
+      "statusText": "Internal Redirect",
+      "protocol": null,
+      "remoteIp": null,
+      "remotePort": null,
+      "connectionId": 0,
+      "connectionReused": false,
+      "fromCache": false,
+      "requestHeaders": { "Upgrade-Insecure-Requests": "1" },
+      "responseHeaders": { "Location": "https://example.org/", "Non-Authoritative-Reason": "HSTS" },
+      "timing": null,
+      "security": null,
+      "encodedBytes": 0,
+      "redirectedTo": "https://example.org/"
+    },
+    {
+      "id": "R1:1",
+      "url": "https://example.org/",
+      "method": "GET",
+      "resourceType": "Document",
+      "status": 200,
+      "statusText": "",
+      "protocol": "h2",
+      "remoteIp": "192.0.2.10",
+      "remotePort": 443,
+      "connectionId": 21,
+      "connectionReused": false,
+      "fromCache": false,
+      "requestHeaders": {
+        ":method": "GET",
+        ":authority": "example.org",
+        ":scheme": "https",
+        ":path": "/",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "accept-encoding": "gzip, deflate, br, zstd",
+        "accept-language": "ko-KR,ko;q=0.9",
+        "sec-fetch-mode": "navigate"
+      },
+      "responseHeaders": {
+        ":status": "200",
+        "content-type": "text/html; charset=UTF-8",
+        "content-encoding": "gzip",
+        "server": "demo-origin",
+        "cache-control": "max-age=3600",
+        "age": "120",
+        "alt-svc": "h3=\":443\"; ma=86400"
+      },
+      "timing": {
+        "dnsMs": 18.2,
+        "connectMs": 139.8,
+        "tlsMs": 141.3,
+        "sendMs": 0.3,
+        "waitMs": 142,
+        "receiveMs": 1.2
+      },
+      "security": {
+        "protocol": "TLS 1.3",
+        "keyExchange": "X25519MLKEM768",
+        "cipher": "AES_128_GCM",
+        "subject": "example.org",
+        "issuer": "Demo Issuing CA",
+        "validTo": "2027-03-01T23:59:59.000Z",
+        "san": ["example.org", "www.example.org"]
+      },
+      "encodedBytes": 1256,
+      "redirectedTo": null
+    },
+    {
+      "id": "R2",
+      "url": "https://example.org/logo.png",
+      "method": "GET",
+      "resourceType": "Image",
+      "status": 200,
+      "statusText": "",
+      "protocol": "h2",
+      "remoteIp": "192.0.2.10",
+      "remotePort": 443,
+      "connectionId": 21,
+      "connectionReused": true,
+      "fromCache": false,
+      "requestHeaders": {},
+      "responseHeaders": { "content-type": "image/png" },
+      "timing": {
+        "dnsMs": null,
+        "connectMs": null,
+        "tlsMs": null,
+        "sendMs": 0.2,
+        "waitMs": 140,
+        "receiveMs": 3
+      },
+      "security": null,
+      "encodedBytes": 5120,
+      "redirectedTo": null
+    },
+    {
+      "id": "R3",
+      "url": "https://cdn.example.net/app.js",
+      "method": "GET",
+      "resourceType": "Script",
+      "status": 200,
+      "statusText": "",
+      "protocol": "h3",
+      "remoteIp": "198.51.100.200",
+      "remotePort": 443,
+      "connectionId": 22,
+      "connectionReused": false,
+      "fromCache": false,
+      "requestHeaders": {},
+      "responseHeaders": { "content-type": "text/javascript", "cf-ray": "demo" },
+      "timing": {
+        "dnsMs": 9,
+        "connectMs": 4.1,
+        "tlsMs": null,
+        "sendMs": 0.1,
+        "waitMs": 6,
+        "receiveMs": 2
+      },
+      "security": null,
+      "encodedBytes": 20480,
+      "redirectedTo": null
+    }
+  ],
+  "documentChain": ["R1", "R1:1"],
+  "dns": {
+    "host": "example.org",
+    "cnames": [],
+    "addresses": [{ "address": "192.0.2.10", "family": 4, "ttl": 300 }],
+    "server": "192.168.4.1"
+  },
+  "path": {
+    "target": "192.0.2.10",
+    "complete": true,
+    "error": null,
+    "hops": [
+      { "ttl": 1, "ip": "192.168.4.1", "rttMs": 1.0, "hostname": null, "asn": null, "geo": null },
+      { "ttl": 2, "ip": "100.112.0.1", "rttMs": 3.1, "hostname": null, "asn": null, "geo": null },
+      {
+        "ttl": 3,
+        "ip": "203.0.113.164",
+        "rttMs": 3.4,
+        "hostname": null,
+        "asn": { "number": 64500, "name": "DEMO-ISP-KR", "country": "KR" },
+        "geo": { "lat": 37.57, "lon": 126.98, "accuracyKm": 20, "place": "Seoul, KR" }
+      },
+      { "ttl": 4, "ip": null, "rttMs": null, "hostname": null, "asn": null, "geo": null },
+      {
+        "ttl": 5,
+        "ip": "203.0.113.248",
+        "rttMs": 3.7,
+        "hostname": null,
+        "asn": { "number": 64500, "name": "DEMO-ISP-KR", "country": "KR" },
+        "geo": { "lat": 37.57, "lon": 126.98, "accuracyKm": 20, "place": "Seoul, KR" }
+      },
+      {
+        "ttl": 6,
+        "ip": "198.51.100.7",
+        "rttMs": 35.2,
+        "hostname": "ae-1.r01.tokyo.demo-transit.example",
+        "asn": { "number": 64501, "name": "DEMO-TRANSIT", "country": "JP" },
+        "geo": { "lat": 35.68, "lon": 139.69, "accuracyKm": 50, "place": "Tokyo, JP" }
+      },
+      {
+        "ttl": 7,
+        "ip": "198.51.100.9",
+        "rttMs": 36.0,
+        "hostname": "ae-2.r02.tokyo.demo-transit.example",
+        "asn": { "number": 64501, "name": "DEMO-TRANSIT", "country": "JP" },
+        "geo": { "lat": 35.68, "lon": 139.69, "accuracyKm": 50, "place": "Tokyo, JP" }
+      },
+      {
+        "ttl": 8,
+        "ip": "198.51.100.45",
+        "rttMs": 132.4,
+        "hostname": "ae-5.r02.lax.demo-transit.example",
+        "asn": { "number": 64501, "name": "DEMO-TRANSIT", "country": "US" },
+        "geo": { "lat": 34.05, "lon": -118.24, "accuracyKm": 50, "place": "Los Angeles, US" }
+      },
+      {
+        "ttl": 9,
+        "ip": "192.0.2.1",
+        "rttMs": 138.9,
+        "hostname": null,
+        "asn": { "number": 64502, "name": "DEMO-HOSTING", "country": "US" },
+        "geo": { "lat": 37.34, "lon": -121.89, "accuracyKm": 20, "place": "San Jose, US" }
+      },
+      {
+        "ttl": 10,
+        "ip": "192.0.2.10",
+        "rttMs": 139.5,
+        "hostname": null,
+        "asn": { "number": 64502, "name": "DEMO-HOSTING", "country": "US" },
+        "geo": { "lat": 37.34, "lon": -121.89, "accuracyKm": 20, "place": "San Jose, US" }
+      }
+    ]
+  },
+  "origin": { "lat": 37.57, "lon": 126.98, "accuracyKm": 20, "place": "Seoul, KR" },
+  "geoSource": "데모 데이터 (문서용 IP와 ASN)"
+}

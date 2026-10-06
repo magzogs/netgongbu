@@ -11,11 +11,15 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:example": "tsx scripts/build-example.ts"
   },
   "dependencies": {
     "@magvirtualedu/schema": "workspace:*",
     "devtools-protocol": "0.0.1710668",
     "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "tsx": "4.23.15"
   }
 }

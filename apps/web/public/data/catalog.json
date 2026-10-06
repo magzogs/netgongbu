@@ -4,6 +4,11 @@
       "id": "visit-example-com",
       "topologyId": "home-to-web",
       "title": "브라우저에서 https://example.com 열기"
+    },
+    {
+      "id": "trace-demo",
+      "topologyId": "trace-demo",
+      "title": "실측 예시: 서울에서 미국 서버까지 (데모 데이터)"
     }
   ]
 }
