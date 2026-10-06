@@ -8,6 +8,7 @@ import {
 } from '@magvirtualedu/schema';
 import { mainRequest, type CapturedRequest, type TraceReport } from '../report';
 import { bytes, derived, layer, ms, observed, observedOr, typical } from './packets';
+import { FIBER_KM_PER_MS } from './geocheck';
 import { detectCdn, type BuiltTopology } from './topology';
 
 /** Headers worth showing a learner (in this order); the rest are counted. */
@@ -38,7 +39,6 @@ const RESPONSE_HEADERS = [
   'set-cookie',
 ];
 const INITIAL_TTL = 64;
-const FIBER_KM_PER_MS = 200;
 
 function pick(headers: Record<string, string>, names: readonly string[]): Record<string, string> {
   const lower = new Map(Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v]));
@@ -428,12 +428,19 @@ export function buildScenario(report: TraceReport, built: BuiltTopology, id: str
         lastHop?.rttMs !== null && lastHop?.rttMs !== undefined
           ? ` 여기까지 왕복 ${ms(lastHop.rttMs)}(traceroute 실측).`
           : '';
-      const prevGeo = i > 0 ? built.roles.hops.get(segments[i - 1]?.last ?? '')?.geo : undefined;
+      // Distance of this segment: from where the previous one ended (or the learner's place).
+      const prevGeo =
+        i > 0
+          ? built.roles.hops.get(segments[i - 1]?.last ?? '')?.geo
+          : (report.origin ?? undefined);
       const km = prevGeo && lastHop?.geo ? distanceKm(prevGeo, lastHop.geo) : 0;
       const far =
         km > 1500
           ? ` 이 구간은 약 ${String(Math.round(km))} km라 빛이 광섬유로 가는 데만 편도 ${String(Math.round(km / FIBER_KM_PER_MS))} ms 이상 걸립니다.`
           : '';
+      const anycast = built.roles.geoNotes.has(seg.last)
+        ? ' 위치 데이터베이스가 말하는 곳은 측정한 왕복 시간으로 보면 불가능하게 멉니다 — 같은 주소를 여러 곳에서 쓰는 애니캐스트라 가까운 곳에서 응답했습니다.'
+        : '';
       const actions: NonNullable<Beat['nodeActions']> = [];
       if (i === 0) {
         actions.push({
@@ -445,10 +452,10 @@ export function buildScenario(report: TraceReport, built: BuiltTopology, id: str
       }
       const text =
         seg.name === '목적지'
-          ? `마지막 구간을 지나 ${host} 서버(${serverIp})${where}에 도착합니다.${rtt}${far}`
+          ? `마지막 구간을 지나 ${host} 서버(${serverIp})${where}에 도착합니다.${rtt}${far}${anycast}`
           : i === 0
-            ? `공유기가 NAT로 출발지를 공인 IP로 바꾸고, 모뎀을 거쳐 ${seg.name} 망으로 들어갑니다. 라우터 ${String(seg.path.length - 2)}개를 지납니다${where}.${rtt}`
-            : `${seg.name} 망을 지납니다(라우터 ${String(seg.path.length - 1)}개)${where}.${rtt}${far}`;
+            ? `공유기가 NAT로 출발지를 공인 IP로 바꾸고, 모뎀을 거쳐 ${seg.name} 망으로 들어갑니다. 라우터 ${String(seg.path.length - 2)}개를 지납니다${where}.${rtt}${far}${anycast}`
+            : `${seg.name} 망을 지납니다(라우터 ${String(seg.path.length - 1)}개)${where}.${rtt}${far}${anycast}`;
       beat(
         text,
         [hop(seg.path, quic ? 'QUIC' : 'TCP', summary, [wan(), ...transport(ttlLeft, publicSrc)])],

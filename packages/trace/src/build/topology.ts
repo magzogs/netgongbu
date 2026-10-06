@@ -9,6 +9,7 @@ import {
   type Zone,
 } from '@magvirtualedu/schema';
 import { isNonPublic } from '../ip';
+import { checkGeo, implausibleNote } from './geocheck';
 import { mainRequest, type Hop, type TraceReport } from '../report';
 
 /** Node ids the scenario builder needs, in travel order where it matters. */
@@ -26,8 +27,10 @@ export interface Roles {
   server: string;
   /** Node the DNS question ends at, and the path to it from the resolver. */
   dnsPath: string[];
-  /** Hops by node id (for RTT, ASN and place in narration). */
+  /** Hops by node id (for RTT, ASN and place in narration); implausible places removed. */
   hops: ReadonlyMap<string, Hop>;
+  /** Why a hop's database location was not used (node id → explanation). */
+  geoNotes: ReadonlyMap<string, string>;
 }
 
 export interface BuiltTopology {
@@ -40,8 +43,10 @@ const GLOBE_RADIUS = 40;
 // learner's place so they do not hide the hops there when seen from above.
 const DEVICE_ELEVATION = 14;
 const DEVICE_SOUTH = 22;
-/** Spacing of the parts inside the computer, so their labels do not overlap. */
+/** Spacing of the parts inside the computer, so their labels do not overlap (flat layout). */
 const DEVICE_SPREAD = 1.4;
+/** On a globe the computer is a small inset: the globe and the route are the main picture. */
+const DEVICE_SPREAD_GLOBE = 0.8;
 /** Flat layout: internet hops snake in rows of this many. */
 const ROW = 5;
 const COL_GAP = 8;
@@ -98,7 +103,8 @@ function internetPath(
       last.label = `응답 없음 #${String(Number(last.id.split('-').pop()))}–${String(hop.ttl)}`;
       continue;
     }
-    const asnName = hop.asn?.name.split(/[\s-]/)[0];
+    // "MERCURYNZ-AS-AP - Mercury NZ Limited" → "MERCURYNZ", "IP-Max - IP-Max SA" → "IP-Max".
+    const asnName = hop.asn?.name.split(/\s/)[0]?.replace(/(-(AS|AP|ASN|NET))+$/, '');
     entries.push({
       id: `n-hop-${String(hop.ttl)}`,
       hop: hop.ip === null ? null : hop,
@@ -140,7 +146,7 @@ function spread(positions: Map<string, Vec3>, order: readonly string[], globe: G
     ) {
       k += 1;
       const angle = (k * Math.PI) / 3;
-      const ring = 2 * Math.ceil(k / 6);
+      const ring = 3 * Math.ceil(k / 6);
       candidate = [p[0] + Math.cos(angle) * ring, p[1], p[2] + Math.sin(angle) * ring];
       if (globe) {
         // Back onto the globe surface.
@@ -211,10 +217,23 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
   const cdn = main ? detectCdn(main.responseHeaders) : null;
   const wifi = local.interface?.kind === 'wifi';
 
+  // Locations the measured round-trip time makes impossible (anycast, stale database) are not
+  // used for placement; the node explains why instead.
+  const geoNotes = new Map<string, string>();
+  const vetted = (id: string, hop: Hop | null): Hop | null => {
+    if (!hop?.geo) return hop;
+    const verdict = checkGeo(report.origin, hop.geo, hop.rttMs);
+    if (verdict.plausible || hop.rttMs === null) return hop;
+    geoNotes.set(id, implausibleNote(hop.geo, hop.rttMs, verdict));
+    return { ...hop, geo: null };
+  };
+  for (const e of entries) e.hop = vetted(e.id, e.hop);
+  const serverHopVetted = vetted('n-server', serverHop);
+
   // Where things are on Earth decides between a globe and a flat layout.
   const geoOf = new Map<string, Geo>();
   for (const e of entries) if (e.hop?.geo) geoOf.set(e.id, e.hop.geo);
-  if (serverHop?.geo) geoOf.set('n-server', serverHop.geo);
+  if (serverHopVetted?.geo) geoOf.set('n-server', serverHopVetted.geo);
   const focus = report.origin ?? [...geoOf.values()][0] ?? null;
   const globe: Globe | null =
     focus && geoOf.size > 0
@@ -281,12 +300,13 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
   const dx = globe ? 0 : -30;
   const dz = globe ? DEVICE_SOUTH : 0;
   const deviceY = globe ? DEVICE_ELEVATION : 0;
+  const spreadBy = globe ? DEVICE_SPREAD_GLOBE : DEVICE_SPREAD;
   for (const [nid, type, label, [x, z], description] of device) {
     nodes.push({
       id: nid,
       type,
       label,
-      pos: [x * DEVICE_SPREAD + dx, deviceY, z * DEVICE_SPREAD + dz],
+      pos: [x * spreadBy + dx, deviceY, z * spreadBy + dz],
       zone: 'z-device',
       description,
     });
@@ -355,7 +375,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       type: 'hop',
       label: e.label,
       pos: [0, 0, 0],
-      description: hopDescription(e),
+      description: [hopDescription(e), geoNotes.get(e.id)].filter(Boolean).join(' '),
       ...(e.hop?.ip && { interfaces: [{ name: 'ip', ip: e.hop.ip }] }),
       ...(e.hop?.hostname && { hostname: e.hop.hostname }),
       ...(e.hop?.asn && { asn: { number: e.hop.asn.number, name: e.hop.asn.name } }),
@@ -363,7 +383,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       ...(e.hop?.rttMs !== null && e.hop?.rttMs !== undefined && { rttMs: e.hop.rttMs }),
     });
   }
-  if (serverHop) hops.set('n-server', serverHop);
+  if (serverHopVetted) hops.set('n-server', serverHopVetted);
   nodes.push({
     id: 'n-server',
     type: cdn ? 'cdn' : 'server',
@@ -374,11 +394,12 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       main?.protocol ? `프로토콜 ${main.protocol}.` : '',
       cdn ? `응답 헤더로 보아 ${cdn} CDN의 서버입니다.` : '',
       report.path.complete ? '' : 'traceroute가 이 서버까지 닿지 못해 마지막 구간은 추정입니다.',
+      geoNotes.get('n-server') ?? '',
     ]
       .filter(Boolean)
       .join(' '),
     ...(target && { interfaces: [{ name: 'ip', ip: target }] }),
-    ...(serverHop?.geo && { geo: serverHop.geo }),
+    ...(serverHopVetted?.geo && { geo: serverHopVetted.geo }),
     ...(serverHop?.rttMs !== null && serverHop?.rttMs !== undefined && { rttMs: serverHop.rttMs }),
     ...(serverHop?.asn && { asn: { number: serverHop.asn.number, name: serverHop.asn.name } }),
     ...(serverHop?.hostname && { hostname: serverHop.hostname }),
@@ -433,7 +454,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
         id: 'z-device',
         label: '노트북 내부',
         color: '#2563eb',
-        bounds: [-12, DEVICE_SOUTH - 7, 8.5, DEVICE_SOUTH + 7],
+        bounds: [-7.5, DEVICE_SOUTH - 4.5, 5.5, DEVICE_SOUTH + 4.5],
         elevation: DEVICE_ELEVATION,
       },
       {
@@ -497,6 +518,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       server: 'n-server',
       dnsPath,
       hops,
+      geoNotes,
     },
   };
 }

@@ -55,7 +55,7 @@ describe('buildFromReport on a located trace', () => {
     expect(node('n-hop-4')?.label).toBe('응답 없음 #4');
     expect(node('n-hop-2')?.geo).toBeUndefined();
     expect(node('n-hop-6')).toMatchObject({
-      label: 'DEMO #6',
+      label: 'DEMO-TRANSIT #6',
       hostname: 'ae-1.r01.tokyo.demo-transit.example',
       asn: { number: 64501, name: 'DEMO-TRANSIT' },
       rttMs: 35.2,
@@ -158,6 +158,23 @@ describe('buildFromReport in other situations', () => {
     expect(summaries).toContain('QUIC Initial');
     expect(summaries).not.toContain('SYN');
     expect(summaries).not.toContain('ClientHello');
+  });
+
+  it('does not trust a location the round-trip time makes impossible (anycast)', () => {
+    const report = demo();
+    const last = report.path.hops.at(-1);
+    // A CDN address the database puts in New York answering within 3 ms of Seoul.
+    if (last) {
+      last.rttMs = 3;
+      last.geo = { lat: 40.7, lon: -74, place: 'New York, US' };
+    }
+    const { topology, scenario } = buildFromReport(report, 'trace-anycast');
+    expectPlayable(topology, scenario);
+    const server = topology.nodes.find((n) => n.id === 'n-server');
+    expect(server?.geo).toBeUndefined();
+    expect(server?.description).toContain('애니캐스트');
+    expect(server?.description).toContain('최대 약 300 km');
+    expect(allText(scenario)).toContain('애니캐스트');
   });
 
   it('explains a page that did not load', () => {

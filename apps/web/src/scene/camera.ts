@@ -1,8 +1,14 @@
 import { CameraControlsImpl } from '@react-three/drei';
 import { PerspectiveCamera, Vector3 } from 'three';
-import type { Topology, Vec3 } from '@magvirtualedu/schema';
+import type { Globe, Topology, Vec3 } from '@magvirtualedu/schema';
 import { anchorOf } from '../engine/curves';
-import { frame, framingPoints, type Insets } from '../engine/framing';
+import {
+  frame,
+  framingPoints,
+  globeDirection,
+  globeFollowEye,
+  type Insets,
+} from '../engine/framing';
 import { ease, pointOnRoute } from '../engine/timeline';
 import type { ViewerState } from '../store/viewer';
 
@@ -34,7 +40,7 @@ export function frameTopology(topology: Topology, insets: Insets, animate: boole
     ctl.camera.fov,
     ctl.camera.aspect,
     insets,
-    topology.globe !== undefined,
+    globeDirection(topology),
   );
   void ctl.setFocalOffset(focalOffset.x, focalOffset.y, 0, animate);
   void ctl.setLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, animate);
@@ -81,6 +87,14 @@ export function followPoint(state: ViewerState, out: Vector3): Vector3 | null {
 }
 
 /** Called every frame while following. */
-export function trackPoint(point: Vector3): void {
-  void controls?.moveTo(point.x, point.y, point.z, true);
+export function trackPoint(point: Vector3, globe?: Globe): void {
+  const ctl = controls;
+  if (!ctl) return;
+  if (!globe) {
+    void ctl.moveTo(point.x, point.y, point.z, true);
+    return;
+  }
+  // Over a globe, fly round it: keep looking down at the packet from outside the surface.
+  const eye = globeFollowEye(point, globe, Math.max(CLOSE_DISTANCE, Math.min(ctl.distance, 60)));
+  void ctl.setLookAt(eye.x, eye.y, eye.z, point.x, point.y, point.z, true);
 }

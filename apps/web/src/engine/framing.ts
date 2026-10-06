@@ -1,5 +1,5 @@
 import { Box3, PerspectiveCamera, Vector3 } from 'three';
-import type { Topology } from '@magvirtualedu/schema';
+import type { Globe, Topology } from '@magvirtualedu/schema';
 import { anchorOf } from './curves';
 
 /** Fractions of the screen covered by overlays: top/bottom of the height, left/right of the width. */
@@ -49,14 +49,7 @@ export function framingPoints(topology: Topology): Vector3[] {
  * Where to look from. Landscape screens see the topology from the front; on portrait screens the
  * camera looks along the topology's longer horizontal axis so it runs up the screen.
  */
-export function viewDirection(
-  points: readonly Vector3[],
-  aspect: number,
-  northUp = false,
-): Vector3 {
-  // A globe keeps north up (geography reads wrong when turned) and is seen from high above, so
-  // the learner's place on top of it is in the middle rather than on the horizon.
-  if (northUp) return new Vector3(0, 1, 0.45).normalize();
+export function viewDirection(points: readonly Vector3[], aspect: number): Vector3 {
   if (aspect >= PORTRAIT_ASPECT) return new Vector3(0, 0.8, 1).normalize();
   const size = new Box3().setFromPoints([...points]).getSize(new Vector3());
   return size.x >= size.z
@@ -93,11 +86,12 @@ export function frame(
   fov: number,
   aspect: number,
   insets: Insets,
-  northUp = false,
+  /** Look from this direction instead of the default for the screen shape. */
+  preferred?: Vector3,
 ): Framing {
   const target = new Box3().setFromPoints([...points]).getCenter(new Vector3());
 
-  const direction = viewDirection(points, aspect, northUp);
+  const direction = preferred ?? viewDirection(points, aspect);
   const x = band(insets.left, insets.right);
   const y = band(insets.bottom, insets.top);
 
@@ -125,4 +119,31 @@ export function frame(
       y: y.centre * halfHeightAtTarget,
     },
   };
+}
+
+/**
+ * Where to look at a globe from at first: high above the learner's place (on top), north up, so
+ * the story starts with the computer, the home and the first routers in view. A route to the far
+ * side of the world cannot be seen whole from any one side; following the packet carries the
+ * camera round the globe (see globeFollowEye).
+ */
+export function globeDirection(topology: Topology): Vector3 | undefined {
+  return topology.globe ? new Vector3(0, 1, 0.45).normalize() : undefined;
+}
+
+/**
+ * Camera position for following a packet over a globe: above the point, out along the surface
+ * normal with a little extra height, at `distance`. Points well above the surface (the computer
+ * and home floating over the learner's place) are looked at from above the learner's place.
+ */
+export function globeFollowEye(point: Vector3, globe: Globe, distance: number): Vector3 {
+  const center = new Vector3(...globe.center);
+  const out = point.clone().sub(center);
+  const aboveSurface = out.length() > globe.radius + 2;
+  const normal = aboveSurface ? new Vector3(0, 1, 0.45) : out.normalize();
+  const direction = normal
+    .normalize()
+    .add(new Vector3(0, 0.25, 0))
+    .normalize();
+  return point.clone().addScaledVector(direction, distance);
 }

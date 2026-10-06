@@ -4,6 +4,7 @@ import { buildScenario } from './scenario';
 import { buildTopology } from './topology';
 
 export { detectCdn } from './topology';
+export { checkGeo, FIBER_KM_PER_MS } from './geocheck';
 
 export interface BuiltTrace {
   topology: Topology;

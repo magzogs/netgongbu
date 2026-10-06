@@ -33,16 +33,45 @@ export function useLabelAnchor(id: string, source: AnchorSource): RefCallback<HT
   );
 }
 
-/** Places every label at its projected screen position; hides labels behind the camera. */
+/** A sphere that hides what is behind it (the globe). */
+export interface Occluder {
+  center: Vector3;
+  radius: number;
+}
+
+/** Whether the line of sight from `eye` to `point` passes through the sphere first. */
+export function hiddenBehind(eye: Vector3, point: Vector3, sphere: Occluder): boolean {
+  const dx = point.x - eye.x;
+  const dy = point.y - eye.y;
+  const dz = point.z - eye.z;
+  const length = Math.hypot(dx, dy, dz);
+  if (length === 0) return false;
+  const [ux, uy, uz] = [dx / length, dy / length, dz / length];
+  const ox = eye.x - sphere.center.x;
+  const oy = eye.y - sphere.center.y;
+  const oz = eye.z - sphere.center.z;
+  const b = ox * ux + oy * uy + oz * uz;
+  const c = ox * ox + oy * oy + oz * oz - sphere.radius * sphere.radius;
+  const disc = b * b - c;
+  if (disc <= 0) return false;
+  const t = -b - Math.sqrt(disc);
+  return t > 0 && t < length - 0.01;
+}
+
+/**
+ * Places every label at its projected screen position; hides labels behind the camera and,
+ * with an occluder, those on the far side of the globe.
+ */
 export function projectLabels(
   camera: Camera,
   width: number,
   height: number,
   scratch: Vector3,
+  occluder?: Occluder,
 ): void {
   for (const { el, source } of anchors.values()) {
     const point = typeof source === 'function' ? source() : source;
-    if (!point) {
+    if (!point || (occluder && hiddenBehind(camera.position, point, occluder))) {
       el.style.visibility = 'hidden';
       continue;
     }

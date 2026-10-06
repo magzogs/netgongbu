@@ -15,7 +15,7 @@
       "id": "z-device",
       "label": "노트북 내부",
       "color": "#2563eb",
-      "bounds": [-12, 15, 8.5, 29],
+      "bounds": [-7.5, 17.5, 5.5, 26.5],
       "elevation": 14
     },
     {
@@ -31,7 +31,7 @@
       "id": "d-browser",
       "type": "browser",
       "label": "브라우저",
-      "pos": [-9.799999999999999, 14, 22],
+      "pos": [-5.6000000000000005, 14, 22],
       "zone": "z-device",
       "description": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
     },
@@ -39,7 +39,7 @@
       "id": "d-resolver",
       "type": "os",
       "label": "OS DNS 리졸버",
-      "pos": [-5.6, 14, 17.1],
+      "pos": [-3.2, 14, 19.2],
       "zone": "z-device",
       "description": "운영체제가 이름을 주소로 바꾸는 부분. 설정된 DNS 서버: 192.168.4.1"
     },
@@ -47,7 +47,7 @@
       "id": "d-stack",
       "type": "os",
       "label": "TCP/IP 스택",
-      "pos": [-2.0999999999999996, 14, 22],
+      "pos": [-1.2000000000000002, 14, 22],
       "zone": "z-device",
       "description": "커널 안의 네트워크 구현: 소켓, 포트 할당, TCP 세그먼트와 IP 패킷 조립"
     },
@@ -55,7 +55,7 @@
       "id": "d-route",
       "type": "os",
       "label": "라우팅 테이블",
-      "pos": [2.0999999999999996, 14, 17.1],
+      "pos": [1.2000000000000002, 14, 19.2],
       "zone": "z-device",
       "description": "default → 192.168.4.1 (en1)"
     },
@@ -63,7 +63,7 @@
       "id": "d-arp",
       "type": "os",
       "label": "ARP 캐시",
-      "pos": [2.0999999999999996, 14, 26.9],
+      "pos": [1.2000000000000002, 14, 24.8],
       "zone": "z-device",
       "description": "192.168.4.1 → 02:4c:a0:3d:05:0e"
     },
@@ -71,7 +71,7 @@
       "id": "d-nic",
       "type": "nic",
       "label": "Wi-Fi (en1)",
-      "pos": [6.3, 14, 22],
+      "pos": [3.6, 14, 22],
       "zone": "z-device",
       "description": "무선 랜카드: 프레임을 802.11 형식으로 전파에 실어 보냅니다",
       "interfaces": [
@@ -123,8 +123,8 @@
     {
       "id": "n-hop-3",
       "type": "hop",
-      "label": "DEMO #3",
-      "pos": [0.998770811229915, 0.25046369256558165, 1.729921790166994],
+      "label": "DEMO-ISP-KR #3",
+      "pos": [1.4958610207830858, 0.18879942503890845, 2.5909072890581464],
       "description": "traceroute 3번째 홉.",
       "interfaces": [
         {
@@ -148,14 +148,14 @@
       "id": "n-hop-4",
       "type": "hop",
       "label": "응답 없음 #4",
-      "pos": [-0.9987708112299153, 0.25046369256558165, 1.7299217901669945],
+      "pos": [-1.4958610207830858, 0.18879942503890845, 2.5909072890581464],
       "description": "이 라우터는 traceroute에 응답하지 않았습니다(ICMP 응답을 막거나 줄이는 설정). 패킷 자체는 정상적으로 지나갑니다."
     },
     {
       "id": "n-hop-5",
       "type": "hop",
-      "label": "DEMO #5",
-      "pos": [-1.9975416224598308, 0.25046369256558165, -2.8843140634399295e-15],
+      "label": "DEMO-ISP-KR #5",
+      "pos": [-2.991722041566171, 0.18879942503889424, -2.7577684936317796e-15],
       "description": "traceroute 5번째 홉.",
       "interfaces": [
         {
@@ -178,7 +178,7 @@
     {
       "id": "n-hop-6",
       "type": "hop",
-      "label": "DEMO #6",
+      "label": "DEMO-TRANSIT #6",
       "pos": [7.202277013137814, -0.35770510290555535, 0.840036378871078],
       "description": "traceroute 6번째 홉.",
       "interfaces": [
@@ -203,8 +203,8 @@
     {
       "id": "n-hop-7",
       "type": "hop",
-      "label": "DEMO #7",
-      "pos": [8.148977804867458, -0.6153046607662347, 2.5553735091988674],
+      "label": "DEMO-TRANSIT #7",
+      "pos": [8.610069747618667, -0.7777454677257438, 3.401683163763602],
       "description": "traceroute 7번째 홉.",
       "interfaces": [
         {
@@ -228,7 +228,7 @@
     {
       "id": "n-hop-8",
       "type": "hop",
-      "label": "DEMO #8",
+      "label": "DEMO-TRANSIT #8",
       "pos": [30.316063237989535, -37.33434857073454, -26.41818714839977],
       "description": "traceroute 8번째 홉.",
       "interfaces": [
@@ -253,7 +253,7 @@
     {
       "id": "n-hop-9",
       "type": "hop",
-      "label": "DEMO #9",
+      "label": "DEMO-HOSTING #9",
       "pos": [29.886276733568394, -34.250674863009976, -26.416769739575333],
       "description": "traceroute 9번째 홉.",
       "interfaces": [
@@ -278,7 +278,7 @@
       "id": "n-server",
       "type": "server",
       "label": "example.org",
-      "pos": [31.15345727483406, -34.20094054847073, -24.89825313757408],
+      "pos": [31.76610844262946, -34.18109744829245, -24.1069435537738],
       "description": "페이지를 보낸 서버 192.0.2.10. 프로토콜 h2.",
       "interfaces": [
         {

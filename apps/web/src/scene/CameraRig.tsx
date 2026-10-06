@@ -38,7 +38,7 @@ export function CameraRig(): ReactElement {
     const state = useViewer.getState();
     if (state.cameraMode !== 'follow') return;
     const point = followPoint(state, scratch);
-    if (point) trackPoint(point);
+    if (point) trackPoint(point, state.world?.topology.globe);
   });
 
   return (

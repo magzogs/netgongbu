@@ -1,7 +1,7 @@
 import { createWriteStream } from 'node:fs';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { Readable } from 'node:stream';
+import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { createGunzip } from 'node:zlib';
 import maxmind, { type CityResponse, type Reader } from 'maxmind';
@@ -84,15 +84,20 @@ export class GeoIpDb {
       }
       const total = Number(res.headers.get('content-length')) || null;
       let received = 0;
-      const body = Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]);
-      body.on('data', (chunk: Buffer) => {
-        received += chunk.length;
-        onProgress(received, total);
+      // Count bytes inside the pipeline: a 'data' listener on the body would start it flowing
+      // before gunzip is attached, and the gzip header would be lost.
+      const counter = new Transform({
+        transform(chunk: Buffer, _encoding, done) {
+          received += chunk.length;
+          onProgress(received, total);
+          done(null, chunk);
+        },
       });
+      const body = Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]);
       await mkdir(this.dir, { recursive: true });
       const partial = `${this.file}.partial`;
       try {
-        await pipeline(body, createGunzip(), createWriteStream(partial));
+        await pipeline(body, counter, createGunzip(), createWriteStream(partial));
         await rename(partial, this.file);
       } catch (err) {
         await rm(partial, { force: true });

@@ -1,6 +1,7 @@
 {
   "name": "@magvirtualedu/desktop",
   "version": "0.1.0",
+  "productName": "Network in 3D",
   "private": true,
   "description": "Network in 3D desktop app: the viewer plus a real browser and the OS tools to measure where a page load goes",
   "author": "magzog",
@@ -11,7 +12,8 @@
     "start": "electron-vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:e2e": "electron-vite build && tsx e2e/smoke.mts"
+    "test:e2e": "electron-vite build && tsx e2e/smoke.mts",
+    "measure": "tsx e2e/measure.mts"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "0.131.0",
