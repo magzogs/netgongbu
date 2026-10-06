@@ -1,0 +1,111 @@
+{
+  "id": "home-to-web",
+  "title": "집에서 웹사이트까지",
+  "description": "집 공유기, 통신사(ISP), 인터넷, 공용 DNS, 로드밸런서 뒤의 웹 서버 두 대로 이루어진 기본 경로",
+  "zones": [
+    {
+      "id": "home",
+      "label": "집 (사설망 192.168.0.0/24)",
+      "color": "#2f6f4f",
+      "bounds": [-4, -5, 11, 5]
+    },
+    { "id": "isp", "label": "통신사 (ISP)", "color": "#3d5a80", "bounds": [13, -5, 21, 5] },
+    { "id": "internet", "label": "인터넷", "color": "#5c5470", "bounds": [23, -5, 35, 5] },
+    { "id": "public-dns", "label": "공용 DNS", "color": "#7a5c2e", "bounds": [37, -16, 47, -8] },
+    {
+      "id": "datacenter",
+      "label": "데이터센터 (사설망 10.0.1.0/24)",
+      "color": "#7a3e48",
+      "bounds": [37, -5, 57, 13]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "laptop",
+      "type": "client",
+      "label": "노트북",
+      "pos": [0, 0, 0],
+      "zone": "home",
+      "interfaces": [{ "name": "wlan0", "ip": "192.168.0.10", "mac": "3c:22:fb:10:00:10" }],
+      "description": "브라우저를 실행하는 사용자 기기. 기본 게이트웨이는 192.168.0.1, DNS 서버는 8.8.8.8"
+    },
+    {
+      "id": "r-home",
+      "type": "router",
+      "label": "집 공유기",
+      "pos": [7, 0, 0],
+      "zone": "home",
+      "interfaces": [
+        { "name": "lan", "ip": "192.168.0.1", "mac": "58:86:94:00:00:01" },
+        { "name": "wan", "ip": "211.234.10.5", "mac": "58:86:94:00:00:02" }
+      ],
+      "description": "사설 IP를 공인 IP 하나로 바꿔 주는 NAT 라우터이자 Wi-Fi 액세스 포인트"
+    },
+    {
+      "id": "r-isp",
+      "type": "router",
+      "label": "ISP 라우터",
+      "pos": [17, 0, 0],
+      "zone": "isp",
+      "interfaces": [
+        { "name": "customer", "ip": "211.234.10.1", "mac": "00:1b:54:aa:00:01" },
+        { "name": "core", "ip": "211.234.0.1", "mac": "00:1b:54:aa:00:02" }
+      ],
+      "description": "가입자 회선을 통신사 코어망과 인터넷으로 연결하는 라우터"
+    },
+    {
+      "id": "internet",
+      "type": "cloud",
+      "label": "인터넷",
+      "pos": [29, 0, 0],
+      "zone": "internet",
+      "description": "여러 통신사 라우터가 BGP로 경로를 주고받는 구간을 하나로 묶어 표현"
+    },
+    {
+      "id": "dns",
+      "type": "dns",
+      "label": "DNS 리졸버",
+      "pos": [42, 0, -12],
+      "zone": "public-dns",
+      "interfaces": [{ "name": "eth0", "ip": "8.8.8.8" }],
+      "description": "도메인 이름을 IP 주소로 바꿔 주는 공용 재귀 DNS 서버"
+    },
+    {
+      "id": "lb",
+      "type": "loadbalancer",
+      "label": "로드밸런서",
+      "pos": [42, 0, 4],
+      "zone": "datacenter",
+      "interfaces": [
+        { "name": "public", "ip": "93.184.216.34" },
+        { "name": "private", "ip": "10.0.1.1" }
+      ],
+      "description": "example.com의 공인 IP를 가진 L7 로드밸런서. TLS를 종료하고 웹 서버로 요청을 나눔"
+    },
+    {
+      "id": "web-1",
+      "type": "server",
+      "label": "웹 서버 1",
+      "pos": [52, 0, 0],
+      "zone": "datacenter",
+      "interfaces": [{ "name": "eth0", "ip": "10.0.1.11" }]
+    },
+    {
+      "id": "web-2",
+      "type": "server",
+      "label": "웹 서버 2",
+      "pos": [52, 0, 9],
+      "zone": "datacenter",
+      "interfaces": [{ "name": "eth0", "ip": "10.0.1.12" }]
+    }
+  ],
+  "links": [
+    { "id": "l-wifi", "a": "laptop", "b": "r-home", "medium": "wifi", "latencyMs": 3 },
+    { "id": "l-access", "a": "r-home", "b": "r-isp", "medium": "fiber", "latencyMs": 2 },
+    { "id": "l-isp-core", "a": "r-isp", "b": "internet", "medium": "internet", "latencyMs": 10 },
+    { "id": "l-dns", "a": "internet", "b": "dns", "medium": "internet", "latencyMs": 8 },
+    { "id": "l-dc", "a": "internet", "b": "lb", "medium": "internet", "latencyMs": 12 },
+    { "id": "l-web-1", "a": "lb", "b": "web-1", "medium": "ethernet", "latencyMs": 1 },
+    { "id": "l-web-2", "a": "lb", "b": "web-2", "medium": "ethernet", "latencyMs": 1 }
+  ]
+}

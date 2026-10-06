@@ -1,0 +1,9 @@
+{
+  "scenarios": [
+    {
+      "id": "visit-example-com",
+      "topologyId": "home-to-web",
+      "title": "브라우저에서 https://example.com 열기"
+    }
+  ]
+}
