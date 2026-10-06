@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../src/app';
-import type { ScenarioModel } from '../src/generate';
+import type { ScenarioModel } from '@magvirtualedu/ai';
 import { ScenarioStore } from '../src/store';
 import { TopologyLibrary } from '../src/topologies';
 import { dataDir, fakeModel, goodDraft, textReply } from './fakes';

@@ -1,10 +1,8 @@
+import { DEFAULT_CLAUDE_SETTINGS, EFFORTS, type Effort } from '@magvirtualedu/ai';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const appDir = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
-
-type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
-const EFFORTS: readonly Effort[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 
 export interface ServerConfig {
   port: number;
@@ -21,7 +19,7 @@ export interface ServerConfig {
 }
 
 function effortFrom(value: string | undefined): Effort {
-  return EFFORTS.find((e) => e === value) ?? 'high';
+  return EFFORTS.find((e) => e === value) ?? DEFAULT_CLAUDE_SETTINGS.effort;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
@@ -30,7 +28,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     port: Number(env.SCENARIO_PORT ?? 8787),
     dataDir: resolve(env.DATA_DIR ?? resolve(appDir, '../web/public/data')),
     storeDir: resolve(env.STORE_DIR ?? resolve(appDir, '.data/scenarios')),
-    model: env.SCENARIO_MODEL ?? 'claude-opus-5-5',
+    model: env.SCENARIO_MODEL ?? DEFAULT_CLAUDE_SETTINGS.model,
     effort: effortFrom(env.SCENARIO_EFFORT),
     maxAttempts: Number(env.SCENARIO_MAX_ATTEMPTS ?? 3),
     maxQuestionLength: 500,

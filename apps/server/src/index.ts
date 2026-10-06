@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { serve } from '@hono/node-server';
 import { createApp } from './app';
-import { claudeModel } from './claude';
+import { claudeModel } from '@magvirtualedu/ai';
 import { hasCredentials, loadConfig } from './config';
 import { ScenarioStore } from './store';
 import { TopologyLibrary } from './topologies';

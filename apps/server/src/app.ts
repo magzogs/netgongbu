@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import type { ServerConfig } from './config';
-import { generateScenario, GenerationError, type ScenarioModel } from './generate';
+import { generateScenario, GenerationError, type ScenarioModel } from '@magvirtualedu/ai';
 import { newScenarioId, type ScenarioStore } from './store';
 import type { TopologyLibrary } from './topologies';
 

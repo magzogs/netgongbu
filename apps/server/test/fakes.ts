@@ -7,7 +7,7 @@ import {
   TopologySchema,
   type ScenarioDraft,
 } from '@magvirtualedu/schema';
-import type { ModelReply, ScenarioModel } from '../src/generate';
+import type { ModelReply, ScenarioModel } from '@magvirtualedu/ai';
 
 export const dataDir = join(import.meta.dirname, '..', '..', 'web', 'public', 'data');
 

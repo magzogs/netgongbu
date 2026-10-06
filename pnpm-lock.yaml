@@ -50,6 +50,9 @@ importers:
       '@hono/node-server':
         specifier: 2.1.3
         version: 2.1.3(hono@4.13.13)
+      '@magvirtualedu/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@magvirtualedu/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -106,6 +109,18 @@ importers:
       vite:
         specifier: 7.3.6
         version: 7.3.6(@types/node@24.13.6)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.15)
+
+  packages/ai:
+    dependencies:
+      '@anthropic-ai/sdk':
+        specifier: 0.131.0
+        version: 0.131.0(zod@4.6.5)
+      '@magvirtualedu/schema':
+        specifier: workspace:*
+        version: link:../schema
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
 
   packages/schema:
     dependencies:
