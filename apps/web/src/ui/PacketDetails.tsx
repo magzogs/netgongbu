@@ -3,6 +3,7 @@ import type { Layer } from '@magvirtualedu/schema';
 import { changedFields, fieldKey, previousLeg, type FieldChanges } from '../engine/packetDiff';
 import { PROTOCOL_COLORS } from '../scene/theme';
 import { useViewer } from '../store/viewer';
+import { SOURCE_HINTS, SOURCE_NAMES } from './names';
 
 interface LayersProps {
   layers: readonly Layer[];
@@ -22,11 +23,17 @@ function Layers({ layers, depth, changes }: LayersProps): ReactElement | null {
         <dl className="layer__fields">
           {fields.map(([field, value]) => {
             const was = changes.get(fieldKey(layer.name, field));
+            const source = layer.sources?.[field];
             return (
               <div key={field} className={`field${was === undefined ? '' : ' is-changed'}`}>
                 <dt>{field}</dt>
                 <dd>
                   {value}
+                  {source && (
+                    <span className={`source source--${source}`} title={SOURCE_HINTS[source]}>
+                      {SOURCE_NAMES[source]}
+                    </span>
+                  )}
                   {was !== undefined && <span className="field__was">이전 {was}</span>}
                 </dd>
               </div>

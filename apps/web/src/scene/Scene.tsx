@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { useViewer, type World } from '../store/viewer';
 import { focusNode } from '../commands';
 import { CameraRig } from './CameraRig';
+import { GlobeView } from './GlobeView';
 import { Ground } from './Ground';
 import { LabelProjector } from './LabelProjector';
 import { LinkMesh, type LinkEmphasis } from './LinkMesh';
@@ -48,6 +49,8 @@ function TopologyView({ world }: { world: World }): ReactElement {
 
 export function Scene(): ReactElement {
   const world = useViewer((s) => s.world);
+  // Fog starts well beyond the topology so large (globe) scenes are not washed out.
+  const fogNear = world?.topology.globe ? world.topology.globe.radius * 6 : 120;
   const select = useViewer((s) => s.select);
   return (
     <Canvas
@@ -59,10 +62,11 @@ export function Scene(): ReactElement {
       }}
     >
       <color attach="background" args={[SCENE_BACKGROUND]} />
-      <fog attach="fog" args={[SCENE_BACKGROUND, 120, 260]} />
+      <fog attach="fog" args={[SCENE_BACKGROUND, fogNear, fogNear * 2.2]} />
       <hemisphereLight args={['#dbeafe', '#0f172a', 0.9]} />
       <directionalLight position={[30, 50, 25]} intensity={1.4} />
-      <Ground zones={world?.topology.zones ?? []} />
+      <Ground zones={world?.topology.zones ?? []} grid={!world?.topology.globe} />
+      {world?.topology.globe && <GlobeView globe={world.topology.globe} />}
       {world && <TopologyView world={world} />}
       <CameraRig />
       <PlaybackTicker />

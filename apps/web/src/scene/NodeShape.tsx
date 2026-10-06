@@ -16,6 +16,11 @@ export const NODE_HEIGHT: Record<NodeType, number> = {
   service: 0.9,
   queue: 0.7,
   database: 1.2,
+  browser: 1.1,
+  os: 0.5,
+  nic: 0.5,
+  modem: 0.7,
+  hop: 0.7,
 };
 
 interface Props {
@@ -132,6 +137,71 @@ export function NodeShape({ type, color }: Props): ReactElement {
       return (
         <mesh position={[0, 0.35, 0]} rotation={[0, 0, Math.PI / 2]}>
           <cylinderGeometry args={[0.35, 0.35, 1.8, 24]} />
+          {material}
+        </mesh>
+      );
+    case 'browser':
+      // A browser window: frame with a title bar.
+      return (
+        <group>
+          <mesh position={[0, 0.55, 0]}>
+            <boxGeometry args={[1.5, 1.1, 0.12]} />
+            {material}
+          </mesh>
+          <mesh position={[0, 0.98, 0.065]}>
+            <planeGeometry args={[1.5, 0.22]} />
+            <meshBasicMaterial color="#1e293b" />
+          </mesh>
+        </group>
+      );
+    case 'os':
+      // A chip: a flat square with pins.
+      return (
+        <group>
+          <mesh position={[0, 0.2, 0]}>
+            <boxGeometry args={[1, 0.25, 1]} />
+            {material}
+          </mesh>
+          {[-0.3, 0, 0.3].map((x) => (
+            <mesh key={x} position={[x, 0.06, 0.58]}>
+              <boxGeometry args={[0.08, 0.06, 0.18]} />
+              {material}
+            </mesh>
+          ))}
+        </group>
+      );
+    case 'nic':
+      return (
+        <group>
+          <mesh position={[0, 0.15, 0]}>
+            <boxGeometry args={[1.1, 0.12, 0.7]} />
+            {material}
+          </mesh>
+          <mesh position={[0.4, 0.45, -0.2]}>
+            <cylinderGeometry args={[0.04, 0.04, 0.6, 8]} />
+            {material}
+          </mesh>
+        </group>
+      );
+    case 'modem':
+      return (
+        <group>
+          <mesh position={[0, 0.35, 0]}>
+            <boxGeometry args={[0.5, 0.7, 1]} />
+            {material}
+          </mesh>
+          {[0.15, 0.35, 0.55].map((y) => (
+            <mesh key={y} position={[0.255, y, 0.3]} rotation={[0, Math.PI / 2, 0]}>
+              <circleGeometry args={[0.05, 12]} />
+              <meshBasicMaterial color="#4ade80" />
+            </mesh>
+          ))}
+        </group>
+      );
+    case 'hop':
+      return (
+        <mesh position={[0, 0.35, 0]}>
+          <cylinderGeometry args={[0.45, 0.45, 0.35, 20]} />
           {material}
         </mesh>
       );

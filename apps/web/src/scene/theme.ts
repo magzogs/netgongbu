@@ -20,6 +20,11 @@ export const NODE_COLORS: Record<NodeType, string> = {
   service: '#a7f3d0',
   queue: '#fde68a',
   database: '#a5b4fc',
+  browser: '#93c5fd',
+  os: '#94a3b8',
+  nic: '#67e8f9',
+  modem: '#fcd34d',
+  hop: '#a78bfa',
 };
 
 export const MEDIUM_COLORS: Record<LinkMedium, string> = {
@@ -38,5 +43,7 @@ export const PROTOCOL_COLORS: Record<Protocol, string> = {
   TLS: '#c084fc',
   HTTP: '#4ade80',
   ICMP: '#fb923c',
+  QUIC: '#a3e635',
+  LOCAL: '#fda4af',
   OTHER: '#f472b6',
 };

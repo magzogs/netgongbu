@@ -30,7 +30,8 @@ function NodeLabel({ node, selected }: { node: NetNode; selected: boolean }): Re
 
 function ZoneLabel({ zone }: { zone: Zone }): ReactElement {
   const [minX, , , maxZ] = zone.bounds;
-  const point = useMemo(() => new Vector3(minX + 0.3, 0, maxZ - 0.3), [minX, maxZ]);
+  const y = zone.elevation ?? 0;
+  const point = useMemo(() => new Vector3(minX + 0.3, y, maxZ - 0.3), [minX, y, maxZ]);
   const ref = useLabelAnchor(`zone:${zone.id}`, point);
   return (
     <div ref={ref} className="anchor anchor--corner">

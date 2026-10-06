@@ -34,11 +34,12 @@ export function framingPoints(topology: Topology): Vector3[] {
   }
   for (const zone of topology.zones ?? []) {
     const [minX, minZ, maxX, maxZ] = zone.bounds;
+    const y = zone.elevation ?? 0;
     points.push(
-      new Vector3(minX, 0, minZ),
-      new Vector3(maxX, 0, minZ),
-      new Vector3(minX, 0, maxZ),
-      new Vector3(maxX, 0, maxZ),
+      new Vector3(minX, y, minZ),
+      new Vector3(maxX, y, minZ),
+      new Vector3(minX, y, maxZ),
+      new Vector3(maxX, y, maxZ),
     );
   }
   return points;

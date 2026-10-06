@@ -13,6 +13,8 @@ import { approach, followPoint, registerControls, setPanEnabled, trackPoint } fr
 export function CameraRig(): ReactElement {
   const timeline = useViewer((s) => s.timeline);
   const cameraMode = useViewer((s) => s.cameraMode);
+  // A globe can be looked at from any side; a floor plan only from above.
+  const onGlobe = useViewer((s) => s.world?.topology.globe !== undefined);
   const scratch = useMemo(() => new Vector3(), []);
 
   // Frame a newly opened scenario once the player card is on screen, so its height is known.
@@ -46,8 +48,8 @@ export function CameraRig(): ReactElement {
       }}
       makeDefault
       minDistance={3}
-      maxDistance={220}
-      maxPolarAngle={Math.PI * 0.48}
+      maxDistance={onGlobe ? 600 : 220}
+      maxPolarAngle={onGlobe ? Math.PI : Math.PI * 0.48}
       dollyToCursor
     />
   );

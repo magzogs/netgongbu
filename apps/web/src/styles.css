@@ -1052,3 +1052,61 @@ body,
     font-size: 13px;
   }
 }
+
+/* ---- value sources and node facts (trace scenarios) ---- */
+
+.source {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  font-family: var(--font);
+  font-size: 10px;
+  line-height: 16px;
+  vertical-align: 1px;
+  border-radius: 4px;
+}
+
+.source--observed {
+  color: #052e16;
+  background: #4ade80;
+}
+
+.source--derived {
+  color: #082f49;
+  background: #7dd3fc;
+}
+
+.source--typical {
+  color: var(--text-muted);
+  border: 1px dashed var(--text-muted);
+}
+
+.node-details__typical {
+  margin: 6px 0 0;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  border: 1px dashed var(--panel-border);
+  border-radius: 6px;
+}
+
+.facts {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0 12px;
+}
+
+.facts > div {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 8px;
+}
+
+.facts dt {
+  color: var(--text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

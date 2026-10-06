@@ -6,7 +6,7 @@ function ZoneArea({ zone }: { zone: Zone }): ReactElement {
   const [minX, minZ, maxX, maxZ] = zone.bounds;
   const width = maxX - minX;
   const depth = maxZ - minZ;
-  const y = 0.01;
+  const y = (zone.elevation ?? 0) + 0.01;
   const outline: [number, number, number][] = [
     [minX, y, minZ],
     [maxX, y, minZ],
@@ -25,19 +25,22 @@ function ZoneArea({ zone }: { zone: Zone }): ReactElement {
   );
 }
 
-export function Ground({ zones }: { zones: readonly Zone[] }): ReactElement {
+/** Floor grid (left out when the topology sits on a globe) and zone areas. */
+export function Ground({ zones, grid }: { zones: readonly Zone[]; grid: boolean }): ReactElement {
   return (
     <group>
-      <Grid
-        infiniteGrid
-        position={[0, -0.01, 0]}
-        cellSize={1}
-        sectionSize={5}
-        cellColor="#1c2433"
-        sectionColor="#2a3550"
-        fadeDistance={160}
-        fadeStrength={1.5}
-      />
+      {grid && (
+        <Grid
+          infiniteGrid
+          position={[0, -0.01, 0]}
+          cellSize={1}
+          sectionSize={5}
+          cellColor="#1c2433"
+          sectionColor="#2a3550"
+          fadeDistance={160}
+          fadeStrength={1.5}
+        />
+      )}
       {zones.map((zone) => (
         <ZoneArea key={zone.id} zone={zone} />
       ))}

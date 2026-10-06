@@ -1,10 +1,22 @@
 import { z } from 'zod';
-import { IdSchema } from './topology';
+import { FieldSourceSchema, IdSchema } from './topology';
 
 // Field descriptions are written for the AI as well as for people: in MVP-2 this schema becomes
 // the input_schema of the `create_scenario` tool via z.toJSONSchema().
 
-export const PROTOCOLS = ['ARP', 'DNS', 'TCP', 'UDP', 'TLS', 'HTTP', 'ICMP', 'OTHER'] as const;
+/** LOCAL: a message between parts of one computer (an API or system call, not a packet). */
+export const PROTOCOLS = [
+  'ARP',
+  'DNS',
+  'TCP',
+  'UDP',
+  'QUIC',
+  'TLS',
+  'HTTP',
+  'ICMP',
+  'LOCAL',
+  'OTHER',
+] as const;
 export const ProtocolSchema = z.enum(PROTOCOLS);
 export type Protocol = z.infer<typeof ProtocolSchema>;
 
@@ -13,6 +25,8 @@ export const LayerSchema = z.object({
   fields: z
     .record(z.string(), z.string())
     .describe('Header fields shown to the learner, e.g. { "src": "192.168.0.10", "ttl": "64" }'),
+  /** Where each field's value comes from (scenarios built from a real trace). */
+  sources: z.record(z.string(), FieldSourceSchema).optional(),
 });
 export type Layer = z.infer<typeof LayerSchema>;
 

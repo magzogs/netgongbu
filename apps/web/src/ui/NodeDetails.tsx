@@ -28,7 +28,45 @@ export function NodeDetails({ id }: { id: string }): ReactElement | null {
       >
         이 장비로 이동
       </button>
+      {node.source === 'typical' && (
+        <p className="node-details__typical">
+          측정으로 보이지 않아 일반적인 구성을 가정해 그린 장비입니다.
+        </p>
+      )}
       {node.description && <p className="node-details__desc">{node.description}</p>}
+      {(node.hostname ?? node.asn ?? node.geo ?? node.rttMs) !== undefined && (
+        <dl className="facts">
+          {node.hostname && (
+            <div>
+              <dt>이름</dt>
+              <dd>{node.hostname}</dd>
+            </div>
+          )}
+          {node.asn && (
+            <div>
+              <dt>네트워크</dt>
+              <dd>
+                AS{node.asn.number} {node.asn.name}
+              </dd>
+            </div>
+          )}
+          {node.geo && (
+            <div>
+              <dt>위치(추정)</dt>
+              <dd>
+                {node.geo.place ?? `${node.geo.lat.toFixed(2)}, ${node.geo.lon.toFixed(2)}`}
+                {node.geo.accuracyKm !== undefined && ` · 반경 ${String(node.geo.accuracyKm)} km`}
+              </dd>
+            </div>
+          )}
+          {node.rttMs !== undefined && (
+            <div>
+              <dt>왕복 시간</dt>
+              <dd>{node.rttMs.toFixed(1)} ms</dd>
+            </div>
+          )}
+        </dl>
+      )}
       {node.interfaces && node.interfaces.length > 0 && (
         <table className="kv-table">
           <thead>
