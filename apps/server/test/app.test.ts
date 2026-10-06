@@ -2,23 +2,27 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+  ScenarioService,
+  ScenarioStore,
+  TopologyLibrary,
+  type ScenarioModel,
+} from '@magvirtualedu/ai';
 import { createApp } from '../src/app';
-import type { ScenarioModel } from '@magvirtualedu/ai';
-import { ScenarioStore } from '../src/store';
-import { TopologyLibrary } from '../src/topologies';
 import { dataDir, fakeModel, goodDraft, textReply } from './fakes';
-
-const config = { model: 'claude-opus-5-5', maxAttempts: 2, maxQuestionLength: 500 };
 
 function app(model: ScenarioModel | null) {
   let n = 0;
-  return createApp({
+  const scenarios = new ScenarioService({
     topologies: new TopologyLibrary(dataDir),
     store: new ScenarioStore(mkdtempSync(join(tmpdir(), 'scenarios-'))),
-    model,
-    config,
+    model: () => model,
+    maxAttempts: 2,
+    maxQuestionLength: 500,
+    noCredentialsMessage: 'no key',
     newId: () => `ask-${String(++n)}`,
   });
+  return createApp({ scenarios, model: 'claude-opus-5-5' });
 }
 
 function ask(target: ReturnType<typeof app>, body: unknown) {

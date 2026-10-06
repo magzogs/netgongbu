@@ -1,10 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { serve } from '@hono/node-server';
+import { claudeModel, ScenarioService, ScenarioStore, TopologyLibrary } from '@magvirtualedu/ai';
 import { createApp } from './app';
-import { claudeModel } from '@magvirtualedu/ai';
 import { hasCredentials, loadConfig } from './config';
-import { ScenarioStore } from './store';
-import { TopologyLibrary } from './topologies';
 
 const config = loadConfig();
 const log = (message: string): void => {
@@ -12,13 +10,16 @@ const log = (message: string): void => {
 };
 
 const model = hasCredentials() ? claudeModel(new Anthropic(), config) : null;
-const app = createApp({
+const scenarios = new ScenarioService({
   topologies: new TopologyLibrary(config.dataDir),
   store: new ScenarioStore(config.storeDir),
-  model,
-  config,
+  model: () => model,
+  maxAttempts: config.maxAttempts,
+  maxQuestionLength: config.maxQuestionLength,
+  noCredentialsMessage: 'AI 서버에 ANTHROPIC_API_KEY가 설정되어 있지 않습니다.',
   log,
 });
+const app = createApp({ scenarios, model: config.model });
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
   log(
