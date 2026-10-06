@@ -96,25 +96,17 @@ try {
   if (pagePng) writeFileSync(join(out, '4b-browser-page.png'), Buffer.from(pagePng, 'base64'));
 
   await win.waitForFunction(
-    () =>
-      (document.querySelector('.picker select') as HTMLSelectElement | null)?.value.startsWith(
-        'trace-',
-      ),
+    () => document.querySelector<HTMLSelectElement>('.picker select')?.value.startsWith('trace-'),
     undefined,
     { timeout: 120_000 },
   );
   await win.waitForTimeout(1500);
   const title = await win.locator('.picker select option:checked').textContent();
   check(title?.includes('실측') ?? false, `measured scenario opened: ${title ?? ''}`);
-  const beats = await win.evaluate(
-    () =>
-      (
-        window as unknown as {
-          viewer?: { getState: () => { timeline: { beats: unknown[] } | null } };
-        }
-      ).viewer?.getState().timeline?.beats.length ?? -1,
-  );
-  check(beats === -1 || beats > 8, `scenario has steps (${String(beats)})`);
+  // "1 / 20": the step counter shows how many steps the measured scenario has.
+  const counter = (await win.locator('.narration__step').textContent()) ?? '';
+  const beats = Number(counter.split('/')[1]?.trim() ?? 0);
+  check(beats > 8, `scenario has ${String(beats)} steps`);
   await win.screenshot({ path: join(out, '5-measured-map.png') });
 
   check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(' | ')}` : ''}`);
