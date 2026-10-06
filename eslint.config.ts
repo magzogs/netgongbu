@@ -54,7 +54,7 @@ export default defineConfig(
       'apps/server/src/index.ts',
       'apps/desktop/src/main/**/*.ts',
       '**/scripts/**/*.ts',
-      '**/e2e/**/*.ts',
+      '**/e2e/**/*.{ts,mts}',
     ],
     rules: { 'no-console': 'off' },
   },
