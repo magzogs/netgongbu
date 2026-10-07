@@ -1,20 +1,27 @@
 import { safeStorage } from 'electron';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { AiPrefsSchema, type AiPrefs, type ProviderId } from '@magvirtualedu/llm';
+import type { PrefsStore, SecretStore } from '@magvirtualedu/llm/node';
 
 interface SettingsFile {
-  /** Anthropic API key encrypted with the OS keychain (safeStorage), base64. */
+  /** API keys encrypted with the OS keychain (safeStorage), base64, per provider. */
+  apiKeys?: Partial<Record<ProviderId, string>>;
+  /** Before ChatGPT: the Anthropic key alone (read once, then moved to apiKeys). */
   apiKey?: string;
+  /** Which AI questions go to, how, with which model and effort. */
+  ai?: unknown;
 }
 
-export interface ApiKey {
-  key: string;
-  source: 'saved' | 'environment';
-}
+/** Keys from the environment, used when none is saved. */
+const ENV_KEYS: Partial<Record<ProviderId, string>> = {
+  anthropic: 'ANTHROPIC_API_KEY',
+  openai: 'OPENAI_API_KEY',
+};
 
 /**
- * The app's own settings. The API key is stored only encrypted by the OS keychain; when the
- * keychain is unavailable the app refuses to save it rather than keep it in plain text.
+ * The app's own settings. API keys are stored only encrypted by the OS keychain; when the
+ * keychain is unavailable the app refuses to save them rather than keep them in plain text.
  */
 export class SettingsStore {
   constructor(private readonly file: string) {}
@@ -36,28 +43,60 @@ export class SettingsStore {
     return safeStorage.isEncryptionAvailable();
   }
 
-  /** The saved key first, else ANTHROPIC_API_KEY from the environment. */
-  apiKey(): ApiKey | null {
-    const saved = this.read().apiKey;
-    if (saved && this.canSaveKey) {
-      try {
-        return { key: safeStorage.decryptString(Buffer.from(saved, 'base64')), source: 'saved' };
-      } catch {
-        // Encrypted by another keychain (e.g. copied settings): ignore it.
-      }
+  private savedKey(provider: ProviderId): string | null {
+    const settings = this.read();
+    const saved =
+      settings.apiKeys?.[provider] ?? (provider === 'anthropic' ? settings.apiKey : undefined);
+    if (!saved || !this.canSaveKey) return null;
+    try {
+      return safeStorage.decryptString(Buffer.from(saved, 'base64'));
+    } catch {
+      // Encrypted by another keychain (e.g. copied settings): ignore it.
+      return null;
     }
-    const env = process.env.ANTHROPIC_API_KEY;
-    return env ? { key: env, source: 'environment' } : null;
   }
 
-  setApiKey(key: string | null): void {
-    const settings = this.read();
-    if (key === null) {
-      delete settings.apiKey;
-    } else {
-      if (!this.canSaveKey) throw new Error('이 컴퓨터에서는 키를 암호화해 저장할 수 없습니다.');
-      settings.apiKey = safeStorage.encryptString(key).toString('base64');
-    }
-    this.write(settings);
+  /** API keys: the saved one first, else the provider's environment variable. */
+  secrets(): SecretStore {
+    return {
+      kind: this.canSaveKey ? 'keychain' : 'unavailable',
+      get: (provider) => {
+        const saved = this.savedKey(provider);
+        if (saved) return { key: saved, source: 'saved' };
+        const name = ENV_KEYS[provider];
+        const env = name ? process.env[name] : undefined;
+        return env ? { key: env, source: 'environment' } : null;
+      },
+      set: (provider, key) => {
+        const settings = this.read();
+        const { apiKey: legacy, ...rest } = settings;
+        const keys: Partial<Record<ProviderId, string>> = {
+          ...(legacy && { anthropic: legacy }),
+          ...settings.apiKeys,
+        };
+        if (key !== null && !this.canSaveKey)
+          throw new Error('이 컴퓨터에서는 키를 암호화해 저장할 수 없습니다.');
+        const others = Object.entries(keys).filter(([name]) => name !== provider);
+        const apiKeys = Object.fromEntries(
+          key === null
+            ? others
+            : [...others, [provider, safeStorage.encryptString(key).toString('base64')]],
+        );
+        this.write({ ...rest, apiKeys });
+      },
+    };
+  }
+
+  /** The AI connection choice (no secrets in it). */
+  prefs(): PrefsStore {
+    return {
+      read: (): AiPrefs | null => {
+        const parsed = AiPrefsSchema.safeParse(this.read().ai);
+        return parsed.success ? parsed.data : null;
+      },
+      write: (prefs) => {
+        this.write({ ...this.read(), ai: prefs });
+      },
+    };
   }
 }

@@ -2,7 +2,7 @@
   "name": "@magvirtualedu/server",
   "version": "0.1.0",
   "private": true,
-  "description": "Asks Claude for a scenario that answers a network question on a topology, validates it and stores it",
+  "description": "HTTP API for the web viewer: scenarios from the connected AI (validated and stored), and the AI connection itself (sign-in, keys, models, streamed answers)",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -15,6 +15,7 @@
     "@anthropic-ai/sdk": "0.131.0",
     "@hono/node-server": "2.1.3",
     "@magvirtualedu/ai": "workspace:*",
+    "@magvirtualedu/llm": "workspace:*",
     "@magvirtualedu/schema": "workspace:*",
     "hono": "4.13.13",
     "zod": "4.6.5"

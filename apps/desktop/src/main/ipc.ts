@@ -1,6 +1,5 @@
 import { ipcMain, type BrowserWindow, type IpcMainInvokeEvent } from 'electron';
 import {
-  ApiKeySchema,
   Channels,
   RectSchema,
   TraceStartSchema,
@@ -10,7 +9,6 @@ import {
 } from '@magvirtualedu/bridge';
 import type { DesktopAi } from './ai';
 import type { LabBrowser } from './lab-browser';
-import type { SettingsStore } from './settings';
 import type { GeoIpDb } from './trace/geo';
 import { runTrace, type TraceRunDeps } from './trace/run';
 import { newTraceId, type TraceStore } from './trace/store';
@@ -31,21 +29,11 @@ export function handle(channel: string, handler: (...args: unknown[]) => unknown
 }
 
 export interface SettingsDeps {
-  settings: SettingsStore;
-  model: string;
   geo: () => Settings['geo'];
 }
 
-export function settingsSnapshot({ settings, model, geo }: SettingsDeps): Settings {
-  const key = settings.apiKey();
-  return {
-    hasApiKey: key !== null,
-    apiKeySource: key?.source ?? null,
-    canSaveKey: settings.canSaveKey,
-    model,
-    geo: geo(),
-    platform: process.platform,
-  };
+export function settingsSnapshot({ geo }: SettingsDeps): Settings {
+  return { geo: geo(), platform: process.platform };
 }
 
 export function registerAiIpc(ai: DesktopAi): void {
@@ -64,10 +52,6 @@ export function registerAiIpc(ai: DesktopAi): void {
 
 export function registerSettingsIpc(deps: SettingsDeps): void {
   handle(Channels.settingsGet, () => settingsSnapshot(deps));
-  handle(Channels.settingsSetApiKey, (key: unknown) => {
-    deps.settings.setApiKey(ApiKeySchema.parse(key));
-    return settingsSnapshot(deps);
-  });
 }
 
 export interface TraceIpcDeps {

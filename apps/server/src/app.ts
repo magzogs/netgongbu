@@ -1,5 +1,16 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
+import { streamSSE } from 'hono/streaming';
+import { z } from 'zod';
 import type { AskErrorCode, ScenarioService } from '@magvirtualedu/ai';
+import {
+  ApiKeyInputSchema,
+  CLI_PROVIDERS,
+  ChatRequestSchema,
+  PROVIDER_IDS,
+  PrefsChangeSchema,
+  type ChatEvent,
+} from '@magvirtualedu/llm';
+import type { AiHub } from '@magvirtualedu/llm/node';
 
 const STATUS: Record<AskErrorCode, 400 | 404 | 422 | 429 | 502 | 503> = {
   'bad-request': 400,
@@ -14,14 +25,36 @@ const STATUS: Record<AskErrorCode, 400 | 404 | 422 | 429 | 502 | 503> = {
 
 export interface AppDeps {
   scenarios: ScenarioService;
-  model: string;
+  /** The AI connection (sign-in, keys, models, questions); without it /api/ai is absent. */
+  hub?: AiHub;
 }
 
-/** HTTP face of the scenario service, for the web viewer (`/api`, proxied by Vite in dev). */
-export function createApp({ scenarios, model }: AppDeps): Hono {
+const LOCAL_HOST = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
+const ProviderSchema = z.enum(PROVIDER_IDS);
+const CliProviderSchema = z.object({ provider: z.enum(CLI_PROVIDERS) });
+
+const message = (err: unknown): string => (err instanceof Error ? err.message : String(err));
+
+async function body(c: Context): Promise<unknown> {
+  return c.req.json().catch(() => null);
+}
+
+/** HTTP face of the scenario service and the AI connection, for the web viewer. */
+export function createApp({ scenarios, hub }: AppDeps): Hono {
   const app = new Hono().basePath('/api');
 
-  app.get('/health', (c) => c.json({ ok: true, ai: scenarios.ready, model }));
+  // The server signs in to the learner's accounts and runs their CLIs: it answers only this
+  // computer (by name, against DNS rebinding) and never another site's page in the browser.
+  app.use('*', async (c, next) => {
+    if (!LOCAL_HOST.test(new URL(c.req.url).host)) return c.json({ error: 'Forbidden' }, 403);
+    const site = c.req.header('sec-fetch-site');
+    if (site === 'cross-site' || site === 'same-site') return c.json({ error: 'Forbidden' }, 403);
+    if (c.req.method !== 'GET' && !c.req.header('content-type')?.startsWith('application/json'))
+      return c.json({ error: 'JSON only' }, 415);
+    await next();
+  });
+
+  app.get('/health', (c) => c.json({ ok: true, ai: scenarios.ready }));
 
   app.get('/catalog', async (c) => c.json({ scenarios: await scenarios.catalog() }));
 
@@ -31,7 +64,7 @@ export function createApp({ scenarios, model }: AppDeps): Hono {
   });
 
   app.post('/scenarios', async (c) => {
-    const result = await scenarios.ask(await c.req.json().catch(() => null));
+    const result = await scenarios.ask(await body(c));
     if (!result.ok) {
       return c.json(
         { code: result.code, error: result.error, issues: result.issues },
@@ -44,5 +77,89 @@ export function createApp({ scenarios, model }: AppDeps): Hono {
     );
   });
 
+  if (hub) addAiRoutes(app, hub);
   return app;
+}
+
+function addAiRoutes(app: Hono, hub: AiHub): void {
+  const invalid = (c: Context, err: unknown) => c.json({ error: message(err) }, 400);
+
+  app.get('/ai/status', async (c) =>
+    c.json(c.req.query('refresh') === '1' ? await hub.refresh() : hub.status()),
+  );
+
+  app.post('/ai/change', async (c) => {
+    const change = PrefsChangeSchema.safeParse(await body(c));
+    if (!change.success) return invalid(c, '설정 값이 올바르지 않습니다.');
+    try {
+      return c.json(await hub.change(change.data));
+    } catch (err) {
+      return invalid(c, err);
+    }
+  });
+
+  app.post('/ai/key', async (c) => {
+    const input = ApiKeyInputSchema.safeParse(await body(c));
+    if (!input.success) return invalid(c, 'API 키 형식이 올바르지 않습니다.');
+    return c.json(hub.setKey(input.data.provider, input.data.key));
+  });
+
+  app.get('/ai/models', async (c) => {
+    const provider = ProviderSchema.safeParse(c.req.query('provider'));
+    if (!provider.success) return invalid(c, '알 수 없는 AI입니다.');
+    return c.json(await hub.models(provider.data, c.req.query('refresh') === '1'));
+  });
+
+  app.post('/ai/sign-in', async (c) => {
+    const input = CliProviderSchema.safeParse(await body(c));
+    if (!input.success) return invalid(c, '알 수 없는 AI입니다.');
+    return c.json(await hub.signIn(input.data.provider));
+  });
+
+  app.post('/ai/sign-in/stop', (c) => c.json(hub.stopSignIn()));
+
+  app.post('/ai/sign-out', async (c) => {
+    const input = CliProviderSchema.safeParse(await body(c));
+    if (!input.success) return invalid(c, '알 수 없는 AI입니다.');
+    try {
+      return c.json(await hub.signOut(input.data.provider));
+    } catch (err) {
+      return invalid(c, err);
+    }
+  });
+
+  // The answer as server-sent events (ChatEvent); closing the request stops it.
+  app.post('/ai/chat', async (c) => {
+    const request = ChatRequestSchema.safeParse(await body(c));
+    if (!request.success) return invalid(c, '질문 형식이 올바르지 않습니다.');
+    const { id, messages } = request.data;
+    return streamSSE(c, async (stream) => {
+      const controller = new AbortController();
+      stream.onAbort(() => {
+        controller.abort();
+      });
+      // Pieces are written in order, one after another.
+      let writing = Promise.resolve();
+      const emit = (event: ChatEvent): void => {
+        writing = writing.then(() => stream.writeSSE({ data: JSON.stringify(event) }));
+      };
+      try {
+        const { model } = await hub.chat(
+          messages,
+          (text) => {
+            emit({ id, type: 'delta', text });
+          },
+          controller.signal,
+        );
+        emit({ id, type: 'done', model });
+      } catch (err) {
+        emit(
+          controller.signal.aborted
+            ? { id, type: 'done', model: null }
+            : { id, type: 'error', message: message(err) },
+        );
+      }
+      await writing;
+    });
+  });
 }

@@ -83,53 +83,64 @@ try {
   check((await win.locator('.scenario-note, .narration').count()) > 0, 'player renders');
   await win.screenshot({ path: join(out, '1-start.png') });
 
-  // Ask the canned AI through IPC: first answer is broken, the service corrects it.
-  await win.locator('.ask-button').click();
-  await win.locator('.ask__input').fill('DNS는 어떻게 동작하나요?');
-  await win.locator('.ask .primary-button').click();
-  await win.waitForFunction(() => document.querySelector('.ask') === null, undefined, {
-    timeout: 30_000,
-  });
+  // One AI panel. A scenario from the canned AI through IPC: the first answer is broken, the
+  // service corrects it, and the new scenario opens.
+  await win.locator('.assistant-button').click();
+  await win.waitForSelector('.assistant');
+  check(
+    (await win.locator('.conn__tab').count()) === 3,
+    'AI connection offers ChatGPT, Claude and a local model',
+  );
+  await win.locator('.assistant__input').fill('DNS는 어떻게 동작하나요?');
+  await win.locator('.assistant__scenario').click();
+  await win.waitForFunction(
+    () => document.querySelector<HTMLSelectElement>('.picker select')?.value.startsWith('ask-'),
+    undefined,
+    { timeout: 30_000 },
+  );
   const picked = await win.locator('.picker select').inputValue();
   check(picked.startsWith('ask-'), `generated scenario opened (${picked})`);
+  const made = (await win.locator('.assistant__made').first().textContent()) ?? '';
+  check(made.includes('시나리오를 만들었습니다'), 'the conversation says the scenario was made');
   await win.waitForTimeout(800);
   await win.screenshot({ path: join(out, '2-ai-scenario.png') });
 
-  await win.locator('.settings-button').click();
-  await win.waitForSelector('.settings');
-  const keyStatus = win.locator('.settings__status').first();
-  await win.waitForFunction(
-    () => document.querySelector('.settings__status')?.textContent !== '불러오는 중…',
-  );
-  const status = await keyStatus.textContent();
-  check(status !== null && status.length > 0, `settings show key status: ${status ?? ''}`);
-  await win.screenshot({ path: join(out, '3-settings.png') });
-
-  await win.keyboard.press('Escape');
-
-  // Questions about the screen: the main process asks the local LLM and streams the answer.
-  await win.locator('.tutor-button').click();
-  await win.locator('.tutor__settings input').first().fill(llmUrl);
-  await win.locator('.tutor__settings .primary-button').click();
+  // Questions about the screen, in the same panel: connect the local model, then ask; the
+  // main process calls the server and streams the answer.
+  await win.locator('.conn__tab', { hasText: '로컬' }).click();
+  await win.locator('.conn__local input').first().fill(llmUrl);
+  await win.locator('.conn__local .primary-button').click();
   await win.waitForFunction(() =>
-    document.querySelector('.tutor__model')?.textContent.includes('stand-in'),
+    document.querySelector('.assistant__bar select')?.textContent.includes('stand-in'),
   );
-  await win.locator('.tutor__input').fill('이 단계에서 무슨 일이 일어나나요?');
-  await win.locator('.tutor__input').press('Enter');
+  await win.locator('.assistant__input').fill('이 단계에서 무슨 일이 일어나나요?');
+  await win.locator('.assistant__input').press('Enter');
   await win.waitForFunction(
-    () => document.querySelector('.tutor__msg--assistant')?.textContent.includes('화면을 받았'),
+    () =>
+      [...document.querySelectorAll('.assistant__msg--assistant')]
+        .at(-1)
+        ?.textContent.includes('화면을 받았'),
     undefined,
     { timeout: 10_000 },
   );
-  const answer = (await win.locator('.tutor__msg--assistant').first().textContent()) ?? '';
+  const answer = (await win.locator('.assistant__msg--assistant').last().textContent()) ?? '';
   check(!answer.includes('…'), `local LLM answers through the main process: ${answer}`);
-  const system = llmRequests.at(-1)?.messages[0]?.content;
+  const asked = llmRequests.at(-1)?.messages.at(-1)?.content;
   check(
-    typeof system === 'string' && system.includes('[지금 단계'),
+    typeof asked === 'string' && asked.includes('[화면]') && asked.includes('[지금 단계'),
     'the question goes with a description of the screen',
   );
-  await win.screenshot({ path: join(out, '3b-screen-question.png') });
-  await win.locator('.tutor__actions .text-button', { hasText: '닫기' }).click();
+  await win.screenshot({ path: join(out, '3-ai-panel.png') });
+  await win.locator('.assistant__actions .text-button', { hasText: '닫기' }).click();
+
+  await win.locator('.settings-button').click();
+  await win.waitForSelector('.settings');
+  check(
+    (await win.locator('.settings', { hasText: '위치 데이터베이스' }).count()) === 1,
+    'settings show the location database',
+  );
+  await win.screenshot({ path: join(out, '3b-settings.png') });
+  await win.keyboard.press('Escape');
 
   // The laptop's browser: load a real page, trace the path, open the measured scenario.
   await win.locator('.browser-button').click();

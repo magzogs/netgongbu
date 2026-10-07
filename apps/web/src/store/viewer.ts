@@ -17,10 +17,9 @@ import { nodeNumbers } from '../engine/order';
 import { buildTimeline } from '../engine/timeline';
 import { backend } from '../data/backend';
 import { fetchCatalog, fetchScenario, ScenarioLoadError, type ViewerEntry } from '../data/load';
-import { createAskSlice, type AskSlice } from './ask';
+import { createAssistantSlice, type AssistantSlice } from './assistant';
 import { createDesktopSlice, type DesktopSlice } from './desktop';
 import { createPlaybackSlice, type PlaybackSlice } from './playback';
-import { createTutorSlice, type TutorSlice } from './tutor';
 
 /** How a topology with a globe is shown: on the globe, or on a flat world map. */
 export type MapView = 'globe' | 'flat';
@@ -74,7 +73,7 @@ export type Selection = { kind: 'node'; id: string } | { kind: 'packet'; hopInde
 /** orbit: the learner moves the camera freely; follow: it stays on the moving packet. */
 export type CameraMode = 'orbit' | 'follow';
 
-export interface ViewerState extends PlaybackSlice, AskSlice, DesktopSlice, TutorSlice {
+export interface ViewerState extends PlaybackSlice, AssistantSlice, DesktopSlice {
   /** Hand-written examples, then AI scenarios newest first. */
   catalog: readonly ViewerEntry[];
   entryId: string | null;
@@ -136,9 +135,8 @@ let openToken = 0;
 
 export const useViewer = create<ViewerState>()((set, get, api) => ({
   ...createPlaybackSlice(set, get, api),
-  ...createAskSlice(set, get, api),
+  ...createAssistantSlice(set, get, api),
   ...createDesktopSlice(set, get, api),
-  ...createTutorSlice(set, get, api),
   catalog: [],
   entryId: null,
   status: { kind: 'loading' },
@@ -153,6 +151,7 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
 
   async init() {
     void get().checkAi();
+    void get().connectAssistant();
     try {
       const [examples, generated] = await Promise.all([fetchCatalog(), backend.aiCatalog()]);
       const catalog: ViewerEntry[] = [

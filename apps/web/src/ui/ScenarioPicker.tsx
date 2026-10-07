@@ -53,23 +53,3 @@ export function ScenarioPicker(): ReactElement {
     </label>
   );
 }
-
-/** Opens the question panel; shows progress while a scenario is being generated. */
-export function AskButton(): ReactElement {
-  const pending = useViewer((s) => s.ask.kind === 'pending');
-  const open = useViewer((s) => s.askOpen);
-  const setAskOpen = useViewer((s) => s.setAskOpen);
-  return (
-    <button
-      type="button"
-      className="ask-button"
-      aria-expanded={open}
-      onClick={() => {
-        setAskOpen(!open);
-      }}
-    >
-      {pending && <span className="spinner spinner--small" aria-hidden="true" />}
-      AI에게 질문
-    </button>
-  );
-}

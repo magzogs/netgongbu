@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { AiError } from '@magvirtualedu/llm/node';
 import { z } from 'zod';
 import type { Scenario, ValidationIssue } from '@magvirtualedu/schema';
 import { generateScenario, GenerationError, type ScenarioModel } from './generate';
@@ -26,8 +27,8 @@ export interface ScenarioServiceDeps {
   model: () => ScenarioModel | null;
   maxAttempts: number;
   maxQuestionLength: number;
-  /** Shown when there is no model: where the learner sets the key differs per app. */
-  noCredentialsMessage: string;
+  /** Shown when there is no model: what is missing, and where to set it. */
+  noCredentialsMessage: string | (() => string);
   newId?: () => string;
   log?: (message: string) => void;
 }
@@ -38,8 +39,11 @@ const fail = (
   issues: readonly ValidationIssue[] = [],
 ): AskResult => ({ ok: false, code, error, issues });
 
-/** Maps a failed Claude call to a result the viewer can show. */
-function claudeFailure(err: unknown): AskResult | undefined {
+/** Maps a failed model call (Claude API, OpenAI API, a CLI) to a result the viewer can show. */
+function modelFailure(err: unknown): AskResult | undefined {
+  if (err instanceof AiError) {
+    return fail(err.kind === 'auth' ? 'no-credentials' : 'api-error', err.message);
+  }
   if (
     err instanceof Anthropic.AuthenticationError ||
     err instanceof Anthropic.PermissionDeniedError
@@ -52,11 +56,12 @@ function claudeFailure(err: unknown): AskResult | undefined {
   if (err instanceof Anthropic.APIError) {
     return fail('api-error', `Claude API 오류 (${String(err.status)})`);
   }
+  if (err instanceof Error) return fail('api-error', err.message);
   return undefined;
 }
 
 /**
- * Generated scenarios: ask Claude for one (validated and corrected), list and load them.
+ * Generated scenarios: ask the connected AI for one (validated and corrected), list and load them.
  * The HTTP server and the desktop app's IPC both call this.
  */
 export class ScenarioService {
@@ -94,7 +99,10 @@ export class ScenarioService {
       );
     }
     const model = this.deps.model();
-    if (!model) return fail('no-credentials', this.deps.noCredentialsMessage);
+    if (!model) {
+      const { noCredentialsMessage: why } = this.deps;
+      return fail('no-credentials', typeof why === 'string' ? why : why());
+    }
     const topology = await this.deps.topologies.get(body.data.topologyId);
     if (!topology) return fail('not-found', '토폴로지를 찾을 수 없습니다.');
 
@@ -119,9 +127,9 @@ export class ScenarioService {
         this.log(`generation failed (${err.code}): ${err.message}`);
         return fail(err.code, err.message, err.issues);
       }
-      const failure = claudeFailure(err);
+      const failure = modelFailure(err);
       if (failure) {
-        this.log(`Claude API error: ${err instanceof Error ? err.message : String(err)}`);
+        this.log(`model error: ${err instanceof Error ? err.message : String(err)}`);
         return failure;
       }
       throw err;

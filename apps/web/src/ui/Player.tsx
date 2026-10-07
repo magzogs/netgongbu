@@ -9,7 +9,7 @@ import { Scrubber } from './Scrubber';
 function Narration(): ReactElement | null {
   const timeline = useViewer((s) => s.timeline);
   const beatIndex = useViewer((s) => s.beatIndex);
-  const askTutor = useViewer((s) => s.askTutor);
+  const ask = useViewer((s) => s.ask);
   const entry = timeline?.beats[beatIndex];
   if (!timeline || !entry) return null;
   const protocols = [...new Set(entry.beat.hops.map((h) => h.packet.protocol))];
@@ -27,9 +27,9 @@ function Narration(): ReactElement | null {
         <button
           type="button"
           className="text-button narration__ask"
-          title="로컬 LLM에게 이 단계를 자세히 묻습니다"
+          title="AI에게 이 단계를 자세히 묻습니다"
           onClick={() => {
-            void askTutor('지금 단계에서 무슨 일이 일어나는지 자세히 설명해 줘');
+            void ask('지금 단계에서 무슨 일이 일어나는지 자세히 설명해 줘');
           }}
         >
           이 단계 AI에게 묻기

@@ -9,7 +9,7 @@ export default defineConfig({
     port: 5180,
     strictPort: true,
     // apps/server (AI scenario generation); `pnpm dev` at the repo root starts both.
-    proxy: { '/api': 'http://localhost:8787' },
+    proxy: { '/api': `http://127.0.0.1:${process.env.SCENARIO_PORT ?? '8787'}` },
   },
   preview: { port: 5181, strictPort: true },
   // three.js + drei make one ~1 MB vendor chunk (plus the world map); expected for a 3D viewer.

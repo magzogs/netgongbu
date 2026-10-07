@@ -217,9 +217,9 @@ function PacketLabView({
   const focus = hovered ?? pinned;
   const labelOf = (id: string): string => world?.index.nodes.get(id)?.label ?? id;
 
-  // What is being looked at, for questions to the local LLM about the screen.
+  // What is being looked at, for questions to AI about the screen.
   const setLabFocus = useViewer((s) => s.setLabFocus);
-  const askTutor = useViewer((s) => s.askTutor);
+  const ask = useViewer((s) => s.ask);
   useEffect(() => {
     setLabFocus(
       layer
@@ -240,7 +240,7 @@ function PacketLabView({
   }, [layer, focus, setLabFocus]);
   const askAbout = (f: Field): void => {
     if (!layer) return;
-    void askTutor(
+    void ask(
       `${layer.title} 헤더의 ${f.name} 필드(값 ${f.value || '—'})는 무슨 뜻이고, 이 패킷에서 왜 이 값인가요?`,
     );
   };

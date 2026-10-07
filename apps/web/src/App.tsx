@@ -1,17 +1,16 @@
 import { useEffect, type ReactElement } from 'react';
 import { Scene } from './scene/Scene';
 import { useViewer } from './store/viewer';
-import { AskPanel } from './ui/AskPanel';
 import { Inspector } from './ui/Inspector';
 import { BrowserButton, LaptopBrowser } from './ui/LaptopBrowser';
 import { Legend } from './ui/Legend';
 import { PacketLab } from './ui/lab/PacketLab';
 import { Player } from './ui/Player';
-import { AskButton, ScenarioPicker } from './ui/ScenarioPicker';
+import { ScenarioPicker } from './ui/ScenarioPicker';
 import { SceneLabels } from './ui/SceneLabels';
 import { SettingsButton, SettingsPanel } from './ui/SettingsPanel';
 import { StatusOverlay } from './ui/StatusOverlay';
-import { TutorButton, TutorPanel } from './ui/tutor/TutorPanel';
+import { AssistantButton, AssistantPanel } from './ui/assistant/AssistantPanel';
 import { useKeyboardShortcuts } from './ui/useKeyboardShortcuts';
 
 export function App(): ReactElement {
@@ -29,19 +28,17 @@ export function App(): ReactElement {
         <img className="topbar__logo" src="/logo.svg" alt="" width={28} height={28} />
         <h1 className="topbar__title">Network in 3D</h1>
         <ScenarioPicker />
-        <AskButton />
-        <TutorButton />
+        <AssistantButton />
         <BrowserButton />
         <SettingsButton />
       </header>
       <Legend />
       <Inspector />
       <Player />
-      <AskPanel />
       <LaptopBrowser />
       <SettingsPanel />
       <PacketLab />
-      <TutorPanel />
+      <AssistantPanel />
       <StatusOverlay />
     </div>
   );

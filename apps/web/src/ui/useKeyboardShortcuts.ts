@@ -22,13 +22,9 @@ export function handleShortcut(e: KeyboardEvent): void {
     viewer.openPacketLab(null);
     return;
   }
-  if (
-    e.key === 'Escape' &&
-    (viewer.askOpen || viewer.settingsOpen || viewer.browserOpen || viewer.tutorOpen)
-  ) {
-    viewer.setAskOpen(false);
+  if (e.key === 'Escape' && (viewer.assistantOpen || viewer.settingsOpen || viewer.browserOpen)) {
+    viewer.setAssistantOpen(false);
     viewer.setSettingsOpen(false);
-    viewer.setTutorOpen(false);
     if (viewer.traceRun.kind !== 'running') viewer.setBrowserOpen(false);
     return;
   }

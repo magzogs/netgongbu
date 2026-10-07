@@ -1,26 +1,23 @@
-import Anthropic from '@anthropic-ai/sdk';
 import {
   cannedModel,
-  claudeModel,
-  DEFAULT_CLAUDE_SETTINGS,
+  connectedModel,
   ScenarioService,
   ScenarioStore,
   TopologyLibrary,
-  type ScenarioModel,
 } from '@magvirtualedu/ai';
+import type { AiHub } from '@magvirtualedu/llm/node';
 import { dataDir, userPath } from './paths';
-import type { SettingsStore } from './settings';
 
 export interface DesktopAi {
   service: ScenarioService;
   topologies: TopologyLibrary;
-  /** MAGVE_FAKE_AI=1: canned answers instead of Claude, for working without a key. */
+  /** MAGVE_FAKE_AI=1: canned answers instead of the connected AI, for working without one. */
   fake: boolean;
 }
 
-/** Claude through the shared ScenarioService, with the key from the app's settings. */
+/** Scenario generation through the shared ScenarioService, with whichever AI is connected. */
 export async function createDesktopAi(
-  settings: SettingsStore,
+  hub: AiHub,
   log: (message: string) => void,
 ): Promise<DesktopAi> {
   const topologies = new TopologyLibrary(dataDir());
@@ -28,28 +25,14 @@ export async function createDesktopAi(
   const example = fake ? await topologies.exampleFor('home-to-web') : undefined;
   const canned = example ? cannedModel(example) : null;
 
-  // One client per key, rebuilt when the learner changes the key in settings.
-  let current: { key: string; model: ScenarioModel } | null = null;
-  const model = (): ScenarioModel | null => {
-    if (canned) return canned;
-    const key = settings.apiKey()?.key;
-    if (!key) return null;
-    if (current?.key !== key) {
-      current = {
-        key,
-        model: claudeModel(new Anthropic({ apiKey: key }), DEFAULT_CLAUDE_SETTINGS),
-      };
-    }
-    return current.model;
-  };
-
   const service = new ScenarioService({
     topologies,
     store: new ScenarioStore(userPath('scenarios')),
-    model,
+    model: () => canned ?? connectedModel(hub),
     maxAttempts: 3,
     maxQuestionLength: 500,
-    noCredentialsMessage: '설정에서 Anthropic API 키를 입력해 주세요.',
+    noCredentialsMessage: () =>
+      hub.status().notReady ?? 'AI에게 질문 → 연결 설정에서 ChatGPT나 Claude를 연결하세요.',
     log,
   });
   return { service, topologies, fake };

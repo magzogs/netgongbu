@@ -80,7 +80,7 @@ export function FieldDetail({ field, layer, bytes, pinned, onAsk }: DetailProps)
           <button
             type="button"
             className="text-button fdetail__ask"
-            title="로컬 LLM에게 이 필드에 대해 묻습니다"
+            title="AI에게 이 필드에 대해 묻습니다"
             onClick={() => {
               onAsk(field);
             }}

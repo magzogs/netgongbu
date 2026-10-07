@@ -33,7 +33,6 @@ const api: LabApi = {
   },
   settings: {
     get: () => invoke(Channels.settingsGet),
-    setApiKey: (key) => invoke(Channels.settingsSetApiKey, key),
   },
   trace: {
     start: (request) => invoke(Channels.traceStart, request),
@@ -51,11 +50,20 @@ const api: LabApi = {
     download: () => invoke(Channels.geoDownload),
     onEvent: listen(Channels.geoEvent),
   },
-  llm: {
-    models: (config) => invoke(Channels.llmModels, config),
-    chat: (request) => invoke(Channels.llmChat, request),
-    cancel: (id) => invoke(Channels.llmCancel, id),
-    onEvent: listen(Channels.llmEvent),
+  connection: {
+    status: (refresh) => invoke(Channels.connectionStatus, refresh === true),
+    change: (change) => invoke(Channels.connectionChange, change),
+    setKey: (provider, key) => invoke(Channels.connectionKey, { provider, key }),
+    models: (provider, refresh) => invoke(Channels.connectionModels, provider, refresh === true),
+    signIn: (provider) => invoke(Channels.connectionSignIn, provider),
+    stopSignIn: () => invoke(Channels.connectionStopSignIn),
+    signOut: (provider) => invoke(Channels.connectionSignOut, provider),
+    onStatus: listen(Channels.connectionEvent),
+  },
+  chat: {
+    ask: (request) => invoke(Channels.chatAsk, request),
+    cancel: (id) => invoke(Channels.chatCancel, id),
+    onEvent: listen(Channels.chatEvent),
   },
 };
 

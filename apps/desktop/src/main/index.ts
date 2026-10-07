@@ -1,12 +1,14 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { networkInterfaces } from 'node:os';
-import { app } from 'electron';
+import { app, shell } from 'electron';
 import { DEFAULT_CLAUDE_SETTINGS } from '@magvirtualedu/ai';
+import type { AiPrefs } from '@magvirtualedu/llm';
+import { AiHub } from '@magvirtualedu/llm/node';
 import { createDesktopAi } from './ai';
+import { registerConnectionIpc } from './connection';
 import { registerAiIpc, registerSettingsIpc, registerTraceIpc } from './ipc';
 import { LabBrowser } from './lab-browser';
-import { registerLlmIpc } from './llm';
 import { rendererDir, userPath } from './paths';
 import { registerAppScheme, serveRenderer } from './protocol';
 import { SettingsStore } from './settings';
@@ -31,18 +33,35 @@ registerAppScheme();
 async function start(): Promise<void> {
   serveRenderer(rendererDir);
   const settings = new SettingsStore(userPath('settings.json'));
-  const ai = await createDesktopAi(settings, log);
+  const secrets = settings.secrets();
+  // Before the learner chooses: Claude with the key they saved earlier (or ANTHROPIC_API_KEY).
+  const defaults: AiPrefs | undefined = secrets.get('anthropic')
+    ? {
+        provider: 'anthropic',
+        providers: { anthropic: { method: 'api', ...DEFAULT_CLAUDE_SETTINGS } },
+      }
+    : undefined;
+  const hub = new AiHub({
+    prefs: settings.prefs(),
+    secrets,
+    workDir: userPath('ai-workdir'),
+    log,
+    openExternal: (url) => {
+      if (url.startsWith('https://')) void shell.openExternal(url);
+    },
+    ...(defaults && { defaults }),
+  });
+  app.on('will-quit', () => {
+    hub.dispose();
+  });
+  const ai = await createDesktopAi(hub, log);
   const geo = new GeoIpDb(userPath('geo'));
   await geo.open();
   registerAiIpc(ai);
-  registerSettingsIpc({
-    settings,
-    model: ai.fake ? 'fake' : DEFAULT_CLAUDE_SETTINGS.model,
-    geo: () => geo.status(),
-  });
+  registerSettingsIpc({ geo: () => geo.status() });
 
   const win = createMainWindow();
-  registerLlmIpc(win, log);
+  registerConnectionIpc(win, hub, log);
   registerTraceIpc({
     win,
     browser: new LabBrowser(win),

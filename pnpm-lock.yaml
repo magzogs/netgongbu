@@ -101,6 +101,9 @@ importers:
       '@magvirtualedu/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@magvirtualedu/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
       '@magvirtualedu/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -187,6 +190,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: 0.131.0
         version: 0.131.0(zod@4.6.5)
+      '@magvirtualedu/llm':
+        specifier: workspace:*
+        version: link:../llm
       '@magvirtualedu/schema':
         specifier: workspace:*
         version: link:../schema
@@ -211,6 +217,9 @@ importers:
 
   packages/llm:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: 0.131.0
+        version: 0.131.0(zod@4.6.5)
       zod:
         specifier: 4.6.5
         version: 4.6.5

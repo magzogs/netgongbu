@@ -1,5 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
+import { FALLBACK_CAPABLE } from '@magvirtualedu/llm/node';
 import { ScenarioDraftSchema } from '@magvirtualedu/schema';
 import type { ScenarioModel } from './generate';
 
@@ -8,13 +9,14 @@ export type Effort = (typeof EFFORTS)[number];
 
 export interface ClaudeSettings {
   model: string;
-  effort: Effort;
+  /** Null: the model's default (and for models that take no effort setting). */
+  effort: string | null;
 }
 
-export const DEFAULT_CLAUDE_SETTINGS: ClaudeSettings = { model: 'claude-opus-5-5', effort: 'high' };
-
-/** Models that accept server-side `fallbacks: "default"`. */
-const FALLBACK_CAPABLE = new Set(['claude-opus-5-5', 'claude-opus-5', 'claude-fable-5-1']);
+export const DEFAULT_CLAUDE_SETTINGS: { model: string; effort: Effort } = {
+  model: 'claude-opus-5-5',
+  effort: 'high',
+};
 
 /**
  * Claude via the Messages API with structured output in the scenario draft format.
@@ -31,7 +33,7 @@ export function claudeModel(client: Anthropic, config: ClaudeSettings): Scenario
       const stream = client.beta.messages.stream({
         model: config.model,
         max_tokens: 32000,
-        output_config: { effort: config.effort, format },
+        output_config: { ...(config.effort && { effort: config.effort as Effort }), format },
         system,
         messages,
         ...(fallback && {

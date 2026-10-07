@@ -9,7 +9,7 @@ export type AiStatus = 'checking' | 'offline' | 'no-key' | 'ready';
 
 const HealthSchema = z.object({ ok: z.boolean(), ai: z.boolean() });
 
-/** Whether the scenario server is reachable and can call Claude. */
+/** Whether the scenario server is reachable and has an AI connected. */
 export async function fetchAiStatus(): Promise<AiStatus> {
   try {
     const res = await fetch(`${API}/health`);

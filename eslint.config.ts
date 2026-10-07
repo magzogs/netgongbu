@@ -7,7 +7,15 @@ import tseslint from 'typescript-eslint';
 
 export default defineConfig(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/out/**', '**/coverage/**', '**/*.config.ts'],
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/out/**',
+      '**/coverage/**',
+      '**/*.config.ts',
+      // Stand-ins for the AI CLIs, run as separate programs by the tests.
+      '**/test/fixtures/**',
+    ],
   },
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,

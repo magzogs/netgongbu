@@ -9,7 +9,7 @@ export function NodeDetails({ id }: { id: string }): ReactElement | null {
   const world = useViewer((s) => s.world);
   const select = useViewer((s) => s.select);
   const number = useViewer((s) => s.nodeNumbers.get(id));
-  const askTutor = useViewer((s) => s.askTutor);
+  const ask = useViewer((s) => s.ask);
   const node = world?.index.nodes.get(id);
   if (!world || !node) return null;
   const neighbors = world.index.neighbors(id);
@@ -36,9 +36,9 @@ export function NodeDetails({ id }: { id: string }): ReactElement | null {
       <button
         type="button"
         className="text-button node-details__focus"
-        title="로컬 LLM에게 이 장비에 대해 묻습니다"
+        title="AI에게 이 장비에 대해 묻습니다"
         onClick={() => {
-          void askTutor(`${name}은(는) 어떤 장비이고, 이 과정에서 무슨 일을 하나요?`);
+          void ask(`${name}은(는) 어떤 장비이고, 이 과정에서 무슨 일을 하나요?`);
         }}
       >
         AI에게 묻기

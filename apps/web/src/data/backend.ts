@@ -21,8 +21,6 @@ export interface Backend {
   aiScenario: (id: string) => Promise<unknown>;
   /** Throws AskError with the reason when no playable scenario came back. */
   ask: (topologyId: string, question: string) => Promise<{ entry: AiEntry; scenario: Scenario }>;
-  /** Shown when generation is unavailable because no API key is configured. */
-  noKeyHint: string;
 }
 
 const httpBackend: Backend = {
@@ -30,7 +28,6 @@ const httpBackend: Backend = {
   aiCatalog: fetchAiCatalog,
   aiScenario: fetchAiScenario,
   ask: askScenario,
-  noKeyHint: 'AI 서버에 ANTHROPIC_API_KEY가 설정되어 있지 않습니다.',
 };
 
 function desktopBackend(api: LabApi): Backend {
@@ -51,7 +48,6 @@ function desktopBackend(api: LabApi): Backend {
       if (!result.ok) throw new AskError(result.error, result.issues);
       return { entry: result.entry, scenario: result.scenario };
     },
-    noKeyHint: '설정(⚙)에서 Anthropic API 키를 입력해 주세요.',
   };
 }
 

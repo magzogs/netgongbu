@@ -1,29 +1,33 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { serve } from '@hono/node-server';
-import { claudeModel, ScenarioService, ScenarioStore, TopologyLibrary } from '@magvirtualedu/ai';
+import { connectedModel, ScenarioService, ScenarioStore, TopologyLibrary } from '@magvirtualedu/ai';
 import { createApp } from './app';
-import { hasCredentials, loadConfig } from './config';
+import { loadConfig } from './config';
+import { createHub } from './hub';
 
 const config = loadConfig();
 const log = (message: string): void => {
   console.log(`[${new Date().toISOString()}] ${message}`);
 };
 
-const model = hasCredentials() ? claudeModel(new Anthropic(), config) : null;
+const hub = createHub(config, log);
 const scenarios = new ScenarioService({
   topologies: new TopologyLibrary(config.dataDir),
   store: new ScenarioStore(config.storeDir),
-  model: () => model,
+  model: () => connectedModel(hub),
   maxAttempts: config.maxAttempts,
   maxQuestionLength: config.maxQuestionLength,
-  noCredentialsMessage: 'AI 서버에 ANTHROPIC_API_KEY가 설정되어 있지 않습니다.',
+  noCredentialsMessage: () => hub.status().notReady ?? 'AI 연결 설정을 확인하세요.',
   log,
 });
-const app = createApp({ scenarios, model: config.model });
+const app = createApp({ scenarios, hub });
 
-serve({ fetch: app.fetch, port: config.port }, (info) => {
-  log(
-    `scenario server on http://localhost:${String(info.port)} (model ${config.model}, effort ${config.effort})`,
-  );
-  if (!model) log('ANTHROPIC_API_KEY is not set: questions will be refused until it is.');
+// Only this computer: the server can use the learner's AI accounts.
+serve({ fetch: app.fetch, port: config.port, hostname: '127.0.0.1' }, (info) => {
+  log(`scenario server on http://127.0.0.1:${String(info.port)}`);
+  const why = hub.status().notReady;
+  if (why) log(`AI not connected yet: ${why}`);
+});
+process.on('SIGINT', () => {
+  hub.dispose();
+  process.exit(0);
 });

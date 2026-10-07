@@ -1,10 +1,11 @@
-// The scenario API with a canned model instead of Claude, for working on the viewer without an
-// API key: `pnpm dev:fake` at the repo root.
+// The scenario API with a canned model instead of the connected AI, for working on the viewer
+// without one: `pnpm dev:fake` at the repo root.
 import { join } from 'node:path';
 import { serve } from '@hono/node-server';
 import { cannedModel, ScenarioService, ScenarioStore, TopologyLibrary } from '@magvirtualedu/ai';
 import { createApp } from '../src/app';
 import { loadConfig } from '../src/config';
+import { createHub } from '../src/hub';
 
 const config = loadConfig();
 const log = (message: string): void => {
@@ -25,6 +26,11 @@ const scenarios = new ScenarioService({
   log,
 });
 
-serve({ fetch: createApp({ scenarios, model: 'fake' }).fetch, port: config.port }, (info) => {
-  log(`fake scenario server on http://localhost:${String(info.port)}`);
-});
+// Questions about the screen still go to the AI connected in the viewer.
+const hub = createHub(config, log);
+serve(
+  { fetch: createApp({ scenarios, hub }).fetch, port: config.port, hostname: '127.0.0.1' },
+  (info) => {
+    log(`fake scenario server on http://127.0.0.1:${String(info.port)}`);
+  },
+);
