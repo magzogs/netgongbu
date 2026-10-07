@@ -1,9 +1,27 @@
 import { useRef, type PointerEvent, type ReactElement } from 'react';
-import { beatAt, type Timeline } from '../engine/timeline';
+import type { Timeline } from '../engine/timeline';
 import { PROTOCOL_COLORS } from '../scene/theme';
 import { useViewer } from '../store/viewer';
 
 const STILL_COLOR = '#64748b';
+
+/** The beat under a pointer (in a gap, the nearest one) and how far into it, as drawn. */
+function beatUnder(track: HTMLElement, x: number): { beatIndex: number; progress: number } {
+  const rects = Array.from(track.querySelectorAll('.scrubber__beat'), (el) =>
+    el.getBoundingClientRect(),
+  );
+  let beatIndex = 0;
+  let nearest = Infinity;
+  rects.forEach((r, i) => {
+    const distance = Math.max(r.left - x, x - r.right, 0);
+    if (distance < nearest) {
+      nearest = distance;
+      beatIndex = i;
+    }
+  });
+  const r = rects[beatIndex];
+  return { beatIndex, progress: r && r.width > 0 ? (x - r.left) / r.width : 0 };
+}
 
 /**
  * One segment per beat, as wide as the beat is long and coloured by its protocol. Click or drag
@@ -16,17 +34,17 @@ export function Scrubber({ timeline }: { timeline: Timeline }): ReactElement {
   const track = useRef<HTMLDivElement>(null);
 
   const seekToPointer = (e: PointerEvent): void => {
-    const rect = track.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0) return;
-    const { beatIndex: index, progress: p } = beatAt(
-      timeline,
-      (e.clientX - rect.left) / rect.width,
-    );
+    if (!track.current) return;
+    const { beatIndex: index, progress: p } = beatUnder(track.current, e.clientX);
     seek(index, p);
   };
 
   const current = timeline.beats[beatIndex];
   const elapsed = current ? current.start + current.duration * progress : 0;
+  // Segments share the track minus the gaps between them, and each sits one gap further right
+  // than the last: the head goes where the current segment's fill ends.
+  const share = elapsed / Math.max(timeline.total, 0.001);
+  const gaps = timeline.beats.length - 1;
 
   return (
     <div
@@ -63,7 +81,9 @@ export function Scrubber({ timeline }: { timeline: Timeline }): ReactElement {
       })}
       <div
         className="scrubber__head"
-        style={{ left: `${(elapsed / Math.max(timeline.total, 0.001)) * 100}%` }}
+        style={{
+          left: `calc(${share} * (100% - ${gaps} * var(--beat-gap)) + ${beatIndex} * var(--beat-gap))`,
+        }}
       />
     </div>
   );

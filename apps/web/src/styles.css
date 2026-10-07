@@ -323,9 +323,12 @@ body,
 }
 
 .scrubber {
+  /* Scrubber places its head with this too. */
+  --beat-gap: 3px;
+
   position: relative;
   display: flex;
-  gap: 3px;
+  gap: var(--beat-gap);
   height: 18px;
   padding: 5px 0;
   cursor: pointer;
