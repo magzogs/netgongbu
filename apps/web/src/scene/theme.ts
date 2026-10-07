@@ -2,8 +2,8 @@ import type { LinkMedium, NodeType, Protocol } from '@magvirtualedu/schema';
 
 // Colours used inside the WebGL scene, where CSS custom properties do not reach.
 
-export const SCENE_BACKGROUND = '#0b0f17';
-export const ACCENT = '#5eead4';
+export const SCENE_BACKGROUND = '#17100b';
+export const ACCENT = '#ff9f1c';
 /** Ring around a node that acts in the current beat; matches the bubble colour. */
 export const BUSY = '#fbbf24';
 

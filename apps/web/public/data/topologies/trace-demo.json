@@ -14,7 +14,7 @@
     {
       "id": "z-device",
       "label": "노트북 내부",
-      "color": "#2563eb",
+      "color": "#c2410c",
       "bounds": [-7.5, -4.5, 5.5, 4.5],
       "elevation": 0.3,
       "anchor": {

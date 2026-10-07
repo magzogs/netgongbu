@@ -99,8 +99,8 @@ export function Ground({
           position={[0, -0.01, 0]}
           cellSize={1}
           sectionSize={5}
-          cellColor="#1c2433"
-          sectionColor="#2a3550"
+          cellColor="#2e2118"
+          sectionColor="#4a3424"
           fadeDistance={160}
           fadeStrength={1.5}
         />

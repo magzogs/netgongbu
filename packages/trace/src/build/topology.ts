@@ -462,7 +462,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       {
         id: 'z-device',
         label: '노트북 내부',
-        color: '#2563eb',
+        color: '#c2410c',
         bounds: [-7.5, -4.5, 5.5, 4.5],
         elevation: SURFACE_LIFT,
         ...(deviceAnchor && { anchor: deviceAnchor }),
@@ -489,7 +489,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
     const rows = Math.ceil(chainOrder.length / ROW);
     const width = (Math.min(chainOrder.length, ROW) - 1) * COL_GAP;
     zones = [
-      { id: 'z-device', label: '노트북 내부', color: '#2563eb', bounds: [-42, -7, -21.5, 7] },
+      { id: 'z-device', label: '노트북 내부', color: '#c2410c', bounds: [-42, -7, -21.5, 7] },
       { id: 'z-home', label: '집', color: '#2f6f4f', bounds: [-17.5, -2.5, -6.5, 2.5] },
       {
         id: 'z-internet',

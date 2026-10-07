@@ -18,7 +18,7 @@ export function createMainWindow(): BrowserWindow {
     minWidth: 900,
     minHeight: 600,
     title: 'Network in 3D',
-    backgroundColor: '#0b0f17',
+    backgroundColor: '#17100b',
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

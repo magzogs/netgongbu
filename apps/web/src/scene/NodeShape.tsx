@@ -91,7 +91,7 @@ export function NodeShape({ type, color }: Props): ReactElement {
           {[0.45, 0.9, 1.35].map((y) => (
             <mesh key={y} position={[0, y, 0.505]}>
               <planeGeometry args={[0.8, 0.06]} />
-              <meshBasicMaterial color="#1e293b" />
+              <meshBasicMaterial color="#3d2a1e" />
             </mesh>
           ))}
         </group>
@@ -150,7 +150,7 @@ export function NodeShape({ type, color }: Props): ReactElement {
           </mesh>
           <mesh position={[0, 0.98, 0.065]}>
             <planeGeometry args={[1.5, 0.22]} />
-            <meshBasicMaterial color="#1e293b" />
+            <meshBasicMaterial color="#3d2a1e" />
           </mesh>
         </group>
       );
@@ -215,7 +215,7 @@ export function NodeShape({ type, color }: Props): ReactElement {
           {[0.4, 0.8].map((y) => (
             <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <torusGeometry args={[0.66, 0.02, 8, 48]} />
-              <meshBasicMaterial color="#1e293b" />
+              <meshBasicMaterial color="#3d2a1e" />
             </mesh>
           ))}
         </group>

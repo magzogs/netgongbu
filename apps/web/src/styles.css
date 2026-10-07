@@ -1,10 +1,10 @@
 :root {
-  --bg: #0b0f17;
-  --panel: rgb(17 24 39 / 0.86);
-  --panel-border: rgb(148 163 184 / 0.18);
-  --text: #e2e8f0;
-  --text-muted: #94a3b8;
-  --accent: #5eead4;
+  --bg: #17100b;
+  --panel: rgb(39 26 17 / 0.86);
+  --panel-border: rgb(196 168 146 / 0.18);
+  --text: #f3e9df;
+  --text-muted: #bfa48f;
+  --accent: #ff9f1c;
   --danger: #fca5a5;
   --radius: 10px;
   --gutter: 16px;
@@ -76,6 +76,12 @@ body,
   pointer-events: auto;
 }
 
+.topbar__logo {
+  flex: none;
+  width: 28px;
+  height: 28px;
+}
+
 .topbar__title {
   margin: 0;
   font-size: 15px;
@@ -136,7 +142,7 @@ body,
   white-space: nowrap;
   pointer-events: none;
   user-select: none;
-  background: rgb(15 23 42 / 0.72);
+  background: rgb(42 28 18 / 0.72);
   border: 1px solid var(--panel-border);
   border-radius: 6px;
 }
@@ -203,7 +209,7 @@ body,
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  background: rgb(15 23 42 / 0.9);
+  background: rgb(42 28 18 / 0.9);
   border: 1px solid;
   border-radius: 999px;
 }
@@ -327,7 +333,7 @@ body,
 .icon-button--primary {
   width: 42px;
   height: 42px;
-  color: #04201c;
+  color: #2a1505;
   background: var(--accent);
   border-color: var(--accent);
 }
@@ -489,7 +495,7 @@ body,
   padding: 8px 10px;
   border: 1px solid var(--panel-border);
   border-radius: 8px;
-  background: rgb(148 163 184 / 0.05);
+  background: rgb(196 168 146 / 0.05);
 }
 
 .layer .layer {
@@ -662,7 +668,7 @@ body,
 }
 
 .pill-button[aria-pressed='true'] {
-  color: #04201c;
+  color: #2a1505;
   background: var(--accent);
   border-color: var(--accent);
 }
@@ -824,7 +830,7 @@ body,
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
-  color: #04201c;
+  color: #2a1505;
   background: var(--accent);
   border: 1px solid var(--accent);
   border-radius: 8px;
@@ -872,7 +878,7 @@ body,
   font-size: 15px;
   line-height: 1.5;
   color: var(--text);
-  background: rgb(15 23 42 / 0.7);
+  background: rgb(42 28 18 / 0.7);
   border: 1px solid var(--panel-border);
   border-radius: 8px;
   resize: vertical;
@@ -926,7 +932,7 @@ body,
   font: inherit;
   font-size: 14px;
   font-weight: 700;
-  color: #04201c;
+  color: #2a1505;
   background: var(--accent);
   border: none;
   border-radius: 8px;
@@ -984,7 +990,7 @@ body,
   flex: none;
   width: 18px;
   height: 18px;
-  border: 2px solid rgb(94 234 212 / 0.25);
+  border: 2px solid rgb(255 159 28 / 0.25);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
@@ -994,11 +1000,11 @@ body,
   width: 12px;
   height: 12px;
   border-color: rgb(4 32 28 / 0.25);
-  border-top-color: #04201c;
+  border-top-color: #2a1505;
 }
 
 .ask-button[aria-expanded='true'] .spinner--small {
-  border-color: rgb(94 234 212 / 0.25);
+  border-color: rgb(255 159 28 / 0.25);
   border-top-color: var(--accent);
 }
 
@@ -1178,7 +1184,7 @@ body,
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #475569;
+  background: #6e5444;
 }
 
 .browser__dots i:first-child {
@@ -1204,7 +1210,7 @@ body,
   font-family: var(--mono);
   font-size: 13px;
   color: var(--text);
-  background: rgb(15 23 42 / 0.8);
+  background: rgb(42 28 18 / 0.8);
   border: 1px solid var(--panel-border);
   border-radius: 999px;
 }
@@ -1227,7 +1233,7 @@ body,
 .browser__page {
   flex: 1;
   min-width: 0;
-  background: rgb(15 23 42 / 0.6);
+  background: rgb(42 28 18 / 0.6);
 }
 
 .browser__intro {
@@ -1355,7 +1361,7 @@ body,
 }
 
 .segmented > button[aria-checked='true'] {
-  color: #0b1220;
+  color: #20140b;
   font-weight: 700;
   background: var(--accent);
 }
@@ -1393,12 +1399,12 @@ body,
 }
 
 .dot--spec {
-  background: #64748b;
+  background: #8f7462;
 }
 
 .source--spec {
-  color: #e2e8f0;
-  background: #475569;
+  color: #f3e9df;
+  background: #6e5444;
 }
 
 .lab__completed {
@@ -1451,12 +1457,12 @@ body,
 }
 
 .encap__band:hover {
-  background: rgb(148 163 184 / 0.08);
+  background: rgb(196 168 146 / 0.08);
 }
 
 .encap__band.is-selected {
-  background: rgb(94 234 212 / 0.12);
-  box-shadow: inset 0 0 0 1px rgb(94 234 212 / 0.55);
+  background: rgb(255 159 28 / 0.12);
+  box-shadow: inset 0 0 0 1px rgb(255 159 28 / 0.55);
 }
 
 .encap__label {
@@ -1517,7 +1523,7 @@ body,
 }
 
 .encap__box.is-own {
-  color: #0b1220;
+  color: #20140b;
   font-weight: 700;
   background: var(--layer);
   border: 1px solid var(--layer);
@@ -1535,7 +1541,7 @@ body,
 }
 
 .encap__box--cipher {
-  background: repeating-linear-gradient(135deg, #334155 0 6px, #1e293b 6px 12px);
+  background: repeating-linear-gradient(135deg, #564032 0 6px, #3d2a1e 6px 12px);
 }
 
 /* The 32-bit header diagram. */
@@ -1614,7 +1620,7 @@ body,
   white-space: nowrap;
   text-overflow: ellipsis;
   text-align: center;
-  color: #0b1220;
+  color: #20140b;
   background: color-mix(in srgb, var(--layer) 70%, transparent);
   border-right: 1px solid color-mix(in srgb, var(--layer) 55%, transparent);
   cursor: pointer;
@@ -1649,13 +1655,13 @@ body,
 .lcell.is-focused,
 .lgrid__band.is-focused,
 .lgrid__fold.is-focused {
-  color: #0b1220;
+  color: #20140b;
   background: #facc15;
 }
 
 .lcell.is-focused .lcell__value,
 .lcell.is-focused .lcell__raw {
-  color: #0b1220;
+  color: #20140b;
 }
 
 .lcell::after {
@@ -1677,11 +1683,11 @@ body,
 }
 
 .lcell[data-source='spec']::after {
-  background: #64748b;
+  background: #8f7462;
 }
 
 .lcell--gap {
-  background: repeating-linear-gradient(135deg, transparent 0 4px, rgb(148 163 184 / 0.12) 4px 8px);
+  background: repeating-linear-gradient(135deg, transparent 0 4px, rgb(196 168 146 / 0.12) 4px 8px);
   cursor: default;
 }
 
@@ -1755,7 +1761,7 @@ body,
   min-height: 40px;
   font-size: 12px;
   color: var(--text);
-  background: rgb(148 163 184 / 0.06);
+  background: rgb(196 168 146 / 0.06);
   border-style: dashed;
 }
 
@@ -1778,7 +1784,7 @@ body,
 .fdetail {
   padding: 10px 12px;
   font-size: 12px;
-  background: rgb(148 163 184 / 0.06);
+  background: rgb(196 168 146 / 0.06);
   border: 1px solid var(--panel-border);
   border-radius: 8px;
 }
@@ -1862,7 +1868,7 @@ body,
 }
 
 .flist__item:hover {
-  background: rgb(148 163 184 / 0.1);
+  background: rgb(196 168 146 / 0.1);
 }
 
 .flist__item.is-focused {
@@ -1960,7 +1966,7 @@ body,
 
 .hex__byte.is-lit,
 .hex__ascii .is-lit {
-  color: #0b1220;
+  color: #20140b;
   background: #facc15;
   opacity: 1;
 }

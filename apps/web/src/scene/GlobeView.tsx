@@ -44,10 +44,10 @@ export function GlobeView({ globe }: { globe: Globe }): ReactElement {
     <group>
       <mesh position={globe.center}>
         <sphereGeometry args={[globe.radius, 96, 64]} />
-        <meshStandardMaterial color="#0e1a2f" roughness={0.95} metalness={0} />
+        <meshStandardMaterial color="#2a1c12" roughness={0.95} metalness={0} />
       </mesh>
       <lineSegments geometry={borders}>
-        <lineBasicMaterial color="#3d6aa8" transparent opacity={0.75} />
+        <lineBasicMaterial color="#a8703d" transparent opacity={0.75} />
       </lineSegments>
     </group>
   );

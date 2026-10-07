@@ -9,7 +9,7 @@
       "color": "#2f6f4f",
       "bounds": [-4, -5, 11, 5]
     },
-    { "id": "isp", "label": "통신사 (ISP)", "color": "#3d5a80", "bounds": [13, -5, 21, 5] },
+    { "id": "isp", "label": "통신사 (ISP)", "color": "#6b7a2e", "bounds": [13, -5, 21, 5] },
     { "id": "internet", "label": "인터넷", "color": "#5c5470", "bounds": [23, -5, 35, 5] },
     { "id": "public-dns", "label": "공용 DNS", "color": "#7a5c2e", "bounds": [37, -16, 47, -8] },
     {
