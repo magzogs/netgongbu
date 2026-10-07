@@ -1,12 +1,16 @@
-import { useMemo, type ReactElement } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { useMemo, useRef, type ReactElement } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Vector3, type DirectionalLight } from 'three';
+import type { Globe, Vec3 } from '@magvirtualedu/schema';
 import { useViewer, type World } from '../store/viewer';
 import { focusNode, selectNode } from '../commands';
 import { CameraRig } from './CameraRig';
+import { SceneCapture } from './capture';
 import { GlobeView } from './GlobeView';
 import { Ground } from './Ground';
 import { LabelProjector } from './LabelProjector';
 import { LinkMesh, type LinkEmphasis } from './LinkMesh';
+import { markerMax } from './markers';
 import { NodeMesh } from './NodeMesh';
 import { Packets } from './Packets';
 import { PlaybackTicker } from './PlaybackTicker';
@@ -27,33 +31,74 @@ function TopologyView({ world }: { world: World }): ReactElement {
   return (
     <group>
       {[...world.curves.values()].map((lc) => (
-        <LinkMesh key={lc.link.id} linkCurve={lc} emphasis={emphasisOf(lc.link.id)} />
+        <LinkMesh
+          key={lc.link.id}
+          linkCurve={lc}
+          emphasis={emphasisOf(lc.link.id)}
+          thin={world.markers}
+        />
       ))}
       {world.topology.nodes.map((node) => (
         <NodeMesh
           key={node.id}
           node={node}
           globe={world.topology.globe}
+          markerMax={markerMax(world, node)}
           selected={selection?.kind === 'node' && selection.id === node.id}
           busy={busyNodes.has(node.id)}
           onSelect={selectNode}
           onFocus={focusNode}
         />
       ))}
-      <Packets />
+      <Packets markers={world.markers} />
     </group>
+  );
+}
+
+const SUN: Vec3 = [30, 50, 25];
+const scratch = new Vector3();
+
+/**
+ * A sun fixed over a floor or map. A globe is turned every way, so there the light comes from
+ * the camera (a little from the upper left, for some shading) and whatever side faces the viewer
+ * is lit.
+ */
+function Lights({ globe }: { globe: Globe | undefined }): ReactElement {
+  const light = useRef<DirectionalLight>(null);
+  useFrame(({ camera }) => {
+    const sun = light.current;
+    if (!sun) return;
+    if (!globe) {
+      sun.position.set(...SUN);
+      sun.target.position.set(0, 0, 0);
+    } else {
+      const reach = camera.position.distanceTo(sun.target.position) * 0.35;
+      sun.target.position.set(...globe.center);
+      sun.position
+        .copy(camera.position)
+        .addScaledVector(scratch.set(0, 1, 0).applyQuaternion(camera.quaternion), reach)
+        .addScaledVector(scratch.set(-1, 0, 0).applyQuaternion(camera.quaternion), reach * 0.6);
+    }
+    sun.target.updateMatrixWorld();
+  });
+  return (
+    <>
+      <hemisphereLight args={['#dbeafe', '#0f172a', globe ? 0.55 : 0.9]} />
+      <directionalLight ref={light} position={SUN} intensity={globe ? 1.9 : 1.4} />
+    </>
   );
 }
 
 export function Scene(): ReactElement {
   const world = useViewer((s) => s.world);
-  // Fog starts well beyond the topology so large (globe) scenes are not washed out.
-  const fogNear = world?.topology.globe ? world.topology.globe.radius * 6 : 120;
+  // Fog starts well beyond the topology so large (globe, world map) scenes are not washed out.
+  const radius = world?.source.globe?.radius;
+  const fogNear = radius ? radius * 6 : 120;
   const select = useViewer((s) => s.select);
   return (
     <Canvas
       className="scene"
-      camera={{ fov: 45, near: 0.1, far: 600, position: [25, 40, 60] }}
+      camera={{ fov: 45, near: 0.1, far: 900, position: [25, 40, 60] }}
       dpr={[1, 2]}
       onPointerMissed={() => {
         select(null);
@@ -61,14 +106,18 @@ export function Scene(): ReactElement {
     >
       <color attach="background" args={[SCENE_BACKGROUND]} />
       <fog attach="fog" args={[SCENE_BACKGROUND, fogNear, fogNear * 2.2]} />
-      <hemisphereLight args={['#dbeafe', '#0f172a', 0.9]} />
-      <directionalLight position={[30, 50, 25]} intensity={1.4} />
-      <Ground zones={world?.topology.zones ?? []} globe={world?.topology.globe} />
+      <Lights globe={world?.topology.globe} />
+      <Ground
+        zones={world?.topology.zones ?? []}
+        globe={world?.topology.globe}
+        flatMap={world?.flatMap ?? null}
+      />
       {world?.topology.globe && <GlobeView globe={world.topology.globe} />}
       {world && <TopologyView world={world} />}
       <CameraRig />
       <PlaybackTicker />
       <LabelProjector />
+      <SceneCapture />
     </Canvas>
   );
 }

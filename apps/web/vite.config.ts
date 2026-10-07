@@ -12,6 +12,6 @@ export default defineConfig({
     proxy: { '/api': 'http://localhost:8787' },
   },
   preview: { port: 5181, strictPort: true },
-  // three.js + drei make one ~1 MB vendor chunk; that is expected for a 3D viewer.
-  build: { chunkSizeWarningLimit: 1600 },
+  // three.js + drei make one ~1 MB vendor chunk (plus the world map); expected for a 3D viewer.
+  build: { chunkSizeWarningLimit: 1800 },
 });

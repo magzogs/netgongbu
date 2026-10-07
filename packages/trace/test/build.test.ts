@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  distanceKm,
+  positionToGeo,
   ScenarioSchema,
   TopologySchema,
   validateScenario,
@@ -36,23 +38,58 @@ describe('buildFromReport on a located trace', () => {
   });
 
   it('puts the internet on a globe turned to the learner, with the computer and home on its surface', () => {
-    expect(topology.globe?.focus).toEqual({ lat: 37.57, lon: 126.98 });
+    const globe = topology.globe;
+    if (!globe) throw new Error('expected a globe');
+    expect(globe.focus).toEqual({ lat: 37.57, lon: 126.98 });
     const zones = topology.zones ?? [];
     expect(zones.map((z) => [z.id, z.elevation])).toEqual([
-      ['z-device', 0.3],
-      ['z-home', 0.3],
+      ['z-device', 0.03],
+      ['z-home', 0.03],
     ]);
-    // Just south of the learner: the home first, then the computer.
-    const [device, home] = zones.map((z) => z.anchor);
-    expect(home?.lon).toBe(126.98);
-    expect(home?.lat).toBeLessThan(37.57);
-    expect(device?.lat).toBeLessThan(home?.lat ?? 0);
-    const center = topology.globe?.center ?? [0, 0, 0];
+    const center = globe.center;
     const onSurface = ['n-hop-2', 'n-hop-3', 'n-hop-4', 'n-hop-8', 'n-server'];
     onSurface.push('d-browser', 'd-stack', 'd-nic', 'h-router', 'h-modem');
     for (const id of onSurface) {
       const p = node(id)?.pos ?? [0, 0, 0];
-      expect(Math.hypot(p[0] - center[0], p[1] - center[1], p[2] - center[2])).toBeCloseTo(40.3, 5);
+      expect(Math.hypot(p[0] - center[0], p[1] - center[1], p[2] - center[2])).toBeCloseTo(
+        40.03,
+        5,
+      );
+    }
+  });
+
+  it('puts the home on the learner’s place and the computer right beside it, both small', () => {
+    const globe = topology.globe;
+    if (!globe) throw new Error('expected a globe');
+    const zone = (id: string) => topology.zones?.find((z) => z.id === id);
+    const home = zone('z-home');
+    const device = zone('z-device');
+    expect(home?.anchor).toEqual(globe.focus);
+    expect(device?.anchor).toEqual(globe.focus);
+    const km = (units: number): number => (units * 6371) / globe.radius;
+    for (const z of [home, device]) {
+      const [minX, minZ, maxX, maxZ] = z?.bounds ?? [0, 0, 0, 0];
+      // Tens of kilometres across, not a thousand.
+      expect(km(maxX - minX)).toBeLessThan(100);
+      expect(km(maxZ - minZ)).toBeLessThan(100);
+    }
+    // The home covers the learner's place; the computer lies just south of it, not on it.
+    const [hx0, hz0, hx1, hz1] = home?.bounds ?? [1, 1, 1, 1];
+    expect(hx0 < 0 && hx1 > 0 && hz0 < 0 && hz1 > 0).toBe(true);
+    const [, dz0, , dz1] = device?.bounds ?? [0, 0, 0, 0];
+    expect(dz0).toBeGreaterThanOrEqual(hz1);
+    expect(km(dz1)).toBeLessThan(120);
+    // Every part of the computer and the home is within about 100 km of the learner.
+    for (const n of topology.nodes.filter((x) => x.zone === 'z-device' || x.zone === 'z-home')) {
+      expect(distanceKm(globe.focus, positionToGeo(globe, n.pos))).toBeLessThan(100);
+    }
+    // Routers in the same city keep clear of them.
+    const insets = topology.nodes.filter((x) => x.zone === 'z-device' || x.zone === 'z-home');
+    for (const hop of topology.nodes.filter((x) => x.type === 'hop')) {
+      for (const n of insets) {
+        const d = Math.hypot(...hop.pos.map((v, i) => v - (n.pos[i] ?? 0)));
+        expect(d).toBeGreaterThan(0.1);
+      }
     }
   });
 
@@ -72,10 +109,17 @@ describe('buildFromReport on a located trace', () => {
     expect(node('h-modem')?.source).toBe('typical');
   });
 
-  it('keeps nodes in the same city apart', () => {
+  it('keeps nodes in the same city apart, but inside the region of their city', () => {
     const a = node('n-hop-3')?.pos ?? [0, 0, 0];
     const b = node('n-hop-5')?.pos ?? [0, 0, 0];
-    expect(Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])).toBeGreaterThan(1.7);
+    expect(Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])).toBeGreaterThan(0.2);
+    const globe = topology.globe;
+    if (!globe) throw new Error('expected a globe');
+    for (const n of topology.nodes) {
+      if (!n.geo) continue;
+      // Fanned out by at most a few tens of kilometres, not into the next country.
+      expect(distanceKm(n.geo, positionToGeo(globe, n.pos))).toBeLessThan(120);
+    }
   });
 
   it('tells the story from Enter: HSTS, DNS via the router, routing and ARP, then the internet', () => {

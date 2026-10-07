@@ -4,53 +4,66 @@ import { useFrame } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { showAll } from '../commands';
 import { useViewer } from '../store/viewer';
-import { approach, followPoint, registerControls, setPanEnabled, trackPoint } from './camera';
+import {
+  approach,
+  configureControls,
+  followHeight,
+  followPoint,
+  keepFocalShift,
+  registerControls,
+  trackPoint,
+  tuneGlobeControls,
+} from './camera';
 
 /**
- * Orbit (left drag / one finger), pan (right drag / two fingers) and zoom (wheel / pinch).
- * Frames the whole topology when it opens; in follow mode keeps the current packet centred.
+ * Camera handling for each view (see camera.ts). Frames the whole topology when it opens; in
+ * follow mode keeps the current packet centred.
  */
 export function CameraRig(): ReactElement {
   const timeline = useViewer((s) => s.timeline);
+  const world = useViewer((s) => s.world);
   const cameraMode = useViewer((s) => s.cameraMode);
-  // A globe can be looked at from any side; a floor plan only from above.
-  const onGlobe = useViewer((s) => s.world?.topology.globe !== undefined);
   const scratch = useMemo(() => new Vector3(), []);
 
-  // Frame a newly opened scenario once the player card is on screen, so its height is known.
+  // Before framing: the globe turns the camera's up to the Earth's axis.
+  useEffect(() => {
+    const following = cameraMode === 'follow';
+    configureControls(world, following);
+    if (following) approach(world);
+  }, [world, cameraMode]);
+
+  // Frame a newly opened scenario (or view) once the player card is on screen, so its height
+  // is known. While following, keep following instead.
   useEffect(() => {
     if (!timeline) return;
     const frameId = requestAnimationFrame(() => {
-      showAll(false);
+      const state = useViewer.getState();
+      if (state.cameraMode === 'follow') approach(state.world);
+      else showAll(false);
     });
     return () => {
       cancelAnimationFrame(frameId);
     };
   }, [timeline]);
 
-  useEffect(() => {
-    const following = cameraMode === 'follow';
-    setPanEnabled(!following);
-    if (following) approach();
-  }, [cameraMode]);
-
   useFrame(() => {
     const state = useViewer.getState();
+    const current = state.world;
+    if (!current) return;
+    if (current.view === 'globe') tuneGlobeControls(current);
+    keepFocalShift(current);
     if (state.cameraMode !== 'follow') return;
     const point = followPoint(state, scratch);
-    if (point) trackPoint(point, state.world?.topology.globe);
+    if (point) trackPoint(point, current, followHeight(state));
   });
 
   return (
     <CameraControls
       ref={(instance: CameraControlsImpl | null) => {
         registerControls(instance);
+        configureControls(useViewer.getState().world, useViewer.getState().cameraMode === 'follow');
       }}
       makeDefault
-      minDistance={3}
-      maxDistance={onGlobe ? 600 : 220}
-      maxPolarAngle={onGlobe ? Math.PI : Math.PI * 0.48}
-      dollyToCursor
     />
   );
 }

@@ -51,6 +51,12 @@ const api: LabApi = {
     download: () => invoke(Channels.geoDownload),
     onEvent: listen(Channels.geoEvent),
   },
+  llm: {
+    models: (config) => invoke(Channels.llmModels, config),
+    chat: (request) => invoke(Channels.llmChat, request),
+    cancel: (id) => invoke(Channels.llmCancel, id),
+    onEvent: listen(Channels.llmEvent),
+  },
 };
 
 contextBridge.exposeInMainWorld('lab', api);

@@ -19,6 +19,7 @@
     "@anthropic-ai/sdk": "0.131.0",
     "@magvirtualedu/ai": "workspace:^",
     "@magvirtualedu/bridge": "workspace:^",
+    "@magvirtualedu/llm": "workspace:^",
     "@magvirtualedu/schema": "workspace:^",
     "@magvirtualedu/trace": "workspace:^",
     "@types/node": "24.13.6",

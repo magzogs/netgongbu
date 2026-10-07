@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import type { Hop } from '@magvirtualedu/schema';
 import {
   dissect,
@@ -9,15 +9,32 @@ import {
 import { PROTOCOL_COLORS } from '../../scene/theme';
 import { useViewer } from '../../store/viewer';
 import { Encapsulation, type Selection } from './Encapsulation';
-import { FieldDetail, FieldList } from './FieldPanel';
+import { FieldDetail, fieldPosition, FieldList } from './FieldPanel';
 import type { Radix } from './grid';
 import { LayerGrid } from './LayerGrid';
 import { PhysicalView } from './PhysicalView';
 import { RawDump, type Range } from './RawDump';
 import { bytesOf, layerAt, MODEL, payloadOf, stackRows, type LayerRef } from './stack';
 import { SOURCE_HINTS, SOURCE_LABELS } from './theme';
+import { FloatingWindow, fullRect } from '../FloatingWindow';
+import { openPopout, PopoutWindow, type Popout } from '../PopoutWindow';
+import { handleShortcut } from '../useKeyboardShortcuts';
 
 const RADIX_KEY = 'magve.lab.radix';
+const RECT_KEY = 'magve.lab.rect';
+const MIN_SIZE = { w: 560, h: 340 };
+
+/** How the window around the anatomy view is handled, for its header buttons. */
+interface Frame {
+  /** panel: inside the app (moved and resized there); window: a separate window. */
+  place: 'panel' | 'window';
+  maximized: boolean;
+  /** The browser refused to open a separate window. */
+  blocked: boolean;
+  onMaximize: () => void;
+  onPopout: () => void;
+  onDock: () => void;
+}
 
 function savedRadix(): Radix {
   try {
@@ -49,12 +66,77 @@ export function PacketLab(): ReactElement | null {
   if (!lab || !hop) return null;
   // Keyed by packet so selection and hover start fresh for each one.
   return (
-    <PacketLabView
-      key={`${String(lab.beatIndex)}-${String(lab.hopIndex)}`}
-      hop={hop}
-      radix={radix}
-      onRadix={changeRadix}
-    />
+    <LabShell hop={hop}>
+      {(frame) => (
+        <PacketLabView
+          key={`${String(lab.beatIndex)}-${String(lab.hopIndex)}`}
+          hop={hop}
+          radix={radix}
+          onRadix={changeRadix}
+          frame={frame}
+        />
+      )}
+    </LabShell>
+  );
+}
+
+/**
+ * The window around the anatomy view while it is open: a panel in the app that can be moved,
+ * resized and maximised, or a separate window.
+ */
+function LabShell({
+  hop,
+  children,
+}: {
+  hop: Hop;
+  children: (frame: Frame) => ReactElement;
+}): ReactElement {
+  const close = useViewer((s) => s.openPacketLab);
+  const [popout, setPopout] = useState<Popout | null>(null);
+  const [maximized, setMaximized] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+
+  const frame: Frame = {
+    place: popout ? 'window' : 'panel',
+    maximized,
+    blocked,
+    onMaximize: () => {
+      setMaximized(!maximized);
+    },
+    onPopout: () => {
+      const opened = openPopout();
+      setBlocked(opened === null);
+      setPopout(opened);
+    },
+    onDock: () => {
+      setPopout(null);
+    },
+  };
+  if (popout) {
+    return (
+      <PopoutWindow
+        popout={popout}
+        title={`패킷 해부 — ${hop.packet.summary}`}
+        onClose={() => {
+          close(null);
+        }}
+        onKeyDown={handleShortcut}
+      >
+        {children(frame)}
+      </PopoutWindow>
+    );
+  }
+  return (
+    <FloatingWindow
+      storageKey={RECT_KEY}
+      min={MIN_SIZE}
+      initial={fullRect}
+      maximized={maximized}
+      onMaximized={setMaximized}
+      className="lab-frame"
+    >
+      {children(frame)}
+    </FloatingWindow>
   );
 }
 
@@ -89,10 +171,12 @@ function PacketLabView({
   hop,
   radix,
   onRadix,
+  frame,
 }: {
   hop: Hop;
   radix: Radix;
   onRadix: (r: Radix) => void;
+  frame: Frame;
 }): ReactElement {
   const world = useViewer((s) => s.world);
   const close = useViewer((s) => s.openPacketLab);
@@ -133,6 +217,34 @@ function PacketLabView({
   const focus = hovered ?? pinned;
   const labelOf = (id: string): string => world?.index.nodes.get(id)?.label ?? id;
 
+  // What is being looked at, for questions to the local LLM about the screen.
+  const setLabFocus = useViewer((s) => s.setLabFocus);
+  const askTutor = useViewer((s) => s.askTutor);
+  useEffect(() => {
+    setLabFocus(
+      layer
+        ? {
+            layer: layer.title,
+            standard: layer.standard,
+            field: focus
+              ? {
+                  name: focus.name,
+                  value: focus.value,
+                  meaning: focus.meaning,
+                  position: fieldPosition(focus, layer),
+                }
+              : null,
+          }
+        : null,
+    );
+  }, [layer, focus, setLabFocus]);
+  const askAbout = (f: Field): void => {
+    if (!layer) return;
+    void askTutor(
+      `${layer.title} 헤더의 ${f.name} 필드(값 ${f.value || '—'})는 무슨 뜻이고, 이 패킷에서 왜 이 값인가요?`,
+    );
+  };
+
   let payload = { length: 0, label: '', onOpen: null as (() => void) | null };
   let unit: Range | null = null;
   if (dissection && ref && layer) {
@@ -151,8 +263,12 @@ function PacketLabView({
   }
 
   return (
-    <section className="lab panel" role="dialog" aria-label="패킷 해부">
-      <header className="lab__header">
+    <section className={`lab panel lab--${frame.place}`} role="dialog" aria-label="패킷 해부">
+      <header
+        className="lab__header"
+        data-drag-handle
+        title={frame.place === 'panel' ? '끌어서 옮기고, 두 번 눌러 크게 봅니다' : undefined}
+      >
         <span className="chip" style={{ borderColor: PROTOCOL_COLORS[hop.packet.protocol] }}>
           {hop.packet.protocol}
         </span>
@@ -160,15 +276,45 @@ function PacketLabView({
         <span className="muted lab__path">
           {labelOf(hop.path[0] ?? '')} → {labelOf(hop.path.at(-1) ?? '')}
         </span>
-        <button
-          type="button"
-          className="text-button lab__close"
-          onClick={() => {
-            close(null);
-          }}
-        >
-          닫기 (Esc)
-        </button>
+        <span className="lab__window-actions">
+          {frame.place === 'panel' ? (
+            <>
+              <button
+                type="button"
+                className="text-button"
+                aria-pressed={frame.maximized}
+                onClick={frame.onMaximize}
+              >
+                {frame.maximized ? '원래 크기' : '크게'}
+              </button>
+              <button
+                type="button"
+                className="text-button"
+                title={
+                  frame.blocked
+                    ? '브라우저가 팝업을 막았습니다. 주소창의 팝업 차단을 풀고 다시 눌러 주세요.'
+                    : '별도의 창으로 띄웁니다. 다른 화면으로 옮기거나 크기를 마음대로 바꿀 수 있습니다.'
+                }
+                onClick={frame.onPopout}
+              >
+                {frame.blocked ? '새 창 (팝업 차단됨)' : '새 창으로 ⧉'}
+              </button>
+            </>
+          ) : (
+            <button type="button" className="text-button" onClick={frame.onDock}>
+              앱 안으로 ⇲
+            </button>
+          )}
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => {
+              close(null);
+            }}
+          >
+            닫기 (Esc)
+          </button>
+        </span>
       </header>
 
       {!dissection || !stack ? (
@@ -258,6 +404,7 @@ function PacketLabView({
                     layer={layer}
                     bytes={bytes}
                     pinned={focus !== null && focus === pinned}
+                    onAsk={askAbout}
                   />
                   <FieldList fields={layer.fields} focus={focus} onHover={setHovered} onPin={pin} />
                 </aside>

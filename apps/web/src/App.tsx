@@ -11,6 +11,7 @@ import { AskButton, ScenarioPicker } from './ui/ScenarioPicker';
 import { SceneLabels } from './ui/SceneLabels';
 import { SettingsButton, SettingsPanel } from './ui/SettingsPanel';
 import { StatusOverlay } from './ui/StatusOverlay';
+import { TutorButton, TutorPanel } from './ui/tutor/TutorPanel';
 import { useKeyboardShortcuts } from './ui/useKeyboardShortcuts';
 
 export function App(): ReactElement {
@@ -29,6 +30,7 @@ export function App(): ReactElement {
         <h1 className="topbar__title">Network in 3D</h1>
         <ScenarioPicker />
         <AskButton />
+        <TutorButton />
         <BrowserButton />
         <SettingsButton />
       </header>
@@ -39,6 +41,7 @@ export function App(): ReactElement {
       <LaptopBrowser />
       <SettingsPanel />
       <PacketLab />
+      <TutorPanel />
       <StatusOverlay />
     </div>
   );

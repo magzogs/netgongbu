@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  ChatMessageSchema,
+  LlmConfigSchema,
+  type ChatMessage,
+  type LlmConfig,
+} from '@magvirtualedu/llm';
 import type { Scenario, ValidationIssue } from '@magvirtualedu/schema';
 import type { Hop, TraceReport } from '@magvirtualedu/trace';
 
@@ -74,6 +80,23 @@ export type GeoEvent =
 
 export type Unsubscribe = () => void;
 
+/** A question to the local LLM: an id to match its events, the server, the conversation. */
+export const LlmChatSchema = z.object({
+  id: z.string().min(1).max(100),
+  config: LlmConfigSchema,
+  // Text plus at most a screenshot or two (data: URLs of a few megabytes).
+  messages: z.array(ChatMessageSchema).min(1).max(60),
+});
+export type LlmChat = z.infer<typeof LlmChatSchema>;
+
+export type LlmModels = { ok: true; models: string[] } | { ok: false; error: string };
+
+/** The answer as it is written, then done (or an error), for one question id. */
+export type LlmEvent =
+  | { id: string; type: 'delta'; text: string }
+  | { id: string; type: 'done' }
+  | { id: string; type: 'error'; message: string };
+
 /** What the preload script exposes to the viewer as window.lab (desktop app only). */
 export interface LabApi {
   ai: {
@@ -100,5 +123,13 @@ export interface LabApi {
   geo: {
     download: () => Promise<void>;
     onEvent: (listener: (event: GeoEvent) => void) => Unsubscribe;
+  };
+  /** A local LLM server, called from the main process. */
+  llm: {
+    models: (config: LlmConfig) => Promise<LlmModels>;
+    /** Starts answering; the answer arrives as events with the same id. */
+    chat: (request: { id: string; config: LlmConfig; messages: ChatMessage[] }) => Promise<void>;
+    cancel: (id: string) => Promise<void>;
+    onEvent: (listener: (event: LlmEvent) => void) => Unsubscribe;
   };
 }

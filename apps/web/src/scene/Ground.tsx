@@ -1,8 +1,11 @@
-import { useMemo, type ReactElement } from 'react';
+import { useEffect, useMemo, type ReactElement } from 'react';
 import { Grid, Line } from '@react-three/drei';
 import { BufferGeometry, DoubleSide, Float32BufferAttribute } from 'three';
 import type { Globe, Zone } from '@magvirtualedu/schema';
+import { projectGeo, type FlatMap } from '../engine/flatMap';
 import { zonePlacer, type ZonePlacer } from '../engine/zones';
+import { BORDER } from './theme';
+import { bordersGeometry, worldTexture } from './worldMap';
 
 /** Cells per side: enough for a floor wrapped onto the globe to follow its curve. */
 const SEGMENTS = 12;
@@ -80,20 +83,58 @@ function ZoneArea({ zone, globe }: { zone: Zone; globe?: Globe | undefined }): R
   );
 }
 
+/** Borders a hair above the map, under the zones and nodes. */
+const MAP_BORDER_HEIGHT = 0.01;
+
+/** The whole world flat, centred on the globe's focus, with borders and coastlines. */
+function WorldMap({ map }: { map: FlatMap }): ReactElement {
+  const texture = useMemo(() => worldTexture(map.globe.focus.lon - 180), [map]);
+  const borders = useMemo(
+    () =>
+      bordersGeometry(
+        (lon, lat) => projectGeo(map, lat, lon, MAP_BORDER_HEIGHT),
+        // A segment over the map's left and right edge would cross the whole map.
+        (a, b) => Math.abs(a[0] - b[0]) > map.width / 2,
+      ),
+    [map],
+  );
+  useEffect(
+    () => () => {
+      texture.dispose();
+      borders.dispose();
+    },
+    [texture, borders],
+  );
+  return (
+    <group>
+      <mesh position={[0, 0, map.equatorZ]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[map.width, map.height]} />
+        <meshStandardMaterial map={texture} roughness={1} metalness={0} />
+      </mesh>
+      <lineSegments geometry={borders}>
+        <lineBasicMaterial color={BORDER} transparent opacity={0.75} />
+      </lineSegments>
+    </group>
+  );
+}
+
 /**
- * Floor grid (left out when the topology sits on a globe) and zone areas, flat or wrapped onto
- * the globe.
+ * Under the topology: a floor grid, the flat world map, or nothing (the globe draws itself);
+ * then the zone areas, flat or wrapped onto the globe.
  */
 export function Ground({
   zones,
   globe,
+  flatMap,
 }: {
   zones: readonly Zone[];
   globe?: Globe | undefined;
+  flatMap: FlatMap | null;
 }): ReactElement {
   return (
     <group>
-      {!globe && (
+      {flatMap && <WorldMap map={flatMap} />}
+      {!globe && !flatMap && (
         <Grid
           infiniteGrid
           position={[0, -0.01, 0]}

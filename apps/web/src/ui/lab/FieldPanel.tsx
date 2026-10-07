@@ -29,7 +29,7 @@ function Raw({ field, bytes, radix }: { field: Field; bytes: Uint8Array; radix: 
 }
 
 /** Where a field sits: bits from the start of its layer's header (or trailer). */
-function position(field: Field, layer: DissectedLayer): string {
+export function fieldPosition(field: Field, layer: DissectedLayer): string {
   const inTrailer = layer.trailer !== undefined && field.bitOffset >= layer.trailer.start * 8;
   const base = (inTrailer && layer.trailer ? layer.trailer.start : layer.start) * 8;
   const rel = field.bitOffset - base;
@@ -49,16 +49,22 @@ interface DetailProps {
   layer: DissectedLayer;
   bytes: Uint8Array;
   pinned: boolean;
+  /** Ask the local LLM about the (pinned) field. */
+  onAsk?: (field: Field) => void;
 }
 
-/** One field in full: where it is, its raw bits both ways, what it means, where it came from. */
-export function FieldDetail({ field, layer, bytes, pinned }: DetailProps): ReactElement {
+/**
+ * One field in full: where it is, its raw bits both ways, what it means, where it came from.
+ * The card keeps one height whatever it shows (it scrolls inside), so hovering never moves the
+ * list below it.
+ */
+export function FieldDetail({ field, layer, bytes, pinned, onAsk }: DetailProps): ReactElement {
   if (!field) {
     return (
       <div className="fdetail fdetail--empty">
         <p>
           구조도의 칸이나 아래 목록에 마우스를 올리면 그 필드가 몇 번째 비트부터 몇 비트인지, 실제
-          값과 뜻이 여기에 나옵니다. 누르면 고정됩니다.
+          값과 뜻이 여기에 나옵니다. 누르면 고정되고, 고정한 필드는 AI에게 물어볼 수 있습니다.
         </p>
       </div>
     );
@@ -70,10 +76,22 @@ export function FieldDetail({ field, layer, bytes, pinned }: DetailProps): React
         <strong>{field.name}</strong>
         <SourceBadge source={field.source} />
         {pinned && <span className="fdetail__pin">📌 고정됨</span>}
+        {pinned && onAsk && (
+          <button
+            type="button"
+            className="text-button fdetail__ask"
+            title="로컬 LLM에게 이 필드에 대해 묻습니다"
+            onClick={() => {
+              onAsk(field);
+            }}
+          >
+            AI에게 묻기
+          </button>
+        )}
       </div>
       <dl>
         <dt>위치</dt>
-        <dd>{position(field, layer)}</dd>
+        <dd>{fieldPosition(field, layer)}</dd>
         <dt>값</dt>
         <dd>{field.value || '—'}</dd>
         <dt>16진수</dt>
@@ -101,10 +119,22 @@ interface ListProps {
   onPin: (f: Field) => void;
 }
 
-/** Every field of the layer at a glance, groups with their parts indented. */
+/**
+ * Every field of the layer at a glance, groups with their parts indented. Hover ends when the
+ * pointer leaves the whole list, not between two rows, so the detail card does not flash empty.
+ */
 export function FieldList({ fields, focus, depth = 0, onHover, onPin }: ListProps): ReactElement {
   return (
-    <ul className={depth === 0 ? 'flist' : 'flist flist--nested'}>
+    <ul
+      className={depth === 0 ? 'flist' : 'flist flist--nested'}
+      onMouseLeave={
+        depth === 0
+          ? () => {
+              onHover(null);
+            }
+          : undefined
+      }
+    >
       {fields.map((f) => (
         <li key={`${f.key}-${String(f.bitOffset)}`}>
           <button
@@ -113,9 +143,6 @@ export function FieldList({ fields, focus, depth = 0, onHover, onPin }: ListProp
             title={f.meaning}
             onMouseEnter={() => {
               onHover(f);
-            }}
-            onMouseLeave={() => {
-              onHover(null);
             }}
             onClick={() => {
               onPin(f);

@@ -1,6 +1,5 @@
 import {
   geoToPosition,
-  southOf,
   surfacePatch,
   type Geo,
   type Globe,
@@ -41,21 +40,34 @@ export interface BuiltTopology {
 }
 
 const GLOBE_RADIUS = 40;
-// On a globe the computer and the home lie on the surface just south of the learner's place
-// (towards the bottom of the screen from above), so they do not hide the hops there. Distances
-// are along the surface, in globe units.
-const DEVICE_SOUTH = 17;
 /** Spacing of the parts inside the computer, so their labels do not overlap (flat layout). */
 const DEVICE_SPREAD = 1.4;
-/** On a globe the computer is a small inset: the globe and the route are the main picture. */
-const DEVICE_SPREAD_GLOBE = 0.8;
 /** Flat layout: internet hops snake in rows of this many. */
 const ROW = 5;
 const COL_GAP = 8;
 const ROW_GAP = 9;
-const HOME_SOUTH = 7;
-/** Height of nodes and zones above the globe surface. */
-const SURFACE_LIFT = 0.3;
+// On a globe the home lies on the learner's place and the computer right next to it (to the
+// south, the bottom of the screen from above), both drawn small: a few tens of kilometres across,
+// so they stay inside the learner's region. Lengths are along the surface, east (x) and south
+// (z) of the learner's place, in globe units (about 160 km each).
+/** Globe units per unit of the computer's own layout. */
+const DEVICE_SCALE_GLOBE = 0.04;
+/** The computer's layout area (its own units) and where its middle goes on a globe. */
+const DEVICE_LAYOUT: Zone['bounds'] = [-7.5, -4.5, 5.5, 4.5];
+const DEVICE_AT: readonly [number, number] = [-0.12, 0.38];
+/** The home on a globe: router to the west and modem to the east of the learner's place. */
+const HOME_BOUNDS_GLOBE: Zone['bounds'] = [-0.2, -0.1, 0.2, 0.1];
+const HOME_NODE_X = 0.1;
+/** Height of nodes and zones above the globe surface: just clear of it. */
+const SURFACE_LIFT = 0.03;
+/**
+ * Nodes in one city are fanned out on rings this far apart (globe units, about 160 km each), so
+ * they stay inside their region; the viewer draws them as small markers that separate as the
+ * camera comes closer.
+ */
+const SAME_PLACE_RING = 0.3;
+/** Internet nodes keep at least this far from the home and the computer (about 20 km). */
+const INSET_CLEARANCE = 0.12;
 
 /** Well-known response headers that reveal a CDN in front of the origin. */
 const CDN_MARKERS: readonly [header: string, name: string][] = [
@@ -134,35 +146,101 @@ function hopDescription(entry: PathEntry): string {
   return `${parts.join('. ')}.`;
 }
 
-/** Spreads nodes that would sit on top of each other (same city) around their spot. */
-function spread(positions: Map<string, Vec3>, order: readonly string[], globe: Globe | null): void {
+/**
+ * Two directions along the floor at `p`: the plane x/z, or on a globe the plane touching the
+ * surface there (so a ring stays round wherever on the Earth it is).
+ */
+function floorAxes(p: Vec3, globe: Globe | null): [Vec3, Vec3] {
+  if (!globe)
+    return [
+      [1, 0, 0],
+      [0, 0, 1],
+    ];
+  const c = globe.center;
+  const l = Math.hypot(p[0] - c[0], p[1] - c[1], p[2] - c[2]) || 1;
+  const up: Vec3 = [(p[0] - c[0]) / l, (p[1] - c[1]) / l, (p[2] - c[2]) / l];
+  const ref: Vec3 = Math.abs(up[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+  const a: Vec3 = [
+    ref[1] * up[2] - ref[2] * up[1],
+    ref[2] * up[0] - ref[0] * up[2],
+    ref[0] * up[1] - ref[1] * up[0],
+  ];
+  const la = Math.hypot(...a) || 1;
+  const u: Vec3 = [a[0] / la, a[1] / la, a[2] / la];
+  const v: Vec3 = [
+    up[1] * u[2] - up[2] * u[1],
+    up[2] * u[0] - up[0] * u[2],
+    up[0] * u[1] - up[1] * u[0],
+  ];
+  return [u, v];
+}
+
+/** Places on rings round a spot (east, north offsets): 6 on the first ring, 12 on the next … */
+function* ringSpots(): Generator<[number, number]> {
+  for (let ring = 1; ring <= 12; ring++) {
+    const count = 6 * ring;
+    for (let i = 0; i < count; i++) {
+      const angle = (2 * Math.PI * i) / count;
+      yield [Math.cos(angle) * ring * SAME_PLACE_RING, Math.sin(angle) * ring * SAME_PLACE_RING];
+    }
+  }
+}
+
+/**
+ * Spreads nodes that would sit on top of each other (same city) on rings around their spot,
+ * clear of `keepOut` (points covering the home and the computer).
+ */
+function spread(
+  positions: Map<string, Vec3>,
+  order: readonly string[],
+  globe: Globe | null,
+  keepOut: readonly Vec3[] = [],
+): void {
   const placed: Vec3[] = [];
+  const near = SAME_PLACE_RING * 0.8;
+  const distance = (a: Vec3, b: Vec3): number => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  const free = (c: Vec3): boolean =>
+    !placed.some((q) => distance(q, c) < near) &&
+    !keepOut.some((q) => distance(q, c) < INSET_CLEARANCE);
   for (const id of order) {
     const p = positions.get(id);
     if (!p) continue;
-    let k = 0;
+    const [u, v] = floorAxes(p, globe);
     let candidate = p;
-    while (
-      placed.some(
-        (q) => Math.hypot(q[0] - candidate[0], q[1] - candidate[1], q[2] - candidate[2]) < 1.8,
-      )
-    ) {
-      k += 1;
-      const angle = (k * Math.PI) / 3;
-      const ring = 3 * Math.ceil(k / 6);
-      candidate = [p[0] + Math.cos(angle) * ring, p[1], p[2] + Math.sin(angle) * ring];
-      if (globe) {
-        // Back onto the globe surface.
-        const c = globe.center;
-        const v: Vec3 = [candidate[0] - c[0], candidate[1] - c[1], candidate[2] - c[2]];
-        const len = Math.hypot(...v) || 1;
-        const r = globe.radius + SURFACE_LIFT;
-        candidate = [c[0] + (v[0] / len) * r, c[1] + (v[1] / len) * r, c[2] + (v[2] / len) * r];
+    if (!free(candidate)) {
+      for (const [du, dv] of ringSpots()) {
+        candidate = [
+          p[0] + u[0] * du + v[0] * dv,
+          p[1] + u[1] * du + v[1] * dv,
+          p[2] + u[2] * du + v[2] * dv,
+        ];
+        if (globe) {
+          // Back onto the globe surface.
+          const c = globe.center;
+          const w: Vec3 = [candidate[0] - c[0], candidate[1] - c[1], candidate[2] - c[2]];
+          const len = Math.hypot(...w) || 1;
+          const r = globe.radius + SURFACE_LIFT;
+          candidate = [c[0] + (w[0] / len) * r, c[1] + (w[1] / len) * r, c[2] + (w[2] / len) * r];
+        }
+        if (free(candidate)) break;
       }
     }
     positions.set(id, candidate);
     placed.push(candidate);
   }
+}
+
+/** Points every `step` over a zone's area, wrapped onto the globe by `place`. */
+function areaPoints(
+  place: (x: number, z: number) => Vec3,
+  [minX, minZ, maxX, maxZ]: Zone['bounds'],
+  step = 0.05,
+): Vec3[] {
+  const points: Vec3[] = [];
+  for (let x = minX; x <= maxX + 1e-9; x += step) {
+    for (let z = minZ; z <= maxZ + 1e-9; z += step) points.push(place(x, z));
+  }
+  return points;
 }
 
 /** Positions for internet nodes without a location: between their located neighbours. */
@@ -300,19 +378,24 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
         : '유선 랜카드: 이더넷 프레임을 케이블로 보냅니다',
     ],
   ];
-  // On a globe the computer and the home are small maps wrapped onto the surface.
-  const deviceAnchor = globe ? southOf(globe, globe.focus, DEVICE_SOUTH) : null;
-  const homeAnchor = globe ? southOf(globe, globe.focus, HOME_SOUTH) : null;
-  const onDevice =
-    globe && deviceAnchor ? surfacePatch(globe, deviceAnchor, SURFACE_LIFT).place : null;
-  const onHome = globe && homeAnchor ? surfacePatch(globe, homeAnchor, SURFACE_LIFT).place : null;
-  const spreadBy = globe ? DEVICE_SPREAD_GLOBE : DEVICE_SPREAD;
+  // On a globe the home and the computer are small maps laid onto the surface at the learner's
+  // place (both zones are anchored there; their bounds say where around it each one lies).
+  const onPlace = globe ? surfacePatch(globe, globe.focus, SURFACE_LIFT).place : null;
+  const [deviceX, deviceZ] = DEVICE_AT;
+  const deviceBounds: Zone['bounds'] = [
+    deviceX + DEVICE_LAYOUT[0] * DEVICE_SCALE_GLOBE,
+    deviceZ + DEVICE_LAYOUT[1] * DEVICE_SCALE_GLOBE,
+    deviceX + DEVICE_LAYOUT[2] * DEVICE_SCALE_GLOBE,
+    deviceZ + DEVICE_LAYOUT[3] * DEVICE_SCALE_GLOBE,
+  ];
   for (const [nid, type, label, [x, z], description] of device) {
     nodes.push({
       id: nid,
       type,
       label,
-      pos: onDevice ? onDevice(x * spreadBy, z * spreadBy) : [x * spreadBy - 30, 0, z * spreadBy],
+      pos: onPlace
+        ? onPlace(deviceX + x * DEVICE_SCALE_GLOBE, deviceZ + z * DEVICE_SCALE_GLOBE)
+        : [x * DEVICE_SPREAD - 30, 0, z * DEVICE_SPREAD],
       zone: 'z-device',
       description,
     });
@@ -336,13 +419,14 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
 
   // Home: router (observed gateway) and the modem traceroute cannot see.
   // Router towards the computer, modem towards the internet, so the chain does not fold back.
-  const homeAt = (x: number): Vec3 => (onHome ? onHome(x, 0) : [x - 12, 0, 0]);
+  const homeAt = (side: -1 | 1): Vec3 =>
+    onPlace ? onPlace(side * HOME_NODE_X, 0) : [side * 2.5 - 12, 0, 0];
   nodes.push(
     {
       id: 'h-router',
       type: 'router',
       label: '공유기',
-      pos: homeAt(-2.5),
+      pos: homeAt(-1),
       zone: 'z-home',
       description: '기본 게이트웨이. 집 안의 사설 IP를 공인 IP로 바꾸는 NAT도 합니다.',
       ...(local.gateway && {
@@ -359,7 +443,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       id: 'h-modem',
       type: 'modem',
       label: '모뎀 / ONT',
-      pos: homeAt(2.5),
+      pos: homeAt(1),
       zone: 'z-home',
       source: 'typical',
       description:
@@ -457,23 +541,28 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       geoToPosition(globe, globe.focus.lat, globe.focus.lon, SURFACE_LIFT),
       globe,
     );
-    spread(positions, order, globe);
+    // Routers in the learner's own city make way for the home and the computer.
+    const keepOut = onPlace
+      ? [...areaPoints(onPlace, deviceBounds), ...areaPoints(onPlace, HOME_BOUNDS_GLOBE)]
+      : [];
+    spread(positions, order, globe, keepOut);
+    const anchor = { lat: globe.focus.lat, lon: globe.focus.lon };
     zones = [
       {
         id: 'z-device',
         label: '노트북 내부',
         color: '#c2410c',
-        bounds: [-7.5, -4.5, 5.5, 4.5],
+        bounds: deviceBounds,
         elevation: SURFACE_LIFT,
-        ...(deviceAnchor && { anchor: deviceAnchor }),
+        anchor,
       },
       {
         id: 'z-home',
         label: '집',
         color: '#2f6f4f',
-        bounds: [-4.5, -2.5, 4.5, 2.5],
+        bounds: HOME_BOUNDS_GLOBE,
         elevation: SURFACE_LIFT,
-        ...(homeAnchor && { anchor: homeAnchor }),
+        anchor,
       },
     ];
   } else {

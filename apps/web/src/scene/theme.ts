@@ -7,6 +7,12 @@ export const ACCENT = '#ff9f1c';
 /** Ring around a node that acts in the current beat; matches the bubble colour. */
 export const BUSY = '#fbbf24';
 
+/** The world under a globe topology (globe and flat map): sea, land, borders, the 30° grid. */
+export const OCEAN = '#0f2b3d';
+export const LAND = '#5b4632';
+export const BORDER = '#a8703d';
+export const GRATICULE = 'rgb(120 160 180 / 0.16)';
+
 export const NODE_COLORS: Record<NodeType, string> = {
   client: '#93c5fd',
   router: '#5eead4',

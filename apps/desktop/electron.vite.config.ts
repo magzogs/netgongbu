@@ -22,7 +22,7 @@ export default defineConfig({
       outDir: resolve(import.meta.dirname, 'out/renderer'),
       emptyOutDir: true,
       minify: 'esbuild',
-      chunkSizeWarningLimit: 1600,
+      chunkSizeWarningLimit: 1800,
       rollupOptions: { input: resolve(web, 'index.html') },
     },
   },

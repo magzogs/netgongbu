@@ -42,6 +42,8 @@ function rotate(v: V, k: V, a: number): V {
 export interface GlobeTransform {
   /** Unit direction from the globe centre, after turning `focus` to the top (+y, north to -z). */
   direction: (lat: number, lon: number) => V;
+  /** The place a direction from the centre points at: the inverse of `direction`. */
+  place: (direction: V) => { lat: number; lon: number };
 }
 
 /** Turns the focus point to +y and the local north at the focus to -z (up on screen). */
@@ -58,7 +60,14 @@ export function globeTransform(focus: { lat: number; lon: number }): GlobeTransf
   const heading = Math.atan2(northward[0], -northward[2]);
   const spin = (v: V): V => rotate(v, up, heading);
 
-  return { direction: (lat, lon) => spin(first(unit(lat, lon))) };
+  return {
+    direction: (lat, lon) => spin(first(unit(lat, lon))),
+    place: (d) => {
+      const back = rotate(rotate(normalize(d), up, -heading), axis, -angle);
+      const lat = Math.asin(Math.min(1, Math.max(-1, back[1]))) / RAD;
+      return { lat, lon: Math.atan2(-back[2], back[0]) / RAD };
+    },
+  };
 }
 
 /** Position of a lat/lon on the globe surface, `lift` units above it. */
@@ -66,6 +75,22 @@ export function geoToPosition(globe: Globe, lat: number, lon: number, lift = 0):
   const d = globeTransform(globe.focus).direction(lat, lon);
   const r = globe.radius + lift;
   return [globe.center[0] + d[0] * r, globe.center[1] + d[1] * r, globe.center[2] + d[2] * r];
+}
+
+/** Latitude, longitude and height above the surface of a point near the globe. */
+export function positionToGeo(
+  globe: Globe,
+  pos: Vec3,
+): { lat: number; lon: number; height: number } {
+  const v: V = [pos[0] - globe.center[0], pos[1] - globe.center[1], pos[2] - globe.center[2]];
+  const length = Math.hypot(v[0], v[1], v[2]);
+  if (length < 1e-9) return { ...globe.focus, height: -globe.radius };
+  return { ...globeTransform(globe.focus).place(v), height: length - globe.radius };
+}
+
+/** Direction of the globe's axis, south to north pole, in world coordinates. */
+export function northAxis(globe: Globe): V {
+  return globeTransform(globe.focus).direction(90, 0);
 }
 
 /**

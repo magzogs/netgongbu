@@ -2,18 +2,23 @@ import type { ReactElement } from 'react';
 import { useViewer } from '../store/viewer';
 import { focusNode } from '../commands';
 import { MEDIUM_NAMES, NODE_TYPE_NAMES } from './names';
+import { NodeNumber } from './SceneLabels';
 
 /** What a node is, its interfaces and what it connects to. */
 export function NodeDetails({ id }: { id: string }): ReactElement | null {
   const world = useViewer((s) => s.world);
   const select = useViewer((s) => s.select);
+  const number = useViewer((s) => s.nodeNumbers.get(id));
+  const askTutor = useViewer((s) => s.askTutor);
   const node = world?.index.nodes.get(id);
   if (!world || !node) return null;
   const neighbors = world.index.neighbors(id);
+  const name = `${number === undefined ? '' : `${String(number)}번 `}${node.label}`;
 
   return (
     <div className="node-details">
       <div className="node-details__title">
+        <NodeNumber id={node.id} />
         <strong>{node.label}</strong>
         {NODE_TYPE_NAMES[node.type] !== node.label && (
           <span className="muted">{NODE_TYPE_NAMES[node.type]}</span>
@@ -27,6 +32,16 @@ export function NodeDetails({ id }: { id: string }): ReactElement | null {
         }}
       >
         이 장비로 이동
+      </button>
+      <button
+        type="button"
+        className="text-button node-details__focus"
+        title="로컬 LLM에게 이 장비에 대해 묻습니다"
+        onClick={() => {
+          void askTutor(`${name}은(는) 어떤 장비이고, 이 과정에서 무슨 일을 하나요?`);
+        }}
+      >
+        AI에게 묻기
       </button>
       {node.source === 'typical' && (
         <p className="node-details__typical">

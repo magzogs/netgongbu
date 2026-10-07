@@ -53,6 +53,9 @@ importers:
       '@magvirtualedu/bridge':
         specifier: workspace:^
         version: link:../../packages/bridge
+      '@magvirtualedu/llm':
+        specifier: workspace:^
+        version: link:../../packages/llm
       '@magvirtualedu/schema':
         specifier: workspace:^
         version: link:../../packages/schema
@@ -117,6 +120,9 @@ importers:
       '@magvirtualedu/bridge':
         specifier: workspace:^
         version: link:../../packages/bridge
+      '@magvirtualedu/llm':
+        specifier: workspace:^
+        version: link:../../packages/llm
       '@magvirtualedu/protocols':
         specifier: workspace:^
         version: link:../../packages/protocols
@@ -190,12 +196,21 @@ importers:
 
   packages/bridge:
     dependencies:
+      '@magvirtualedu/llm':
+        specifier: workspace:*
+        version: link:../llm
       '@magvirtualedu/schema':
         specifier: workspace:*
         version: link:../schema
       '@magvirtualedu/trace':
         specifier: workspace:*
         version: link:../trace
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+
+  packages/llm:
+    dependencies:
       zod:
         specifier: 4.6.5
         version: 4.6.5

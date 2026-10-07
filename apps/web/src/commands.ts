@@ -8,11 +8,12 @@ import { NARROW_QUERY, useViewer } from './store/viewer';
 /** Select a node and fly to it; leaves follow mode so the camera stays there. */
 export function focusNode(id: string): void {
   const viewer = useViewer.getState();
-  const node = viewer.world?.index.nodes.get(id);
-  if (!node) return;
+  const world = viewer.world;
+  const node = world?.index.nodes.get(id);
+  if (!world || !node) return;
   viewer.setCameraMode('orbit');
   viewer.select({ kind: 'node', id });
-  focusOn(node.pos, viewer.world?.topology.globe);
+  focusOn(world, node);
 }
 
 /**
@@ -43,7 +44,14 @@ export function showAll(animate = true): void {
   const viewer = useViewer.getState();
   if (!viewer.world) return;
   viewer.setCameraMode('orbit');
-  frameTopology(viewer.world.topology, measureInsets(), animate);
+  frameTopology(viewer.world, measureInsets(), animate);
+}
+
+/** Globe ↔ flat world map, for topologies that have a globe. */
+export function toggleMapView(): void {
+  const viewer = useViewer.getState();
+  if (!viewer.world?.source.globe) return;
+  viewer.setMapView(viewer.mapView === 'globe' ? 'flat' : 'globe');
 }
 
 export function toggleFollow(): void {

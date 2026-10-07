@@ -6,6 +6,7 @@ import { DEFAULT_CLAUDE_SETTINGS } from '@magvirtualedu/ai';
 import { createDesktopAi } from './ai';
 import { registerAiIpc, registerSettingsIpc, registerTraceIpc } from './ipc';
 import { LabBrowser } from './lab-browser';
+import { registerLlmIpc } from './llm';
 import { rendererDir, userPath } from './paths';
 import { registerAppScheme, serveRenderer } from './protocol';
 import { SettingsStore } from './settings';
@@ -41,6 +42,7 @@ async function start(): Promise<void> {
   });
 
   const win = createMainWindow();
+  registerLlmIpc(win, log);
   registerTraceIpc({
     win,
     browser: new LabBrowser(win),

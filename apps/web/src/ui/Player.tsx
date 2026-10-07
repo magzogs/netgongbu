@@ -2,13 +2,14 @@ import type { ReactElement } from 'react';
 import { showAll, toggleFollow } from '../commands';
 import { PROTOCOL_COLORS } from '../scene/theme';
 import { SPEEDS } from '../store/playback';
-import { useViewer } from '../store/viewer';
+import { useViewer, type MapView } from '../store/viewer';
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon, ReplayIcon } from './icons';
 import { Scrubber } from './Scrubber';
 
 function Narration(): ReactElement | null {
   const timeline = useViewer((s) => s.timeline);
   const beatIndex = useViewer((s) => s.beatIndex);
+  const askTutor = useViewer((s) => s.askTutor);
   const entry = timeline?.beats[beatIndex];
   if (!timeline || !entry) return null;
   const protocols = [...new Set(entry.beat.hops.map((h) => h.packet.protocol))];
@@ -23,6 +24,16 @@ function Narration(): ReactElement | null {
             {p}
           </span>
         ))}
+        <button
+          type="button"
+          className="text-button narration__ask"
+          title="로컬 LLM에게 이 단계를 자세히 묻습니다"
+          onClick={() => {
+            void askTutor('지금 단계에서 무슨 일이 일어나는지 자세히 설명해 줘');
+          }}
+        >
+          이 단계 AI에게 묻기
+        </button>
       </div>
       <p className="narration__text">{entry.beat.narration}</p>
     </div>
@@ -46,6 +57,41 @@ function ScenarioNote(): ReactElement | null {
           <p>{scenario.unsupported}</p>
         </details>
       )}
+    </div>
+  );
+}
+
+const MAP_VIEWS: readonly { view: MapView; label: string; hint: string }[] = [
+  { view: 'globe', label: '지구본', hint: '드래그로 지구를 돌리고 휠로 확대합니다 (G)' },
+  {
+    view: 'flat',
+    label: '평면 지도',
+    hint: '드래그로 지도를 옮기고, 오른쪽 드래그로 기울입니다 (G)',
+  },
+];
+
+/** Globe or flat world map, for maps built from a real (located) trace. */
+function MapViewSwitch(): ReactElement | null {
+  const hasGlobe = useViewer((s) => s.world?.source.globe !== undefined);
+  const mapView = useViewer((s) => s.mapView);
+  const setMapView = useViewer((s) => s.setMapView);
+  if (!hasGlobe) return null;
+  return (
+    <div className="segmented map-switch" role="radiogroup" aria-label="지도 보기">
+      {MAP_VIEWS.map(({ view, label, hint }) => (
+        <button
+          key={view}
+          type="button"
+          role="radio"
+          aria-checked={mapView === view}
+          title={hint}
+          onClick={() => {
+            setMapView(view);
+          }}
+        >
+          {label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -109,6 +155,7 @@ function Controls(): ReactElement {
       >
         전체 보기
       </button>
+      <MapViewSwitch />
       <div className="controls__spacer" />
       <label className="toggle" title="각 단계가 끝나면 멈춰서 설명을 읽을 수 있게 합니다">
         <input

@@ -20,6 +20,11 @@ export interface Framing {
    * down (the scene appears higher).
    */
   focalOffset: { x: number; y: number };
+  /**
+   * The centre of the uncovered area in normalised device coordinates (-1..1), from which the
+   * focal offset is worked out again whenever the camera's distance changes.
+   */
+  shift: { x: number; y: number };
 }
 
 /** Keep a little air between the outermost points and the edge of the free area. */
@@ -80,6 +85,18 @@ function fits(camera: PerspectiveCamera, points: readonly Vector3[], x: Band, y:
 }
 
 /**
+ * camera-controls focal offset that moves what is `halfHeight / tan(fov / 2)` from the camera to
+ * the screen position `shift` (normalised device coordinates).
+ */
+export function focalOffsetFor(
+  shift: { x: number; y: number },
+  halfHeight: number,
+  aspect: number,
+): { x: number; y: number } {
+  return { x: -shift.x * halfHeight * aspect, y: shift.y * halfHeight };
+}
+
+/**
  * Closest camera position, looking at the centre of the points, at which every point fits the
  * part of the screen the overlays leave free.
  */
@@ -116,36 +133,66 @@ export function frame(
   return {
     target,
     eye: target.clone().addScaledVector(direction, hi),
-    focalOffset: {
-      x: -x.centre * halfHeightAtTarget * aspect,
-      y: y.centre * halfHeightAtTarget,
-    },
+    focalOffset: focalOffsetFor({ x: x.centre, y: y.centre }, halfHeightAtTarget, aspect),
+    shift: { x: x.centre, y: y.centre },
   };
 }
 
 /**
- * Where to look at a globe from at first: high above the learner's place (on top), north up, so
- * the story starts with the computer, the home and the first routers in view. A route to the far
- * side of the world cannot be seen whole from any one side; following the packet carries the
- * camera round the globe (see globeFollowEye).
+ * Framing for a globe. The camera orbits the globe's centre with north up (so a drag turns the
+ * Earth east–west or north–south), looking straight down at the middle of the points, as far out
+ * as needed for all of them to fit the free part of the screen. Points on the far side of the
+ * Earth cannot be seen from any one side; following the packet carries the camera round.
  */
-export function globeDirection(topology: Topology): Vector3 | undefined {
-  return topology.globe ? new Vector3(0, 1, 0.45).normalize() : undefined;
+export function frameGlobe(
+  points: readonly Vector3[],
+  globe: Globe,
+  north: Vector3,
+  fov: number,
+  aspect: number,
+  insets: Insets,
+): Framing {
+  const target = new Vector3(...globe.center);
+  const mean = new Vector3();
+  for (const p of points) mean.add(p.clone().sub(target).normalize());
+  // Points all round the globe have no middle: start above the learner (the top), north up.
+  const direction =
+    points.length > 0 && mean.length() / points.length > 0.3
+      ? mean.normalize()
+      : new Vector3(0, 1, 0.45).normalize();
+
+  const x = band(insets.left, insets.right);
+  const y = band(insets.bottom, insets.top);
+  const camera = new PerspectiveCamera(fov, aspect, 0.1, 5000);
+  camera.up.copy(north);
+  let lo = globe.radius * 1.02;
+  let hi = globe.radius * 12;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    camera.position.copy(target).addScaledVector(direction, mid);
+    camera.lookAt(target);
+    camera.updateMatrixWorld();
+    if (fits(camera, points, x, y)) hi = mid;
+    else lo = mid;
+  }
+  // The offset moves what is on the surface (not the far centre) into the free area.
+  const halfHeight = (hi - globe.radius) * Math.tan((fov * Math.PI) / 360);
+  return {
+    target,
+    eye: target.clone().addScaledVector(direction, hi),
+    focalOffset: focalOffsetFor({ x: x.centre, y: y.centre }, halfHeight, aspect),
+    shift: { x: x.centre, y: y.centre },
+  };
 }
 
 /**
- * Camera position for following a packet over a globe: above the point, out along the surface
- * normal with a little extra height, at `distance`. Everything (the computer and the home
- * included) lies on the surface, and packets arc over it, so the normal under the point works
- * everywhere.
+ * Camera position over a globe that looks straight down at `point` from `altitude` above it (the
+ * camera always looks at the globe's centre).
  */
-export function globeFollowEye(point: Vector3, globe: Globe, distance: number): Vector3 {
+export function globeEye(point: Vector3, globe: Globe, altitude: number): Vector3 {
   const center = new Vector3(...globe.center);
-  const direction = point
-    .clone()
-    .sub(center)
-    .normalize()
-    .add(new Vector3(0, 0.25, 0))
-    .normalize();
-  return point.clone().addScaledVector(direction, distance);
+  const out = point.clone().sub(center);
+  const length = out.length();
+  if (length === 0) return center.add(new Vector3(0, globe.radius + altitude, 0));
+  return center.addScaledVector(out.normalize(), length + altitude);
 }

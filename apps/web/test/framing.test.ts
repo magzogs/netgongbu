@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PerspectiveCamera, Vector3 } from 'three';
-import { frame, globeDirection, globeFollowEye, viewDirection } from '../src/engine/framing';
-import { geoToPosition, type Topology } from '@magvirtualedu/schema';
+import { frame, frameGlobe, framingPoints, globeEye, viewDirection } from '../src/engine/framing';
+import { geoToPosition, northAxis, type Topology } from '@magvirtualedu/schema';
 import { hiddenBehind } from '../src/scene/labels';
 
 // A long, thin layout like the sample topology: 60 wide (x), 10 deep (z).
@@ -79,23 +79,60 @@ describe('globe view', () => {
     links: [],
   });
 
-  it('starts above the learner, north up', () => {
-    const d = globeDirection(
-      topology([
-        [-36.9, 174.8],
-        [46.23, 6.05],
-      ]),
+  const north = new Vector3(...northAxis(globe));
+  const none = { top: 0, bottom: 0, left: 0, right: 0 };
+
+  it('orbits the centre of the globe, north up, looking down at the middle of the route', () => {
+    const f = frameGlobe(
+      framingPoints(
+        topology([
+          [-36.9, 174.8],
+          [-33.87, 151.21],
+        ]),
+      ),
+      globe,
+      north,
+      45,
+      1.6,
+      none,
     );
-    expect(d?.x).toBe(0);
-    expect(d?.y).toBeGreaterThan(0.9);
+    const center = new Vector3(...globe.center);
+    expect(f.target.distanceTo(center)).toBeCloseTo(0);
+    // Above the Tasman Sea, between Auckland and Sydney, outside the globe.
+    const below = f.eye.clone().sub(center).normalize();
+    const auckland = new Vector3(...at(-36.9, 174.8)).sub(center).normalize();
+    const sydney = new Vector3(...at(-33.87, 151.21)).sub(center).normalize();
+    expect(below.dot(auckland)).toBeGreaterThan(0.95);
+    expect(below.dot(sydney)).toBeGreaterThan(0.95);
+    expect(f.eye.distanceTo(center)).toBeGreaterThan(globe.radius + 5);
   });
 
-  it('follows a packet round the globe from outside the surface', () => {
+  it('keeps every point of the route on screen', () => {
+    const points = framingPoints(
+      topology([
+        [-36.9, 174.8],
+        [35.68, 139.69],
+      ]),
+    );
+    const f = frameGlobe(points, globe, north, 45, 1.6, none);
+    const camera = new PerspectiveCamera(45, 1.6, 0.1, 5000);
+    camera.up.copy(north);
+    camera.position.copy(f.eye);
+    camera.lookAt(f.target);
+    camera.updateMatrixWorld();
+    for (const p of points) {
+      const ndc = p.clone().project(camera);
+      expect(Math.abs(ndc.x)).toBeLessThanOrEqual(0.91);
+      expect(Math.abs(ndc.y)).toBeLessThanOrEqual(0.91);
+    }
+  });
+
+  it('follows a packet round the globe from straight above it', () => {
     const geneva = new Vector3(...at(46.23, 6.05));
-    const eye = globeFollowEye(geneva, globe, 30);
+    const eye = globeEye(geneva, globe, 30);
     const center = new Vector3(...globe.center);
     // Outside the globe, looking at Geneva without the globe in between.
-    expect(eye.distanceTo(center)).toBeGreaterThan(globe.radius + 20);
+    expect(eye.distanceTo(center)).toBeCloseTo(geneva.distanceTo(center) + 30);
     expect(hiddenBehind(eye, geneva, { center, radius: 39.4 })).toBe(false);
   });
 

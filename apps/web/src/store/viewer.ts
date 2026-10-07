@@ -6,19 +6,61 @@ import {
   type TopologyIndex,
   type ValidationIssue,
 } from '@magvirtualedu/schema';
-import { buildLinkCurves, type LinkCurve } from '../engine/curves';
+import {
+  ANCHOR_HEIGHT,
+  buildLinkCurves,
+  MARKER_ANCHOR_HEIGHT,
+  type LinkCurve,
+} from '../engine/curves';
+import { flattenTopology, type FlatMap } from '../engine/flatMap';
+import { nodeNumbers } from '../engine/order';
 import { buildTimeline } from '../engine/timeline';
 import { backend } from '../data/backend';
 import { fetchCatalog, fetchScenario, ScenarioLoadError, type ViewerEntry } from '../data/load';
 import { createAskSlice, type AskSlice } from './ask';
 import { createDesktopSlice, type DesktopSlice } from './desktop';
 import { createPlaybackSlice, type PlaybackSlice } from './playback';
+import { createTutorSlice, type TutorSlice } from './tutor';
 
-/** Topology plus everything derived from it once, shared by the scene and the engine. */
+/** How a topology with a globe is shown: on the globe, or on a flat world map. */
+export type MapView = 'globe' | 'flat';
+
+/**
+ * Topology plus everything derived from it once, shared by the scene and the engine.
+ *
+ * view: floor (a plan without a globe), globe, or map (the globe's topology on a flat world map).
+ * On the globe and the map, nodes are small markers that keep their size on screen.
+ */
 export interface World {
+  /** What is drawn: the loaded topology, or its flattened copy on the map. */
   topology: Topology;
+  /** The topology as loaded. */
+  source: Topology;
+  view: 'floor' | 'globe' | 'map';
+  flatMap: FlatMap | null;
+  markers: boolean;
+  /** Height above a node's base where its links attach and packets travel. */
+  lift: number;
   index: TopologyIndex;
   curves: ReadonlyMap<string, LinkCurve>;
+}
+
+export function makeWorld(source: Topology, mapView: MapView): World {
+  const flat = mapView === 'flat' ? flattenTopology(source) : null;
+  const topology = flat?.topology ?? source;
+  const view = flat ? 'map' : source.globe ? 'globe' : 'floor';
+  const markers = view !== 'floor';
+  const lift = markers ? MARKER_ANCHOR_HEIGHT : ANCHOR_HEIGHT;
+  return {
+    topology,
+    source,
+    view,
+    flatMap: flat?.map ?? null,
+    markers,
+    lift,
+    index: indexTopology(topology),
+    curves: buildLinkCurves(topology, lift),
+  };
 }
 
 export type Status =
@@ -32,13 +74,17 @@ export type Selection = { kind: 'node'; id: string } | { kind: 'packet'; hopInde
 /** orbit: the learner moves the camera freely; follow: it stays on the moving packet. */
 export type CameraMode = 'orbit' | 'follow';
 
-export interface ViewerState extends PlaybackSlice, AskSlice, DesktopSlice {
+export interface ViewerState extends PlaybackSlice, AskSlice, DesktopSlice, TutorSlice {
   /** Hand-written examples, then AI scenarios newest first. */
   catalog: readonly ViewerEntry[];
   entryId: string | null;
   status: Status;
   world: World | null;
   scenario: Scenario | null;
+  /** Each node's number, in the order the scenario reaches it (1-based). */
+  nodeNumbers: ReadonlyMap<string, number>;
+  /** Globe or flat world map, for topologies that have a globe. */
+  mapView: MapView;
   selection: Selection | null;
   cameraMode: CameraMode;
   inspectorOpen: boolean;
@@ -47,6 +93,8 @@ export interface ViewerState extends PlaybackSlice, AskSlice, DesktopSlice {
   init: () => Promise<void>;
   open: (entryId: string) => Promise<void>;
   select: (selection: Selection | null) => void;
+  /** Redraws the current topology on the globe or the flat map, keeping playback where it is. */
+  setMapView: (view: MapView) => void;
   setCameraMode: (mode: CameraMode) => void;
   setInspectorOpen: (open: boolean) => void;
   /** Opens the anatomy view on a packet of the current beat (pausing playback), or closes it. */
@@ -54,6 +102,15 @@ export interface ViewerState extends PlaybackSlice, AskSlice, DesktopSlice {
 }
 
 const SCENARIO_PARAM = 's';
+const MAP_VIEW_KEY = 'magve.mapView';
+
+function savedMapView(): MapView {
+  try {
+    return localStorage.getItem(MAP_VIEW_KEY) === 'flat' ? 'flat' : 'globe';
+  } catch {
+    return 'globe';
+  }
+}
 
 /** Phones start with side panels folded so the 3D view and the player have room. */
 export const NARROW_QUERY = '(max-width: 720px)';
@@ -81,11 +138,14 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
   ...createPlaybackSlice(set, get, api),
   ...createAskSlice(set, get, api),
   ...createDesktopSlice(set, get, api),
+  ...createTutorSlice(set, get, api),
   catalog: [],
   entryId: null,
   status: { kind: 'loading' },
   world: null,
   scenario: null,
+  nodeNumbers: new Map(),
+  mapView: savedMapView(),
   selection: null,
   cameraMode: 'orbit',
   inspectorOpen: !isNarrow(),
@@ -122,11 +182,17 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
       if (token !== openToken) return;
       // Keep the scene (and camera) when the new scenario uses the same topology.
       const current = get().world;
-      const world: World =
-        current?.topology.id === topology.id
-          ? current
-          : { topology, index: indexTopology(topology), curves: buildLinkCurves(topology) };
-      set({ world, scenario, selection: null, packetLab: null, status: { kind: 'ready' } });
+      const world =
+        current?.source.id === topology.id ? current : makeWorld(topology, get().mapView);
+      set({
+        world,
+        scenario,
+        nodeNumbers: nodeNumbers(world.topology, scenario),
+        selection: null,
+        packetLab: null,
+        labFocus: null,
+        status: { kind: 'ready' },
+      });
       get().loadTimeline(buildTimeline(world, scenario));
       rememberInUrl(entryId);
     } catch (err) {
@@ -139,6 +205,22 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
     set(selection ? { selection, inspectorOpen: true } : { selection });
   },
 
+  setMapView(mapView) {
+    try {
+      localStorage.setItem(MAP_VIEW_KEY, mapView);
+    } catch {
+      // Not remembered; the choice still applies now.
+    }
+    const { world, scenario } = get();
+    if (!world?.source.globe || mapView === get().mapView) {
+      set({ mapView });
+      return;
+    }
+    const next = makeWorld(world.source, mapView);
+    // Same scenario and step, new routes: only where the curves are has changed.
+    set({ mapView, world: next, ...(scenario && { timeline: buildTimeline(next, scenario) }) });
+  },
+
   setCameraMode(cameraMode) {
     set({ cameraMode });
   },
@@ -149,7 +231,7 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
 
   openPacketLab(hopIndex) {
     if (hopIndex === null) {
-      set({ packetLab: null });
+      set({ packetLab: null, labFocus: null });
       return;
     }
     set({ packetLab: { beatIndex: get().beatIndex, hopIndex }, playing: false });

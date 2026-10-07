@@ -1,53 +1,59 @@
 import { useEffect, useMemo, type ReactElement } from 'react';
-import { BufferAttribute, BufferGeometry } from 'three';
-import { mesh } from 'topojson-client';
-import type { GeometryCollection, Topology as TopoJson } from 'topojson-specification';
-import countries from 'world-atlas/countries-110m.json';
+import { Matrix4, Quaternion, Vector3 } from 'three';
 import { globeTransform, type Globe } from '@magvirtualedu/schema';
+import { BORDER } from './theme';
+import { bordersGeometry, worldTexture } from './worldMap';
 
-// Natural Earth 1:110m country borders and coastlines (public domain) via world-atlas.
-const world = countries as unknown as TopoJson<{ countries: GeometryCollection }>;
+/** Borders sit just above the sphere (whose flat facets dip up to ~0.01 below its radius). */
+const BORDER_LIFT = 1.0015;
 
-/** Border and coastline segments on the globe surface, slightly above it to avoid z-fighting. */
-function bordersGeometry(globe: Globe): BufferGeometry {
+/**
+ * The turn that takes the standard Earth (lat/lon as in `unit`, which is how three.js wraps a
+ * picture round a sphere) to this globe, where the focus is at the top.
+ */
+function globeTurn(globe: Globe): Quaternion {
   const { direction } = globeTransform(globe.focus);
-  const lines = mesh(world, world.objects.countries).coordinates;
-  const r = globe.radius * 1.002;
-  const [cx, cy, cz] = globe.center;
-  const point = (lon: number, lat: number): number[] => {
-    const d = direction(lat, lon);
-    return [cx + d[0] * r, cy + d[1] * r, cz + d[2] * r];
-  };
-  const positions: number[] = [];
-  for (const line of lines) {
-    for (let i = 1; i < line.length; i++) {
-      const a = line[i - 1];
-      const b = line[i];
-      if (!a || !b) continue;
-      positions.push(...point(a[0] ?? 0, a[1] ?? 0), ...point(b[0] ?? 0, b[1] ?? 0));
-    }
-  }
-  const geometry = new BufferGeometry();
-  geometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3));
-  return geometry;
+  const basis = new Matrix4().makeBasis(
+    new Vector3(...direction(0, 0)),
+    new Vector3(...direction(90, 0)),
+    new Vector3(...direction(0, -90)),
+  );
+  return new Quaternion().setFromRotationMatrix(basis);
 }
 
+/** The Earth: sea and land in different colours, country borders and coastlines as lines. */
 export function GlobeView({ globe }: { globe: Globe }): ReactElement {
-  const borders = useMemo(() => bordersGeometry(globe), [globe]);
+  const borders = useMemo(() => {
+    const { direction } = globeTransform(globe.focus);
+    const r = globe.radius * BORDER_LIFT;
+    const [cx, cy, cz] = globe.center;
+    return bordersGeometry((lon, lat) => {
+      const d = direction(lat, lon);
+      return [cx + d[0] * r, cy + d[1] * r, cz + d[2] * r];
+    });
+  }, [globe]);
+  const texture = useMemo(() => worldTexture(), []);
+  const turn = useMemo(() => globeTurn(globe), [globe]);
   useEffect(
     () => () => {
       borders.dispose();
     },
     [borders],
   );
+  useEffect(
+    () => () => {
+      texture.dispose();
+    },
+    [texture],
+  );
   return (
     <group>
-      <mesh position={globe.center}>
-        <sphereGeometry args={[globe.radius, 96, 64]} />
-        <meshStandardMaterial color="#2a1c12" roughness={0.95} metalness={0} />
+      <mesh position={globe.center} quaternion={turn}>
+        <sphereGeometry args={[globe.radius, 128, 96]} />
+        <meshStandardMaterial map={texture} roughness={1} metalness={0} />
       </mesh>
       <lineSegments geometry={borders}>
-        <lineBasicMaterial color="#a8703d" transparent opacity={0.75} />
+        <lineBasicMaterial color={BORDER} transparent opacity={0.75} />
       </lineSegments>
     </group>
   );

@@ -1,0 +1,19 @@
+{
+  "name": "@magvirtualedu/llm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Client for a local LLM server with an OpenAI-compatible API (Ollama, LM Studio, llama.cpp, vLLM): model list and streamed chat, for questions about what is on screen",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  }
+}

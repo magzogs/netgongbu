@@ -14,4 +14,8 @@ export const Channels = {
   browserBounds: 'browser:bounds',
   geoDownload: 'geo:download',
   geoEvent: 'geo:event',
+  llmModels: 'llm:models',
+  llmChat: 'llm:chat',
+  llmCancel: 'llm:cancel',
+  llmEvent: 'llm:event',
 } as const;
