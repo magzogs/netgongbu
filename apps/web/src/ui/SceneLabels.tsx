@@ -1,14 +1,59 @@
-import { useMemo, type ReactElement } from 'react';
+import { useMemo, type HTMLAttributes, type ReactElement } from 'react';
 import { Vector3 } from 'three';
 import type { Hop, NetNode, NodeAction, Zone } from '@netgongbu/schema';
+import { foldedNodes, type FoldedCluster } from '../engine/clusters';
 import { zonePlacer } from '../engine/zones';
+import { clusterTopSource, useFoldedClusters } from '../scene/Clusters';
 import type { Route } from '../engine/timeline';
 import { currentPoint } from '../scene/Packets';
 import { PROTOCOL_COLORS } from '../scene/theme';
 import { useLabelAnchor } from '../scene/labels';
 import { markerMax, nodeTopSource } from '../scene/markers';
 import { useViewer } from '../store/viewer';
+import { focusNode, openZone, selectNode } from '../commands';
 import { ACTION_NAMES } from './names';
+
+/** A press that moves farther than this (CSS pixels) is a drag of the view, not a click. */
+const CLICK_SLOP = 5;
+let pressedAt: { x: number; y: number } | null = null;
+
+function canvasOf(el: Element): HTMLCanvasElement | null {
+  return el.closest('.app')?.querySelector('canvas.scene, .scene canvas') ?? null;
+}
+
+/**
+ * Pointer handling for things drawn over the scene that stand for something in it (a node's
+ * label, a cluster's badge): a click acts on it, while a drag or the wheel started there still
+ * turns and zooms the view, as on the canvas below.
+ */
+export function overlayHandlers(
+  onClick: () => void,
+  onDoubleClick?: () => void,
+): HTMLAttributes<HTMLElement> {
+  return {
+    onPointerDown(e) {
+      pressedAt = { x: e.clientX, y: e.clientY };
+      canvasOf(e.currentTarget)?.dispatchEvent(new PointerEvent('pointerdown', e.nativeEvent));
+    },
+    onWheel(e) {
+      canvasOf(e.currentTarget)?.dispatchEvent(new WheelEvent('wheel', e.nativeEvent));
+    },
+    onContextMenu(e) {
+      e.preventDefault();
+    },
+    onClick(e) {
+      const moved = pressedAt && Math.hypot(e.clientX - pressedAt.x, e.clientY - pressedAt.y);
+      pressedAt = null;
+      if (moved !== null && moved > CLICK_SLOP) return;
+      onClick();
+    },
+    ...(onDoubleClick && {
+      onDoubleClick() {
+        onDoubleClick();
+      },
+    }),
+  };
+}
 
 /** Just above a node's shape (which on a map shrinks and grows with the zoom). */
 function useNodeTop(node: NetNode) {
@@ -31,16 +76,72 @@ function NodeLabel({ node, selected }: { node: NetNode; selected: boolean }): Re
   // The selected node keeps its full label; the others give way in the order they are reached.
   const ref = useLabelAnchor(`node:${node.id}`, point, selected ? 0 : (number ?? 999));
   const ip = node.interfaces?.find((i) => i.ip)?.ip;
+  const handlers = useMemo(
+    () =>
+      overlayHandlers(
+        () => {
+          selectNode(node.id);
+        },
+        () => {
+          focusNode(node.id);
+        },
+      ),
+    [node.id],
+  );
   return (
     <div ref={ref} className="anchor anchor--above">
-      <div className={`node-label${selected ? ' is-selected' : ''}`}>
+      <div className={`node-label${selected ? ' is-selected' : ''}`} {...handlers}>
         <span className="node-label__name">
           <NodeNumber id={node.id} />
           {node.label}
         </span>
         {ip && <span className="node-label__ip">{ip}</span>}
       </div>
-      <span className={`label-badge${selected ? ' is-selected' : ''}`}>{number}</span>
+      <span className={`label-badge${selected ? ' is-selected' : ''}`} {...handlers}>
+        {number}
+      </span>
+    </div>
+  );
+}
+
+/** A folded zone: its name and how many nodes it holds; a click opens it. */
+function ClusterLabel({
+  cluster,
+  selected,
+}: {
+  cluster: FoldedCluster;
+  selected: boolean;
+}): ReactElement {
+  const globe = useViewer((s) => s.world?.topology.globe);
+  const point = useMemo(() => clusterTopSource(cluster, globe), [cluster, globe]);
+  // Before the nodes reached later, as it stands for the first of them.
+  const first = useViewer((s) =>
+    Math.min(...cluster.members.map((id) => s.nodeNumbers.get(id) ?? 999)),
+  );
+  const ref = useLabelAnchor(`cluster:${cluster.key}`, point, selected ? 0 : first);
+  const handlers = useMemo(
+    () =>
+      overlayHandlers(() => {
+        openZone(cluster.key);
+      }),
+    [cluster.key],
+  );
+  const count = cluster.members.length;
+  return (
+    <div ref={ref} className="anchor anchor--above">
+      <div
+        className={`node-label cluster-label${selected ? ' is-selected' : ''}`}
+        title={`눌러서 ${cluster.label}의 장비 ${count}개 펼치기`}
+        {...handlers}
+      >
+        <span className="node-label__name">
+          {cluster.label}
+          <span className="cluster-label__count">{count}</span>
+        </span>
+      </div>
+      <span className={`label-badge${selected ? ' is-selected' : ''}`} {...handlers}>
+        {count}
+      </span>
     </div>
   );
 }
@@ -63,8 +164,22 @@ function ZoneLabel({ zone }: { zone: Zone }): ReactElement {
   );
 }
 
-function ActionBubble({ node, action }: { node: NetNode; action: NodeAction }): ReactElement {
-  const point = useNodeTop(node);
+function ActionBubble({
+  node,
+  action,
+  cluster,
+}: {
+  node: NetNode;
+  action: NodeAction;
+  /** The folded zone the node is in, whose marker the bubble then points at. */
+  cluster: FoldedCluster | undefined;
+}): ReactElement {
+  const nodeTop = useNodeTop(node);
+  const globe = useViewer((s) => s.world?.topology.globe);
+  const point = useMemo(
+    () => (cluster ? clusterTopSource(cluster, globe) : nodeTop),
+    [cluster, globe, nodeTop],
+  );
   const ref = useLabelAnchor(`action:${node.id}:${action.text}`, point);
   return (
     <div ref={ref} className="anchor anchor--above">
@@ -79,13 +194,19 @@ function ActionBubble({ node, action }: { node: NetNode; action: NodeAction }): 
 function ActionBubbles(): ReactElement | null {
   const actions = useViewer((s) => s.timeline?.beats[s.beatIndex]?.beat.nodeActions);
   const world = useViewer((s) => s.world);
+  const folded = useFolded();
   if (!actions || !world) return null;
   return (
     <>
       {actions.map((action) => {
         const node = world.index.nodes.get(action.node);
         return node ? (
-          <ActionBubble key={`${action.node}:${action.text}`} node={node} action={action} />
+          <ActionBubble
+            key={`${action.node}:${action.text}`}
+            node={node}
+            action={action}
+            cluster={folded.get(node.id)}
+          />
         ) : null;
       })}
     </>
@@ -142,23 +263,40 @@ function PacketLabels(): ReactElement | null {
   );
 }
 
+/** Nodes now folded into a zone's marker, by id. */
+function useFolded(): Map<string, FoldedCluster> {
+  const clusters = useFoldedClusters();
+  return useMemo(() => foldedNodes(clusters), [clusters]);
+}
+
 /** HTML labels drawn over the canvas and positioned by LabelProjector. */
 export function SceneLabels(): ReactElement | null {
   const world = useViewer((s) => s.world);
   const selection = useViewer((s) => s.selection);
+  const clusters = useFoldedClusters();
+  const folded = useMemo(() => foldedNodes(clusters), [clusters]);
   if (!world) return null;
+  const selectedNode = selection?.kind === 'node' ? selection.id : null;
   return (
     <div className="label-layer" aria-hidden="true">
-      {(world.topology.zones ?? []).map((zone) => (
-        <ZoneLabel key={zone.id} zone={zone} />
-      ))}
-      {world.topology.nodes.map((node) => (
-        <NodeLabel
-          key={node.id}
-          node={node}
-          selected={selection?.kind === 'node' && selection.id === node.id}
+      {(world.topology.zones ?? [])
+        // A folded zone's name is on its marker.
+        .filter((zone) => !clusters.some((c) => c.zoneIds.includes(zone.id)))
+        .map((zone) => (
+          <ZoneLabel key={zone.id} zone={zone} />
+        ))}
+      {clusters.map((c) => (
+        <ClusterLabel
+          key={c.key}
+          cluster={c}
+          selected={selectedNode !== null && c.members.includes(selectedNode)}
         />
       ))}
+      {world.topology.nodes
+        .filter((node) => !folded.has(node.id))
+        .map((node) => (
+          <NodeLabel key={node.id} node={node} selected={selectedNode === node.id} />
+        ))}
       <PacketLabels />
       <ActionBubbles />
     </div>

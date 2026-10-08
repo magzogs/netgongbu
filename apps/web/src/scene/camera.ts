@@ -197,6 +197,29 @@ export function focusOn(world: World, node: NetNode): void {
 }
 
 /**
+ * Flies in until a folded zone (see engine/clusters.ts) is `pixels` wide on screen, so it opens
+ * into its nodes: on a globe straight above it, elsewhere keeping the viewing angle.
+ */
+export function zoomToZone(world: World, center: Vector3, radius: number, pixels: number): void {
+  const ctl = controls;
+  if (!ctl || !(ctl.camera instanceof PerspectiveCamera)) return;
+  // The canvas fills the window.
+  const perPixel = (2 * radius) / pixels;
+  const distance =
+    (perPixel * window.innerHeight) / (2 * Math.tan((ctl.camera.fov * Math.PI) / 360));
+  const globe = world.topology.globe;
+  if (world.view === 'globe' && globe) {
+    const eye = globeEye(center, globe, Math.max(GLOBE_MIN_ALTITUDE * 1.05, distance));
+    const [cx, cy, cz] = globe.center;
+    void ctl.setLookAt(eye.x, eye.y, eye.z, cx, cy, cz, true);
+    return;
+  }
+  const direction = ctl.getPosition(new Vector3()).sub(ctl.getTarget(new Vector3())).normalize();
+  const eye = center.clone().addScaledVector(direction, Math.max(ctl.minDistance, distance));
+  void ctl.setLookAt(eye.x, eye.y, eye.z, center.x, center.y, center.z, true);
+}
+
+/**
  * Starts following: on a floor plan the camera moves closer when far away; over the globe and
  * the map the follow camera picks its height for each step (see followHeight).
  */

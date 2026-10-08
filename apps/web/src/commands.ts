@@ -1,4 +1,5 @@
-import { focusOn, frameTopology } from './scene/camera';
+import { focusOn, frameTopology, zoomToZone } from './scene/camera';
+import { foldedClusters, OPEN_PIXELS } from './engine/clusters';
 import type { Insets } from './engine/framing';
 import { isDesktop } from './data/backend';
 import { NARROW_QUERY, useViewer } from './store/viewer';
@@ -68,4 +69,17 @@ export function selectNode(id: string): void {
   viewer.select({ kind: 'node', id });
   const type = viewer.world?.index.nodes.get(id)?.type;
   if (isDesktop && (type === 'client' || type === 'browser')) viewer.setBrowserOpen(true);
+}
+
+/**
+ * Opens folded zones (engine/clusters.ts, by fold key): the camera comes close enough to show
+ * the nodes of each of them.
+ */
+export function openZone(key: string): void {
+  const viewer = useViewer.getState();
+  const world = viewer.world;
+  const fold = world && foldedClusters(world.clusters, viewer.folds).find((f) => f.key === key);
+  if (!world || !fold) return;
+  viewer.setCameraMode('orbit');
+  zoomToZone(world, fold.center, fold.openRadius, OPEN_PIXELS * 1.3);
 }

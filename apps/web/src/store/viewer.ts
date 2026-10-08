@@ -12,6 +12,7 @@ import {
   MARKER_ANCHOR_HEIGHT,
   type LinkCurve,
 } from '../engine/curves';
+import { zoneClusters, type Fold, type ZoneCluster } from '../engine/clusters';
 import { flattenTopology, type FlatMap } from '../engine/flatMap';
 import { nodeNumbers } from '../engine/order';
 import { buildTimeline } from '../engine/timeline';
@@ -42,6 +43,8 @@ export interface World {
   lift: number;
   index: TopologyIndex;
   curves: ReadonlyMap<string, LinkCurve>;
+  /** Zones that fold into one node when small on screen (only with markers). */
+  clusters: readonly ZoneCluster[];
 }
 
 export function makeWorld(source: Topology, mapView: MapView): World {
@@ -59,6 +62,7 @@ export function makeWorld(source: Topology, mapView: MapView): World {
     lift,
     index: indexTopology(topology),
     curves: buildLinkCurves(topology, lift),
+    clusters: markers ? zoneClusters(topology, topology.globe) : [],
   };
 }
 
@@ -85,6 +89,8 @@ export interface ViewerState extends PlaybackSlice, AssistantSlice, DesktopSlice
   /** Globe or flat world map, for topologies that have a globe. */
   mapView: MapView;
   selection: Selection | null;
+  /** Zones now folded into one node (see engine/clusters.ts), set from the camera each frame. */
+  folds: readonly Fold[];
   cameraMode: CameraMode;
   inspectorOpen: boolean;
   /** The packet shown in the anatomy view (beat and hop of the current scenario). */
@@ -94,6 +100,7 @@ export interface ViewerState extends PlaybackSlice, AssistantSlice, DesktopSlice
   select: (selection: Selection | null) => void;
   /** Redraws the current topology on the globe or the flat map, keeping playback where it is. */
   setMapView: (view: MapView) => void;
+  setFolds: (folds: readonly Fold[]) => void;
   setCameraMode: (mode: CameraMode) => void;
   setInspectorOpen: (open: boolean) => void;
   /** Opens the anatomy view on a packet of the current beat (pausing playback), or closes it. */
@@ -145,6 +152,7 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
   nodeNumbers: new Map(),
   mapView: savedMapView(),
   selection: null,
+  folds: [],
   cameraMode: 'orbit',
   inspectorOpen: !isNarrow(),
   packetLab: null,
@@ -218,6 +226,10 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
     const next = makeWorld(world.source, mapView);
     // Same scenario and step, new routes: only where the curves are has changed.
     set({ mapView, world: next, ...(scenario && { timeline: buildTimeline(next, scenario) }) });
+  },
+
+  setFolds(folds) {
+    set({ folds });
   },
 
   setCameraMode(cameraMode) {

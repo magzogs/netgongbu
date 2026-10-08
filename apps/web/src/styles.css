@@ -140,7 +140,9 @@ body,
   align-items: center;
   padding: 3px 8px;
   white-space: nowrap;
-  pointer-events: none;
+  /* Clicks on a label act on its node (the label sits where the node's shape is not). */
+  pointer-events: auto;
+  cursor: pointer;
   user-select: none;
   background: rgb(42 28 18 / 0.72);
   border: 1px solid var(--panel-border);
@@ -160,6 +162,28 @@ body,
   font-family: var(--mono);
   font-size: 10px;
   color: var(--text-muted);
+}
+
+/* A zone folded into one marker (engine/clusters.ts): its name and how many nodes it holds. */
+.cluster-label {
+  border-style: dashed;
+}
+
+.cluster-label__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 16px;
+  margin-left: 6px;
+  padding: 0 5px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: 1px;
+  color: var(--text);
+  background: rgb(255 255 255 / 0.14);
+  border-radius: 999px;
 }
 
 /* The node's number in the scenario (the order it is reached). */
@@ -207,6 +231,8 @@ body,
   background: rgb(42 28 18 / 0.86);
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
   border-radius: 999px;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .label-badge.is-selected {
@@ -473,6 +499,51 @@ body,
   padding: 12px 14px 14px;
   overflow-y: auto;
   font-size: 13px;
+}
+
+/* Always under the headers, also when folded: the way into the packet anatomy view. */
+.inspector__footer {
+  flex: none;
+  padding: 8px 10px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.inspector__lab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.inspector__lab:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.inspector__lab[aria-pressed='true'] {
+  color: #2a1505;
+  background: var(--accent);
+}
+
+.inspector__lab:disabled {
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.6;
+}
+
+.inspector__lab-hint {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.8;
 }
 
 .text-button,

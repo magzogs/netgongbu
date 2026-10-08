@@ -64,6 +64,14 @@ export function CameraRig(): ReactElement {
         configureControls(useViewer.getState().world, useViewer.getState().cameraMode === 'follow');
       }}
       makeDefault
+      onControlStart={() => {
+        // Over the globe the follow camera turns round the centre to stay above the packet, and
+        // would undo any drag: a drag there ends following (the wheel still zooms while following).
+        const state = useViewer.getState();
+        if (state.cameraMode === 'follow' && state.world?.view === 'globe') {
+          state.setCameraMode('orbit');
+        }
+      }}
     />
   );
 }

@@ -13,8 +13,17 @@ import { NODE_HEIGHT } from './NodeShape';
 
 /** Width of a node's footprint at scale 1, in world units. */
 const NODE_FOOTPRINT = 1.5;
-/** Width of a marker on screen, in CSS pixels. */
+/**
+ * Width of a marker on screen, in CSS pixels, when one pixel covers REFERENCE_SPAN units: a
+ * little smaller from far away and a little larger up close (within MIN and MAX pixels), as
+ * markers on a web map grow with the zoom.
+ */
 const NODE_PIXELS = 26;
+const NODE_PIXELS_MIN = 18;
+const NODE_PIXELS_MAX = 34;
+const REFERENCE_SPAN = 0.01;
+/** Pixels added for each tenfold zoom. */
+const PIXELS_PER_DECADE = 5;
 /** A node with a real place: at most 0.45 × 1.5 ≈ 0.7 units (about 110 km on the globe). */
 export const MARKER_MAX = 0.45;
 /**
@@ -48,13 +57,24 @@ export function markerMax(world: World | null, node: NetNode): number | null {
   return node.zone ? INSET_MARKER_MAX : MARKER_MAX;
 }
 
+/** A marker's width on screen (CSS pixels) where one pixel covers `perPixel` units. */
+export function markerPixels(perPixel: number): number {
+  if (perPixel <= 0) return NODE_PIXELS;
+  const zoom = Math.log10(REFERENCE_SPAN / perPixel);
+  return Math.min(
+    NODE_PIXELS_MAX,
+    Math.max(NODE_PIXELS_MIN, NODE_PIXELS + zoom * PIXELS_PER_DECADE),
+  );
+}
+
 export function nodeScale(
   base: Vector3,
   camera: Camera,
   viewportHeight: number,
   max: number,
 ): number {
-  return screenScale(base, camera, viewportHeight, NODE_FOOTPRINT, NODE_PIXELS, max);
+  const perPixel = worldPerPixel(base, camera, viewportHeight);
+  return Math.min(max, (markerPixels(perPixel) * perPixel) / NODE_FOOTPRINT);
 }
 
 /** Room left between a node's top and its label. */

@@ -4,7 +4,9 @@ import { Vector3, type DirectionalLight } from 'three';
 import type { Globe, Vec3 } from '@netgongbu/schema';
 import { useViewer, type World } from '../store/viewer';
 import { focusNode, selectNode } from '../commands';
+import { foldedNodes } from '../engine/clusters';
 import { CameraRig } from './CameraRig';
+import { ClusterMesh, ClusterTracker, useFoldedClusters } from './Clusters';
 import { SceneCapture } from './capture';
 import { GlobeView } from './GlobeView';
 import { Ground } from './Ground';
@@ -24,33 +26,54 @@ function TopologyView({ world }: { world: World }): ReactElement {
     [beat],
   );
   const busyNodes = useMemo(() => new Set(beat?.beat.nodeActions?.map((a) => a.node)), [beat]);
+  const clusters = useFoldedClusters();
+  const folded = useMemo(() => foldedNodes(clusters), [clusters]);
+  const selectedNode = selection?.kind === 'node' ? selection.id : null;
   const emphasisOf = (linkId: string): LinkEmphasis => {
     if (activeLinks.size === 0) return 'idle';
     return activeLinks.has(linkId) ? 'active' : 'dim';
   };
   return (
     <group>
-      {[...world.curves.values()].map((lc) => (
-        <LinkMesh
-          key={lc.link.id}
-          linkCurve={lc}
-          emphasis={emphasisOf(lc.link.id)}
-          thin={world.markers}
-        />
-      ))}
-      {world.topology.nodes.map((node) => (
-        <NodeMesh
-          key={node.id}
-          node={node}
+      {[...world.curves.values()]
+        // A link inside a folded zone would be a dot under its marker.
+        .filter((lc) => {
+          const zone = folded.get(lc.link.a);
+          return !zone || zone !== folded.get(lc.link.b);
+        })
+        .map((lc) => (
+          <LinkMesh
+            key={lc.link.id}
+            linkCurve={lc}
+            emphasis={emphasisOf(lc.link.id)}
+            thin={world.markers}
+          />
+        ))}
+      {clusters.map((c) => (
+        <ClusterMesh
+          key={c.key}
+          cluster={c}
           globe={world.topology.globe}
-          markerMax={markerMax(world, node)}
-          selected={selection?.kind === 'node' && selection.id === node.id}
-          busy={busyNodes.has(node.id)}
-          onSelect={selectNode}
-          onFocus={focusNode}
+          selected={selectedNode !== null && c.members.includes(selectedNode)}
+          busy={c.members.some((id) => busyNodes.has(id))}
         />
       ))}
+      {world.topology.nodes
+        .filter((node) => !folded.has(node.id))
+        .map((node) => (
+          <NodeMesh
+            key={node.id}
+            node={node}
+            globe={world.topology.globe}
+            markerMax={markerMax(world, node)}
+            selected={selection?.kind === 'node' && selection.id === node.id}
+            busy={busyNodes.has(node.id)}
+            onSelect={selectNode}
+            onFocus={focusNode}
+          />
+        ))}
       <Packets markers={world.markers} />
+      <ClusterTracker world={world} />
     </group>
   );
 }
