@@ -2,14 +2,9 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import {
-  ScenarioService,
-  ScenarioStore,
-  TopologyLibrary,
-  type ScenarioModel,
-} from '@magvirtualedu/ai';
-import type { AiPrefs } from '@magvirtualedu/llm';
-import { AiHub } from '@magvirtualedu/llm/node';
+import { ScenarioService, ScenarioStore, TopologyLibrary, type ScenarioModel } from '@netgongbu/ai';
+import type { AiPrefs } from '@netgongbu/llm';
+import { AiHub } from '@netgongbu/llm/node';
 import { createApp } from '../src/app';
 import { memorySecrets } from '../src/hub';
 import { dataDir, fakeModel, goodDraft, textReply } from './fakes';
@@ -114,7 +109,7 @@ function aiApp() {
   const hub = new AiHub({
     prefs: { read: () => prefs, write: (p) => (prefs = p) },
     secrets: memorySecrets({}),
-    workDir: mkdtempSync(join(tmpdir(), 'magve-ai-')),
+    workDir: mkdtempSync(join(tmpdir(), 'netgongbu-ai-')),
     log: () => undefined,
     openExternal: () => undefined,
     fetchImpl: localFetch,

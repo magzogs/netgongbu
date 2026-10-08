@@ -1,4 +1,4 @@
-import type { Scenario, Topology } from '@magvirtualedu/schema';
+import type { Scenario, Topology } from '@netgongbu/schema';
 import type { TraceReport } from '../report';
 import { buildScenario } from './scenario';
 import { buildTopology } from './topology';

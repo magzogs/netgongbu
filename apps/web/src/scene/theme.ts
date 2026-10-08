@@ -1,4 +1,4 @@
-import type { LinkMedium, NodeType, Protocol } from '@magvirtualedu/schema';
+import type { LinkMedium, NodeType, Protocol } from '@netgongbu/schema';
 
 // Colours used inside the WebGL scene, where CSS custom properties do not reach.
 

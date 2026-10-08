@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import type { ByteSource, DissectedLayer, Field } from '@magvirtualedu/protocols';
+import type { ByteSource, DissectedLayer, Field } from '@netgongbu/protocols';
 import { decimalOf, formatBits, type Radix } from './grid';
 import { SOURCE_HINTS, SOURCE_LABELS } from './theme';
 

@@ -47,19 +47,19 @@ importers:
       '@anthropic-ai/sdk':
         specifier: 0.131.0
         version: 0.131.0(zod@4.6.5)
-      '@magvirtualedu/ai':
+      '@netgongbu/ai':
         specifier: workspace:^
         version: link:../../packages/ai
-      '@magvirtualedu/bridge':
+      '@netgongbu/bridge':
         specifier: workspace:^
         version: link:../../packages/bridge
-      '@magvirtualedu/llm':
+      '@netgongbu/llm':
         specifier: workspace:^
         version: link:../../packages/llm
-      '@magvirtualedu/schema':
+      '@netgongbu/schema':
         specifier: workspace:^
         version: link:../../packages/schema
-      '@magvirtualedu/trace':
+      '@netgongbu/trace':
         specifier: workspace:^
         version: link:../../packages/trace
       '@types/node':
@@ -98,13 +98,13 @@ importers:
       '@hono/node-server':
         specifier: 2.1.3
         version: 2.1.3(hono@4.13.13)
-      '@magvirtualedu/ai':
+      '@netgongbu/ai':
         specifier: workspace:*
         version: link:../../packages/ai
-      '@magvirtualedu/llm':
+      '@netgongbu/llm':
         specifier: workspace:*
         version: link:../../packages/llm
-      '@magvirtualedu/schema':
+      '@netgongbu/schema':
         specifier: workspace:*
         version: link:../../packages/schema
       hono:
@@ -120,19 +120,19 @@ importers:
 
   apps/web:
     dependencies:
-      '@magvirtualedu/bridge':
+      '@netgongbu/bridge':
         specifier: workspace:^
         version: link:../../packages/bridge
-      '@magvirtualedu/llm':
+      '@netgongbu/llm':
         specifier: workspace:^
         version: link:../../packages/llm
-      '@magvirtualedu/protocols':
+      '@netgongbu/protocols':
         specifier: workspace:^
         version: link:../../packages/protocols
-      '@magvirtualedu/schema':
+      '@netgongbu/schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      '@magvirtualedu/trace':
+      '@netgongbu/trace':
         specifier: workspace:^
         version: link:../../packages/trace
       '@react-three/drei':
@@ -190,10 +190,10 @@ importers:
       '@anthropic-ai/sdk':
         specifier: 0.131.0
         version: 0.131.0(zod@4.6.5)
-      '@magvirtualedu/llm':
+      '@netgongbu/llm':
         specifier: workspace:*
         version: link:../llm
-      '@magvirtualedu/schema':
+      '@netgongbu/schema':
         specifier: workspace:*
         version: link:../schema
       zod:
@@ -202,13 +202,13 @@ importers:
 
   packages/bridge:
     dependencies:
-      '@magvirtualedu/llm':
+      '@netgongbu/llm':
         specifier: workspace:*
         version: link:../llm
-      '@magvirtualedu/schema':
+      '@netgongbu/schema':
         specifier: workspace:*
         version: link:../schema
-      '@magvirtualedu/trace':
+      '@netgongbu/trace':
         specifier: workspace:*
         version: link:../trace
       zod:
@@ -226,7 +226,7 @@ importers:
 
   packages/protocols:
     dependencies:
-      '@magvirtualedu/schema':
+      '@netgongbu/schema':
         specifier: workspace:*
         version: link:../schema
 
@@ -238,7 +238,7 @@ importers:
 
   packages/trace:
     dependencies:
-      '@magvirtualedu/schema':
+      '@netgongbu/schema':
         specifier: workspace:*
         version: link:../schema
       devtools-protocol:

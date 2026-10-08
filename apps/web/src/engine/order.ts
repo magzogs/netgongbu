@@ -1,4 +1,4 @@
-import type { Scenario, Topology } from '@magvirtualedu/schema';
+import type { Scenario, Topology } from '@netgongbu/schema';
 
 /**
  * Numbers every node 1, 2, 3, … in the order the scenario first reaches it (the nodes acting in

@@ -1,4 +1,4 @@
-import type { Field } from '@magvirtualedu/protocols';
+import type { Field } from '@netgongbu/protocols';
 
 // Laying out a header as the 32-bit-wide diagrams of the RFCs: one row per 4 bytes, each field
 // a cell spanning its bits, long fields folded so a 1 KB key does not take 300 rows.

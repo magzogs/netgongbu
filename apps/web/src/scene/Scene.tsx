@@ -1,7 +1,7 @@
 import { useMemo, useRef, type ReactElement } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Vector3, type DirectionalLight } from 'three';
-import type { Globe, Vec3 } from '@magvirtualedu/schema';
+import type { Globe, Vec3 } from '@netgongbu/schema';
 import { useViewer, type World } from '../store/viewer';
 import { focusNode, selectNode } from '../commands';
 import { CameraRig } from './CameraRig';

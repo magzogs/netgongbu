@@ -1,5 +1,5 @@
 import { useMemo, type ReactElement } from 'react';
-import type { Layer } from '@magvirtualedu/schema';
+import type { Layer } from '@netgongbu/schema';
 import { changedFields, fieldKey, previousLeg, type FieldChanges } from '../engine/packetDiff';
 import { PROTOCOL_COLORS } from '../scene/theme';
 import { useViewer } from '../store/viewer';

@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom';
  */
 
 /** Window name the desktop app recognises (and allows) for pop-out windows. */
-export const POPOUT_NAME = 'magve-popout';
+export const POPOUT_NAME = 'netgongbu-popout';
 
 export interface Popout {
   win: Window;

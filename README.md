@@ -1,4 +1,4 @@
-# magVirtualEdu: Network in 3D
+# Net Gongbu
 
 네트워크에서 메시지가 라우터와 서버를 거쳐 어떻게 전달되는지 3D 공간에서 단계별로 보여 주는 교육용 앱입니다.
 
@@ -24,8 +24,8 @@ pnpm dev:desktop   # 데스크톱 앱 (Electron): 뷰어 + 노트북 브라우�
 pnpm dev           # 웹 뷰어 http://localhost:5180 + AI 서버 :8787 (/api는 Vite가 프록시)
 pnpm dev:fake      # 웹, AI 연결 없이: 가짜 AI가 고정된 시나리오(첫 답은 일부러 틀려서 수정 과정까지)를 돌려줌
 pnpm check         # lint + format + typecheck + test
-pnpm --filter @magvirtualedu/desktop test:e2e   # 데스크톱 앱을 띄워 질문·실측·패킷 해부까지 자동 확인 (e2e/out에 스크린샷)
-pnpm --filter @magvirtualedu/desktop measure -- example.com info.cern.ch   # 빌드된 앱으로 실제 측정 후 스크린샷
+pnpm --filter @netgongbu/desktop test:e2e   # 데스크톱 앱을 띄워 질문·실측·패킷 해부까지 자동 확인 (e2e/out에 스크린샷)
+pnpm --filter @netgongbu/desktop measure -- example.com info.cern.ch   # 빌드된 앱으로 실제 측정 후 스크린샷
 ```
 
 `measure`는 `test:e2e`가 만든 빌드를 씁니다. 옵션: `--download-geo`(위치 DB가 없으면 먼저 내려받기),
@@ -43,7 +43,7 @@ pnpm --filter @magvirtualedu/desktop measure -- example.com info.cern.ch   # 빌
   - 모델 목록은 연결한 곳에서 가져옵니다: Codex `model/list`, Claude Code의 `initialize`, Anthropic Models API(`capabilities.effort`),
     OpenAI `/v1/models`(Effort 단계는 모델 계열로 판단), 로컬 서버 `/v1/models`. Effort는 그 모델이 받는 단계만 보이고, "기본값"은
     모델의 기본을 따릅니다. 고른 AI·모델·Effort는 기억되고(데스크톱: 앱 설정, 웹: `apps/server/.data/ai.json`), 시나리오 만들기에도
-    같은 연결이 쓰입니다. `MAGVE_FAKE_AI=1`이면 데스크톱 앱의 시나리오는 가짜 AI가 만듭니다.
+    같은 연결이 쓰입니다. `NETGONGBU_FAKE_AI=1`이면 데스크톱 앱의 시나리오는 가짜 AI가 만듭니다.
 - **위치 데이터베이스:** 경로를 지구본 위에 놓으려면 설정에서 DB-IP City Lite(약 60 MB)를 내려받습니다. 없으면 평면으로 그립니다.
 - **로컬 LLM:** OpenAI 호환 API를 여는 서버면 됩니다. 예: `ollama pull qwen2.5:7b` 후 Ollama 실행
   (`http://localhost:11434/v1`), LM Studio의 로컬 서버(`http://localhost:1234/v1`), `llama-server`(`http://localhost:8080/v1`).
@@ -160,7 +160,7 @@ apps/desktop      Electron 앱: app:// 프로토콜, preload, 노트북 브라�
 - 시나리오는 beat(단계)의 배열이고, beat 하나에는 동시에 움직이는 hop(패킷)이 여러 개 들어갈 수 있습니다.
 - `path`의 인접한 노드 쌍은 반드시 토폴로지 링크로 이어져 있어야 합니다. 테스트가 `public/data`의 모든 파일을 검증합니다.
 - 헤더가 바뀌는 노드(NAT, MAC 재작성, 프록시)에서는 hop을 나눕니다. 직전 beat에서 같은 프로토콜·summary의 hop이 그 노드에서 끝나면, 인스펙터가 바뀐 필드를 이전 값과 함께 보여 줍니다.
-- 새 시나리오는 `scenarios/<id>.json`을 추가하고 `catalog.json`에 등록합니다. 실측 데모는 `pnpm --filter @magvirtualedu/trace build:example`로 다시 만듭니다.
+- 새 시나리오는 `scenarios/<id>.json`을 추가하고 `catalog.json`에 등록합니다. 실측 데모는 `pnpm --filter @netgongbu/trace build:example`로 다시 만듭니다.
 
 ## 데이터 출처
 

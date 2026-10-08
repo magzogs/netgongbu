@@ -26,7 +26,7 @@ export function App(): ReactElement {
       <SceneLabels />
       <header className="topbar">
         <img className="topbar__logo" src="/logo.svg" alt="" width={28} height={28} />
-        <h1 className="topbar__title">Network in 3D</h1>
+        <h1 className="topbar__title">Net Gongbu</h1>
         <ScenarioPicker />
         <AssistantButton />
         <BrowserButton />

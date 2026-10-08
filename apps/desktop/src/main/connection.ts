@@ -1,6 +1,6 @@
 import type { BrowserWindow } from 'electron';
 import { z } from 'zod';
-import { Channels } from '@magvirtualedu/bridge';
+import { Channels } from '@netgongbu/bridge';
 import {
   ApiKeyInputSchema,
   CLI_PROVIDERS,
@@ -8,8 +8,8 @@ import {
   PROVIDER_IDS,
   PrefsChangeSchema,
   type ChatEvent,
-} from '@magvirtualedu/llm';
-import type { AiHub } from '@magvirtualedu/llm/node';
+} from '@netgongbu/llm';
+import type { AiHub } from '@netgongbu/llm/node';
 import { handle } from './ipc';
 
 const message = (err: unknown): string => (err instanceof Error ? err.message : String(err));

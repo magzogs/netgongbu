@@ -1,5 +1,5 @@
 // Measures pages in the built desktop app and saves screenshots of the result to e2e/out/.
-//   pnpm --filter @magvirtualedu/desktop measure -- example.com info.cern.ch
+//   pnpm --filter @netgongbu/desktop measure -- example.com info.cern.ch
 // Options: --user-data <dir> (default: the app's own data folder, so traces and the location
 // database are kept), --download-geo (download the DB-IP location database first if missing),
 // --open <trace id> (open a saved measurement instead of measuring), --tour (play the result
@@ -30,7 +30,7 @@ const executablePath = createRequire(import.meta.url)('electron') as unknown as 
 const app = await electron.launch({
   executablePath,
   args: [join(here, '..')],
-  env: { ...process.env, ...(userData && { MAGVE_USER_DATA: userData }) },
+  env: { ...process.env, ...(userData && { NETGONGBU_USER_DATA: userData }) },
 });
 app.process().stdout?.on('data', (d: Buffer) => process.stdout.write(`[app] ${d.toString()}`));
 

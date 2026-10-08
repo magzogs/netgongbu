@@ -1,4 +1,4 @@
-import type { DissectedLayer, Dissection, LayerKind } from '@magvirtualedu/protocols';
+import type { DissectedLayer, Dissection, LayerKind } from '@netgongbu/protocols';
 
 // The encapsulation picture: each layer's unit (message, segment, packet, frame) as its own
 // header in front of everything the layer above handed down, application on top.

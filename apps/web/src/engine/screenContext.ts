@@ -1,4 +1,4 @@
-import type { Hop, NetNode } from '@magvirtualedu/schema';
+import type { Hop, NetNode } from '@netgongbu/schema';
 import type { ViewerState } from '../store/viewer';
 import { ACTION_NAMES, NODE_TYPE_NAMES } from '../ui/names';
 

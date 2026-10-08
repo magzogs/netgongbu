@@ -1,6 +1,6 @@
 // Launches the built desktop app (electron-vite build first) with a throw-away data folder and
 // the canned AI, checks the viewer works through the preload bridge, and saves screenshots to
-// e2e/out/. Run: pnpm --filter @magvirtualedu/desktop test:e2e
+// e2e/out/. Run: pnpm --filter @netgongbu/desktop test:e2e
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -20,8 +20,8 @@ const app = await electron.launch({
   args: [appDir],
   env: {
     ...process.env,
-    MAGVE_FAKE_AI: '1',
-    MAGVE_USER_DATA: mkdtempSync(join(tmpdir(), 'magve-')),
+    NETGONGBU_FAKE_AI: '1',
+    NETGONGBU_USER_DATA: mkdtempSync(join(tmpdir(), 'netgongbu-')),
   },
 });
 app.process().stdout?.on('data', (d: Buffer) => process.stdout.write(`[app] ${d.toString()}`));

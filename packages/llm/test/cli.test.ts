@@ -7,7 +7,7 @@ import { CodexAppServer } from '../src/node/codex';
 import { cliVersion, isCliPathFor } from '../src/node/locate';
 
 const bin = join(import.meta.dirname, 'fixtures', 'bin');
-const cwd = mkdtempSync(join(tmpdir(), 'magve-cli-'));
+const cwd = mkdtempSync(join(tmpdir(), 'netgongbu-cli-'));
 const log = (): undefined => undefined;
 
 describe('Codex app server', () => {

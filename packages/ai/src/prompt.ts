@@ -4,7 +4,7 @@ import {
   type Scenario,
   type Topology,
   type ValidationIssue,
-} from '@magvirtualedu/schema';
+} from '@netgongbu/schema';
 
 // The system prompt is two blocks: instructions that never change, then the topology and an
 // example for it. Both are stable per topology, so the cache breakpoint sits at the end of the

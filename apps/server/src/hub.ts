@@ -1,8 +1,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { exec } from 'node:child_process';
-import { AiPrefsSchema, type AiPrefs, type ProviderId } from '@magvirtualedu/llm';
-import { AiHub, type PrefsStore, type SecretStore } from '@magvirtualedu/llm/node';
+import { AiPrefsSchema, type AiPrefs, type ProviderId } from '@netgongbu/llm';
+import { AiHub, type PrefsStore, type SecretStore } from '@netgongbu/llm/node';
 import type { ServerConfig } from './config';
 
 const ENV_KEYS: Partial<Record<ProviderId, string>> = {

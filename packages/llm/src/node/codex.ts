@@ -151,7 +151,7 @@ export class CodexAppServer implements Provider {
         );
       });
       this.call('initialize', {
-        clientInfo: { name: 'magve', title: 'Network in 3D', version: '0.1.0' },
+        clientInfo: { name: 'netgongbu', title: 'Net Gongbu', version: '0.1.0' },
         capabilities: null,
       })
         .then(() => {

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CatalogEntrySchema, ScenarioSchema, type Scenario } from '@magvirtualedu/schema';
+import { CatalogEntrySchema, ScenarioSchema, type Scenario } from '@netgongbu/schema';
 
 // Client for apps/server. In development Vite proxies /api to it (see vite.config.ts).
 

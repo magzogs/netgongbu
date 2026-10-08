@@ -1,5 +1,5 @@
 {
-  "name": "@magvirtualedu/protocols",
+  "name": "@netgongbu/protocols",
   "version": "0.1.0",
   "private": true,
   "description": "Builds a scenario packet into real protocol bytes, field by field (offsets, meaning, RFC, value source), for the packet anatomy view",
@@ -14,6 +14,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@magvirtualedu/schema": "workspace:*"
+    "@netgongbu/schema": "workspace:*"
   }
 }

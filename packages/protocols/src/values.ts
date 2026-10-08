@@ -1,4 +1,4 @@
-import type { Layer } from '@magvirtualedu/schema';
+import type { Layer } from '@netgongbu/schema';
 import type { ByteSource } from './model';
 
 /** A value the scenario gave for a header field, with where it came from. */

@@ -1,4 +1,4 @@
-import type { TraceEvent } from '@magvirtualedu/bridge';
+import type { TraceEvent } from '@netgongbu/bridge';
 import {
   TraceReportSchema,
   type CapturedRequest,
@@ -7,7 +7,7 @@ import {
   type LocalNetwork,
   type TraceReport,
   type TracerouteLine,
-} from '@magvirtualedu/trace';
+} from '@netgongbu/trace';
 import { enrichHop, type HopLookups } from './enrich';
 import type { TracerouteResult } from './traceroute';
 

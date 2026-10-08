@@ -1,5 +1,5 @@
 {
-  "name": "@magvirtualedu/bridge",
+  "name": "@netgongbu/bridge",
   "version": "0.1.0",
   "private": true,
   "description": "Contract between the desktop app's main process and the viewer: IPC channels, payload schemas and the window.lab API type",
@@ -14,9 +14,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@magvirtualedu/llm": "workspace:*",
-    "@magvirtualedu/schema": "workspace:*",
-    "@magvirtualedu/trace": "workspace:*",
+    "@netgongbu/llm": "workspace:*",
+    "@netgongbu/schema": "workspace:*",
+    "@netgongbu/trace": "workspace:*",
     "zod": "4.6.5"
   }
 }

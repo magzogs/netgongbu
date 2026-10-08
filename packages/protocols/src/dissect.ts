@@ -1,4 +1,4 @@
-import type { Layer, Packet } from '@magvirtualedu/schema';
+import type { Layer, Packet } from '@netgongbu/schema';
 import { concat } from './bits';
 import { dns } from './layers/dns';
 import { http1, http2 } from './layers/http';

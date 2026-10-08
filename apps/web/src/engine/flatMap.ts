@@ -5,7 +5,7 @@ import {
   type Topology,
   type Vec3,
   type Zone,
-} from '@magvirtualedu/schema';
+} from '@netgongbu/schema';
 import { zonePlacer } from './zones';
 
 const RAD = Math.PI / 180;

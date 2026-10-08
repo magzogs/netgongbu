@@ -8,7 +8,7 @@ import {
   type Globe,
   type Scenario,
   type Topology,
-} from '@magvirtualedu/schema';
+} from '@netgongbu/schema';
 import { flattenTopology, projectGeo, wrapLon } from '../src/engine/flatMap';
 import { nodeNumbers } from '../src/engine/order';
 import { contextChips, screenContext } from '../src/engine/screenContext';

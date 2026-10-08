@@ -4,7 +4,7 @@ import { devRendererUrl } from './paths';
 import { APP_ORIGIN } from './protocol';
 
 /** The name the viewer gives a pop-out window (apps/web/src/ui/PopoutWindow.tsx). */
-const POPOUT_NAME = 'magve-popout';
+const POPOUT_NAME = 'netgongbu-popout';
 
 /** Whether a page URL is the viewer itself (dev server or the app:// bundle). */
 export function isViewerUrl(url: string): boolean {
@@ -20,7 +20,7 @@ export function createMainWindow(): BrowserWindow {
     height: 900,
     minWidth: 900,
     minHeight: 600,
-    title: 'Network in 3D',
+    title: 'Net Gongbu',
     backgroundColor: '#17100b',
     show: false,
     webPreferences: {

@@ -1,4 +1,4 @@
-import type { FieldSource, LinkMedium, NodeActionKind, NodeType } from '@magvirtualedu/schema';
+import type { FieldSource, LinkMedium, NodeActionKind, NodeType } from '@netgongbu/schema';
 
 // Korean display names for schema enums.
 

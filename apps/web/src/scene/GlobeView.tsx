@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type ReactElement } from 'react';
 import { Matrix4, Quaternion, Vector3 } from 'three';
-import { globeTransform, type Globe } from '@magvirtualedu/schema';
+import { globeTransform, type Globe } from '@netgongbu/schema';
 import { BORDER } from './theme';
 import { bordersGeometry, worldTexture } from './worldMap';
 

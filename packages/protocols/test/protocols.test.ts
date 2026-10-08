@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ScenarioSchema, type Packet } from '@magvirtualedu/schema';
+import { ScenarioSchema, type Packet } from '@netgongbu/schema';
 import {
   dissect,
   hpackEncode,

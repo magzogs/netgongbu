@@ -2,9 +2,9 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { networkInterfaces } from 'node:os';
 import { app, shell } from 'electron';
-import { DEFAULT_CLAUDE_SETTINGS } from '@magvirtualedu/ai';
-import type { AiPrefs } from '@magvirtualedu/llm';
-import { AiHub } from '@magvirtualedu/llm/node';
+import { DEFAULT_CLAUDE_SETTINGS } from '@netgongbu/ai';
+import type { AiPrefs } from '@netgongbu/llm';
+import { AiHub } from '@netgongbu/llm/node';
 import { createDesktopAi } from './ai';
 import { registerConnectionIpc } from './connection';
 import { registerAiIpc, registerSettingsIpc, registerTraceIpc } from './ipc';
@@ -26,7 +26,7 @@ const log = (message: string): void => {
 };
 
 // Tests run against a throw-away data folder instead of the learner's.
-if (process.env.MAGVE_USER_DATA) app.setPath('userData', process.env.MAGVE_USER_DATA);
+if (process.env.NETGONGBU_USER_DATA) app.setPath('userData', process.env.NETGONGBU_USER_DATA);
 
 registerAppScheme();
 

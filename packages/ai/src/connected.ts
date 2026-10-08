@@ -1,7 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
-import type { AiHub, Answer, Turn } from '@magvirtualedu/llm/node';
-import { ScenarioDraftSchema } from '@magvirtualedu/schema';
+import type { AiHub, Answer, Turn } from '@netgongbu/llm/node';
+import { ScenarioDraftSchema } from '@netgongbu/schema';
 import { claudeModel } from './claude';
 import type { ModelReply, ScenarioModel } from './generate';
 

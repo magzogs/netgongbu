@@ -1,7 +1,7 @@
 import { Hono, type Context } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { z } from 'zod';
-import type { AskErrorCode, ScenarioService } from '@magvirtualedu/ai';
+import type { AskErrorCode, ScenarioService } from '@netgongbu/ai';
 import {
   ApiKeyInputSchema,
   CLI_PROVIDERS,
@@ -9,8 +9,8 @@ import {
   PROVIDER_IDS,
   PrefsChangeSchema,
   type ChatEvent,
-} from '@magvirtualedu/llm';
-import type { AiHub } from '@magvirtualedu/llm/node';
+} from '@netgongbu/llm';
+import type { AiHub } from '@netgongbu/llm/node';
 
 const STATUS: Record<AskErrorCode, 400 | 404 | 422 | 429 | 502 | 503> = {
   'bad-request': 400,

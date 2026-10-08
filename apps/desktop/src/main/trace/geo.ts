@@ -5,7 +5,7 @@ import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { createGunzip } from 'node:zlib';
 import maxmind, { type CityResponse, type Reader } from 'maxmind';
-import type { Geo } from '@magvirtualedu/schema';
+import type { Geo } from '@netgongbu/schema';
 
 export const GEO_ATTRIBUTION = 'IP Geolocation by DB-IP (db-ip.com), CC BY 4.0';
 const FILE = 'dbip-city-lite.mmdb';

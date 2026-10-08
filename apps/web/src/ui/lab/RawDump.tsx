@@ -1,5 +1,5 @@
 import { memo, useMemo, type CSSProperties, type ReactElement } from 'react';
-import type { DissectedLayer, Field } from '@magvirtualedu/protocols';
+import type { DissectedLayer, Field } from '@netgongbu/protocols';
 import type { Radix } from './grid';
 import { LAYER_COLORS } from './theme';
 

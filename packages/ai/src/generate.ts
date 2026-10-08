@@ -8,7 +8,7 @@ import {
   type Scenario,
   type Topology,
   type ValidationIssue,
-} from '@magvirtualedu/schema';
+} from '@netgongbu/schema';
 import type { ZodError } from 'zod';
 import { correctionMessage, questionMessage, systemPrompt } from './prompt';
 

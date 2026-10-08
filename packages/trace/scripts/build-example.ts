@@ -1,8 +1,8 @@
 // Builds the web viewer's "trace" example from the demo report:
-//   pnpm --filter @magvirtualedu/trace build:example
+//   pnpm --filter @netgongbu/trace build:example
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { CatalogSchema } from '@magvirtualedu/schema';
+import { CatalogSchema } from '@netgongbu/schema';
 import { buildFromReport, TraceReportSchema } from '../src';
 
 const ID = 'trace-demo';

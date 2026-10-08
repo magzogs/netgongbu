@@ -5,7 +5,7 @@ import {
   type Layer,
   type Protocol,
   type Scenario,
-} from '@magvirtualedu/schema';
+} from '@netgongbu/schema';
 import { mainRequest, type CapturedRequest, type TraceReport } from '../report';
 import { bytes, derived, layer, ms, observed, observedOr, typical } from './packets';
 import { FIBER_KM_PER_MS } from './geocheck';

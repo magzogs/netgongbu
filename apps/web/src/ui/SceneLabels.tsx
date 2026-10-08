@@ -1,6 +1,6 @@
 import { useMemo, type ReactElement } from 'react';
 import { Vector3 } from 'three';
-import type { Hop, NetNode, NodeAction, Zone } from '@magvirtualedu/schema';
+import type { Hop, NetNode, NodeAction, Zone } from '@netgongbu/schema';
 import { zonePlacer } from '../engine/zones';
 import type { Route } from '../engine/timeline';
 import { currentPoint } from '../scene/Packets';

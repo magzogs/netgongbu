@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Vector3 } from 'three';
-import { indexTopology, type Scenario, type Topology } from '@magvirtualedu/schema';
+import { indexTopology, type Scenario, type Topology } from '@netgongbu/schema';
 import { anchorOf, buildLinkCurves } from '../src/engine/curves';
 import {
   beatAt,

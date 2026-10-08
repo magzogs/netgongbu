@@ -1,5 +1,5 @@
 import { serve } from '@hono/node-server';
-import { connectedModel, ScenarioService, ScenarioStore, TopologyLibrary } from '@magvirtualedu/ai';
+import { connectedModel, ScenarioService, ScenarioStore, TopologyLibrary } from '@netgongbu/ai';
 import { createApp } from './app';
 import { loadConfig } from './config';
 import { createHub } from './hub';

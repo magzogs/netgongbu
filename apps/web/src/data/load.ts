@@ -9,8 +9,8 @@ import {
   type Scenario,
   type Topology,
   type ValidationIssue,
-} from '@magvirtualedu/schema';
-import { buildFromReport } from '@magvirtualedu/trace';
+} from '@netgongbu/schema';
+import { buildFromReport } from '@netgongbu/trace';
 import { backend, lab } from './backend';
 
 /**

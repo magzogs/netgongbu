@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { ScenarioSchema, type Scenario } from '@magvirtualedu/schema';
+import { ScenarioSchema, type Scenario } from '@netgongbu/schema';
 
 const ID = /^[a-z0-9][a-z0-9-]*$/;
 

@@ -1,5 +1,5 @@
 {
-  "name": "@magvirtualedu/web",
+  "name": "@netgongbu/web",
   "version": "0.1.0",
   "private": true,
   "description": "3D viewer that plays network scenarios over a topology of routers and servers",
@@ -13,11 +13,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@magvirtualedu/bridge": "workspace:^",
-    "@magvirtualedu/llm": "workspace:^",
-    "@magvirtualedu/protocols": "workspace:^",
-    "@magvirtualedu/schema": "workspace:*",
-    "@magvirtualedu/trace": "workspace:^",
+    "@netgongbu/bridge": "workspace:^",
+    "@netgongbu/llm": "workspace:^",
+    "@netgongbu/protocols": "workspace:^",
+    "@netgongbu/schema": "workspace:*",
+    "@netgongbu/trace": "workspace:^",
     "@react-three/drei": "10.7.9",
     "@react-three/fiber": "9.8.1",
     "react": "19.3.0",

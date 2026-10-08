@@ -1,6 +1,6 @@
 import { promises as dns } from 'node:dns';
 import { isIP } from 'node:net';
-import type { DnsLookup } from '@magvirtualedu/trace';
+import type { DnsLookup } from '@netgongbu/trace';
 import { withTimeout } from './exec';
 
 /**

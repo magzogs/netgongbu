@@ -6,7 +6,7 @@ import {
   type AskResult,
   type Settings,
   type TraceEvent,
-} from '@magvirtualedu/bridge';
+} from '@netgongbu/bridge';
 import type { DesktopAi } from './ai';
 import type { LabBrowser } from './lab-browser';
 import type { GeoIpDb } from './trace/geo';

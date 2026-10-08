@@ -5,7 +5,7 @@ import {
   type Topology,
   type TopologyIndex,
   type ValidationIssue,
-} from '@magvirtualedu/schema';
+} from '@netgongbu/schema';
 import {
   ANCHOR_HEIGHT,
   buildLinkCurves,
@@ -101,7 +101,7 @@ export interface ViewerState extends PlaybackSlice, AssistantSlice, DesktopSlice
 }
 
 const SCENARIO_PARAM = 's';
-const MAP_VIEW_KEY = 'magve.mapView';
+const MAP_VIEW_KEY = 'netgongbu.mapView';
 
 function savedMapView(): MapView {
   try {

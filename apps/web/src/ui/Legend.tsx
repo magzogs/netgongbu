@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactElement } from 'react';
-import type { LinkMedium, Protocol } from '@magvirtualedu/schema';
+import type { LinkMedium, Protocol } from '@netgongbu/schema';
 import { MEDIUM_COLORS, PROTOCOL_COLORS } from '../scene/theme';
 import { NARROW_QUERY, useViewer } from '../store/viewer';
 import { MEDIUM_NAMES } from './names';

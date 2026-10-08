@@ -1,5 +1,5 @@
 {
-  "name": "@magvirtualedu/ai",
+  "name": "@netgongbu/ai",
   "version": "0.1.0",
   "private": true,
   "description": "Asks the connected AI (ChatGPT, Claude, a local model) for a scenario on a topology and corrects it until it validates (used by the HTTP server and the desktop app)",
@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.131.0",
-    "@magvirtualedu/llm": "workspace:*",
-    "@magvirtualedu/schema": "workspace:*",
+    "@netgongbu/llm": "workspace:*",
+    "@netgongbu/schema": "workspace:*",
     "zod": "4.6.5"
   }
 }

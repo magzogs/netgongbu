@@ -10,7 +10,7 @@ import {
   validateTopology,
   type Scenario,
   type Topology,
-} from '@magvirtualedu/schema';
+} from '@netgongbu/schema';
 import { buildFromReport, TraceReportSchema, type TraceReport } from '../src';
 
 function demo(): TraceReport {

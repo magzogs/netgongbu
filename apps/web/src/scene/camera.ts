@@ -1,6 +1,6 @@
 import { CameraControlsImpl } from '@react-three/drei';
 import { PerspectiveCamera, Spherical, Vector3 } from 'three';
-import { northAxis, type NetNode } from '@magvirtualedu/schema';
+import { northAxis, type NetNode } from '@netgongbu/schema';
 import { anchorOf } from '../engine/curves';
 import {
   focalOffsetFor,

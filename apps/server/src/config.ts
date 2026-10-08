@@ -1,4 +1,4 @@
-import { DEFAULT_CLAUDE_SETTINGS, EFFORTS, type Effort } from '@magvirtualedu/ai';
+import { DEFAULT_CLAUDE_SETTINGS, EFFORTS, type Effort } from '@netgongbu/ai';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

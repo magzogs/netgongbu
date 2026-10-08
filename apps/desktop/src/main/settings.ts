@@ -1,8 +1,8 @@
 import { safeStorage } from 'electron';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { AiPrefsSchema, type AiPrefs, type ProviderId } from '@magvirtualedu/llm';
-import type { PrefsStore, SecretStore } from '@magvirtualedu/llm/node';
+import { AiPrefsSchema, type AiPrefs, type ProviderId } from '@netgongbu/llm';
+import type { PrefsStore, SecretStore } from '@netgongbu/llm/node';
 
 interface SettingsFile {
   /** API keys encrypted with the OS keychain (safeStorage), base64, per provider. */

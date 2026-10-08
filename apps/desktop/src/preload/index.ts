@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { LabApi } from '@magvirtualedu/bridge';
+import type { LabApi } from '@netgongbu/bridge';
 // Channel names only: the schemas (zod) stay out of the sandboxed preload.
-import { Channels } from '@magvirtualedu/bridge/channels';
+import { Channels } from '@netgongbu/bridge/channels';
 
 /*
  * The only bridge between the sandboxed viewer and the main process: a fixed set of channels,

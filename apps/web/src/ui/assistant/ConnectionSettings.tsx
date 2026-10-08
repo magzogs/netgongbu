@@ -9,7 +9,7 @@ import {
   type CliProvider,
   type Method,
   type ProviderId,
-} from '@magvirtualedu/llm';
+} from '@netgongbu/llm';
 import { useViewer } from '../../store/viewer';
 
 /**

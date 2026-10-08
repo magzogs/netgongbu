@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import type { Dissection } from '@magvirtualedu/protocols';
+import type { Dissection } from '@netgongbu/protocols';
 import { formatBits, type Radix } from './grid';
 
 /** Bytes of the frame shown at the start of its bit stream. */

@@ -7,8 +7,8 @@ import {
   type ModelOption,
   type PrefsChange,
   type ProviderId,
-} from '@magvirtualedu/llm';
-import type { ValidationIssue } from '@magvirtualedu/schema';
+} from '@netgongbu/llm';
+import type { ValidationIssue } from '@netgongbu/schema';
 import { ai, errorText } from '../data/ai';
 import { AskError, type AiStatus as ScenarioAvailability } from '../data/aiApi';
 import { backend } from '../data/backend';
@@ -88,7 +88,7 @@ export interface AssistantSlice {
 }
 
 const SYSTEM = [
-  '당신은 네트워크 교육 앱 "Network in 3D"의 튜터입니다. 이 앱은 메시지가 브라우저에서 출발해 운영체제, 랜카드, 공유기, 통신사 라우터를 거쳐 서버까지 가는 과정을 3D 지도 위에서 단계별로 보여 주고, 패킷을 계층별 헤더와 실제 바이트로 해부해 보여 줍니다.',
+  '당신은 네트워크 교육 앱 "Net Gongbu"의 튜터입니다. 이 앱은 메시지가 브라우저에서 출발해 운영체제, 랜카드, 공유기, 통신사 라우터를 거쳐 서버까지 가는 과정을 3D 지도 위에서 단계별로 보여 주고, 패킷을 계층별 헤더와 실제 바이트로 해부해 보여 줍니다.',
   '학습자가 지금 보고 있는 화면의 내용이 질문과 함께 [화면] 아래에 글로 주어집니다(그림이 함께 오면 3D 장면의 모습입니다). 그 내용을 근거로 학습자의 질문에 한국어로 답하세요.',
   '- 화면에 있는 값(주소, 포트, 헤더 필드, 장비)을 그대로 짚어 가며 설명하고, 장비는 화면의 번호와 이름으로 부르세요(예: "3번 공유기").',
   '- 화면에 없는 내용은 일반적인 네트워크 지식으로 보충하되, 그렇다고 밝히세요. 모르는 것은 지어내지 마세요.',

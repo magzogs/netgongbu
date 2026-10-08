@@ -8,7 +8,7 @@ import {
   type Topology,
   type Vec3,
   type Zone,
-} from '@magvirtualedu/schema';
+} from '@netgongbu/schema';
 import { isNonPublic } from '../ip';
 import { checkGeo, implausibleNote } from './geocheck';
 import { mainRequest, type Hop, type TraceReport } from '../report';

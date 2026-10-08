@@ -4,14 +4,14 @@ import {
   ScenarioService,
   ScenarioStore,
   TopologyLibrary,
-} from '@magvirtualedu/ai';
-import type { AiHub } from '@magvirtualedu/llm/node';
+} from '@netgongbu/ai';
+import type { AiHub } from '@netgongbu/llm/node';
 import { dataDir, userPath } from './paths';
 
 export interface DesktopAi {
   service: ScenarioService;
   topologies: TopologyLibrary;
-  /** MAGVE_FAKE_AI=1: canned answers instead of the connected AI, for working without one. */
+  /** NETGONGBU_FAKE_AI=1: canned answers instead of the connected AI, for working without one. */
   fake: boolean;
 }
 
@@ -21,7 +21,7 @@ export async function createDesktopAi(
   log: (message: string) => void,
 ): Promise<DesktopAi> {
   const topologies = new TopologyLibrary(dataDir());
-  const fake = process.env.MAGVE_FAKE_AI === '1';
+  const fake = process.env.NETGONGBU_FAKE_AI === '1';
   const example = fake ? await topologies.exampleFor('home-to-web') : undefined;
   const canned = example ? cannedModel(example) : null;
 

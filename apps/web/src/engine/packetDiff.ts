@@ -1,4 +1,4 @@
-import type { Hop, Layer } from '@magvirtualedu/schema';
+import type { Hop, Layer } from '@netgongbu/schema';
 import type { Timeline } from './timeline';
 
 /**

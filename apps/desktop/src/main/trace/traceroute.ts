@@ -1,5 +1,5 @@
 import { spawn as nodeSpawn } from 'node:child_process';
-import { lineSplitter, parseTracerouteLine, type TracerouteLine } from '@magvirtualedu/trace';
+import { lineSplitter, parseTracerouteLine, type TracerouteLine } from '@netgongbu/trace';
 
 export interface TracerouteOptions {
   platform: NodeJS.Platform;

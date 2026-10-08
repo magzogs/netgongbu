@@ -1,4 +1,4 @@
-import { distanceKm, type Geo } from '@magvirtualedu/schema';
+import { distanceKm, type Geo } from '@netgongbu/schema';
 
 /** Light in optical fibre travels about 200 km per millisecond. */
 export const FIBER_KM_PER_MS = 200;

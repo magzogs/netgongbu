@@ -1,7 +1,7 @@
 import { useEffect, useMemo, type ReactElement } from 'react';
 import { Grid, Line } from '@react-three/drei';
 import { BufferGeometry, DoubleSide, Float32BufferAttribute } from 'three';
-import type { Globe, Zone } from '@magvirtualedu/schema';
+import type { Globe, Zone } from '@netgongbu/schema';
 import { projectGeo, type FlatMap } from '../engine/flatMap';
 import { zonePlacer, type ZonePlacer } from '../engine/zones';
 import { BORDER } from './theme';

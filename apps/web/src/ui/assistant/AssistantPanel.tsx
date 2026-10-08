@@ -7,7 +7,7 @@ import {
   prefsFor,
   splitThinking,
   type ModelOption,
-} from '@magvirtualedu/llm';
+} from '@netgongbu/llm';
 import { contextChips } from '../../engine/screenContext';
 import type { AssistantMessage } from '../../store/assistant';
 import { useViewer } from '../../store/viewer';
@@ -35,7 +35,7 @@ const SCENARIO_SUGGESTIONS = [
   'HTTPS 없이 http://example.com에 접속하면 중간 장비가 무엇을 볼 수 있나요?',
 ];
 
-const RECT_KEY = 'magve.assistant.rect';
+const RECT_KEY = 'netgongbu.assistant.rect';
 const MIN_SIZE = { w: 340, h: 360 };
 
 function initialRect(): Rect {

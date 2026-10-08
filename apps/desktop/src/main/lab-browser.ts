@@ -1,6 +1,6 @@
-import { session, WebContentsView, type BrowserWindow, type Session } from 'electron';
-import type { Rect } from '@magvirtualedu/bridge';
-import { collectRequests, type CdpEvent } from '@magvirtualedu/trace';
+import { app, session, WebContentsView, type BrowserWindow, type Session } from 'electron';
+import type { Rect } from '@netgongbu/bridge';
+import { collectRequests, type CdpEvent } from '@netgongbu/trace';
 import type { PageCapture } from './trace/run';
 
 /** In-memory session: nothing the laptop's browser visits is kept after the app quits. */
@@ -29,12 +29,13 @@ function hardenSession(s: Session): void {
   s.on('will-download', (event) => {
     event.preventDefault();
   });
-  // Present itself as the Chromium it is, without the Electron and app tokens.
+  // Present itself as the Chromium it is, without the Electron and app tokens
+  // (Electron writes the app token as the product name without spaces: NetGongbu/0.1.0).
   s.setUserAgent(
     s
       .getUserAgent()
       .replace(/ Electron\/\S+/, '')
-      .replace(/ magvirtualedu\/\S+/i, ''),
+      .replace(` ${app.name.replaceAll(' ', '')}/${app.getVersion()}`, ''),
   );
 }
 

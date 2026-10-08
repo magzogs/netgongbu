@@ -1,4 +1,4 @@
-import type { FieldSource, Layer } from '@magvirtualedu/schema';
+import type { FieldSource, Layer } from '@netgongbu/schema';
 
 // Helpers for header layers whose every field says where its value comes from.
 

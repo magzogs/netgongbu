@@ -3,7 +3,7 @@ import { Trail } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Vector3, type Mesh } from 'three';
 import type { ThreeEvent } from '@react-three/fiber';
-import type { Protocol } from '@magvirtualedu/schema';
+import type { Protocol } from '@netgongbu/schema';
 import { ease, pointOnRoute, type Route } from '../engine/timeline';
 import { useViewer } from '../store/viewer';
 import { screenScale, worldPerPixel } from './markers';

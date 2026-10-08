@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
-import type { GeoEvent, TraceEntry, TraceEvent } from '@magvirtualedu/bridge';
-import { buildFromReport, type Hop } from '@magvirtualedu/trace';
+import type { GeoEvent, TraceEntry, TraceEvent } from '@netgongbu/bridge';
+import { buildFromReport, type Hop } from '@netgongbu/trace';
 import { lab } from '../data/backend';
 import type { ViewerEntry } from '../data/load';
 import type { ViewerState } from './viewer';

@@ -1,4 +1,4 @@
-import type { ByteSource, LayerKind } from '@magvirtualedu/protocols';
+import type { ByteSource, LayerKind } from '@netgongbu/protocols';
 import type { BoxKind } from './stack';
 
 export const LAYER_COLORS: Record<LayerKind, string> = {

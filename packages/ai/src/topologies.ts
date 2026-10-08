@@ -7,7 +7,7 @@ import {
   validateTopology,
   type Scenario,
   type Topology,
-} from '@magvirtualedu/schema';
+} from '@netgongbu/schema';
 
 const ID = /^[a-z0-9][a-z0-9-]*$/;
 

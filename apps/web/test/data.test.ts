@@ -7,7 +7,7 @@ import {
   TopologySchema,
   validateScenario,
   validateTopology,
-} from '@magvirtualedu/schema';
+} from '@netgongbu/schema';
 
 // Every JSON file shipped under public/data must parse and validate, so a broken path in a
 // hand-written (or later AI-written) scenario fails here instead of in the 3D view.

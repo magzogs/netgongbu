@@ -1,5 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import { scenarioToDraft, type Scenario } from '@magvirtualedu/schema';
+import { scenarioToDraft, type Scenario } from '@netgongbu/schema';
 import type { ScenarioModel } from './generate';
 
 /**

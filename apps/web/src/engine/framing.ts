@@ -1,5 +1,5 @@
 import { Box3, PerspectiveCamera, Vector3 } from 'three';
-import type { Globe, Topology } from '@magvirtualedu/schema';
+import type { Globe, Topology } from '@netgongbu/schema';
 import { above } from './curves';
 import { zonePlacer } from './zones';
 

@@ -1,5 +1,5 @@
-import type { LabApi } from '@magvirtualedu/bridge';
-import type { Scenario } from '@magvirtualedu/schema';
+import type { LabApi } from '@netgongbu/bridge';
+import type { Scenario } from '@netgongbu/schema';
 import {
   askScenario,
   AskError,

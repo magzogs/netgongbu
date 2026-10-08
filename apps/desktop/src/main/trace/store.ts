@@ -1,8 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { TraceEntry } from '@magvirtualedu/bridge';
-import { mainRequest, TraceReportSchema, type TraceReport } from '@magvirtualedu/trace';
+import type { TraceEntry } from '@netgongbu/bridge';
+import { mainRequest, TraceReportSchema, type TraceReport } from '@netgongbu/trace';
 
 const ID = /^trace-[a-z0-9-]+$/;
 

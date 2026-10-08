@@ -1,4 +1,4 @@
-import type { Beat, Scenario, TopologyIndex } from '@magvirtualedu/schema';
+import type { Beat, Scenario, TopologyIndex } from '@netgongbu/schema';
 import type { Vector3 } from 'three';
 import type { LinkCurve } from './curves';
 

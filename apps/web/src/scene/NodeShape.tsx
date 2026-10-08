@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { RoundedBox } from '@react-three/drei';
-import type { NodeType } from '@magvirtualedu/schema';
+import type { NodeType } from '@netgongbu/schema';
 
 /** Height of each shape, so labels and bubbles sit just above it. */
 export const NODE_HEIGHT: Record<NodeType, number> = {

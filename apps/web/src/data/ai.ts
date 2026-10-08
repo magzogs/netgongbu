@@ -1,4 +1,4 @@
-import type { LabApi } from '@magvirtualedu/bridge';
+import type { LabApi } from '@netgongbu/bridge';
 import type {
   AiStatus,
   ChatEvent,
@@ -7,7 +7,7 @@ import type {
   ModelsResult,
   PrefsChange,
   ProviderId,
-} from '@magvirtualedu/llm';
+} from '@netgongbu/llm';
 import { lab } from './backend';
 
 /**

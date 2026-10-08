@@ -1,5 +1,5 @@
 import { QuadraticBezierCurve3, Vector3 } from 'three';
-import type { Globe, NetLink, Topology, Vec3 } from '@magvirtualedu/schema';
+import type { Globe, NetLink, Topology, Vec3 } from '@netgongbu/schema';
 
 /** Height above a node's base where links attach and packets travel. */
 export const ANCHOR_HEIGHT = 0.5;

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { indexTopology, ScenarioSchema, TopologySchema } from '@magvirtualedu/schema';
+import { indexTopology, ScenarioSchema, TopologySchema } from '@netgongbu/schema';
 import { buildLinkCurves } from '../src/engine/curves';
 import { changedFields, fieldKey, previousLeg } from '../src/engine/packetDiff';
 import { buildTimeline } from '../src/engine/timeline';

@@ -7,9 +7,9 @@ import type {
   ModelsResult,
   PrefsChange,
   ProviderId,
-} from '@magvirtualedu/llm';
-import type { Scenario, ValidationIssue } from '@magvirtualedu/schema';
-import type { Hop, TraceReport } from '@magvirtualedu/trace';
+} from '@netgongbu/llm';
+import type { Scenario, ValidationIssue } from '@netgongbu/schema';
+import type { Hop, TraceReport } from '@netgongbu/trace';
 
 export { Channels } from './channels';
 
@@ -27,7 +27,7 @@ export type AskResult =
 
 export interface AiStatusInfo {
   ready: boolean;
-  /** Answers come from the canned model (MAGVE_FAKE_AI=1), not the connected AI. */
+  /** Answers come from the canned model (NETGONGBU_FAKE_AI=1), not the connected AI. */
   fake: boolean;
 }
 

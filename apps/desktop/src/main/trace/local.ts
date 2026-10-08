@@ -11,7 +11,7 @@ import {
   parseScutilDns,
   type DefaultRoute,
   type LocalNetwork,
-} from '@magvirtualedu/trace';
+} from '@netgongbu/trace';
 import type { Exec } from './exec';
 
 export interface LocalDeps {

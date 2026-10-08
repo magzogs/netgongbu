@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ScenarioSchema, type Packet } from '@magvirtualedu/schema';
-import { dissect, type Dissection } from '@magvirtualedu/protocols';
+import { ScenarioSchema, type Packet } from '@netgongbu/schema';
+import { dissect, type Dissection } from '@netgongbu/protocols';
 import { cover, formatBits, layoutGrid, leaves, shortName, type GridRow } from '../src/ui/lab/grid';
 import { payloadOf, stackRows } from '../src/ui/lab/stack';
 

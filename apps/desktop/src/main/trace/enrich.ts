@@ -1,5 +1,5 @@
 import { promises as dns } from 'node:dns';
-import type { Geo } from '@magvirtualedu/schema';
+import type { Geo } from '@netgongbu/schema';
 import {
   asnQueryName,
   isNonPublic,
@@ -9,7 +9,7 @@ import {
   type Asn,
   type Hop,
   type TracerouteLine,
-} from '@magvirtualedu/trace';
+} from '@netgongbu/trace';
 import { withTimeout } from './exec';
 
 /** What can be learned about a router address beyond the address itself. */

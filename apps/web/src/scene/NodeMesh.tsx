@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type ReactElement } from 'react';
 import { useCursor } from '@react-three/drei';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { Quaternion, Vector3, type Group } from 'three';
-import type { Globe, NetNode } from '@magvirtualedu/schema';
+import type { Globe, NetNode } from '@netgongbu/schema';
 import { upAt } from '../engine/curves';
 import { nodeScale } from './markers';
 import { NodeShape } from './NodeShape';

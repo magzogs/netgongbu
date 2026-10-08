@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties, type ReactElement } from 'react';
-import type { DissectedLayer, Field } from '@magvirtualedu/protocols';
+import type { DissectedLayer, Field } from '@netgongbu/protocols';
 import {
   cover,
   fieldId,

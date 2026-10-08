@@ -1,5 +1,5 @@
 {
-  "name": "@magvirtualedu/trace",
+  "name": "@netgongbu/trace",
   "version": "0.1.0",
   "private": true,
   "description": "What a real page load measured (TraceReport), parsers for the OS tools that measure it, and the builder that turns it into a topology and scenario",
@@ -15,7 +15,7 @@
     "build:example": "tsx scripts/build-example.ts"
   },
   "dependencies": {
-    "@magvirtualedu/schema": "workspace:*",
+    "@netgongbu/schema": "workspace:*",
     "devtools-protocol": "0.0.1710668",
     "zod": "4.6.5"
   },

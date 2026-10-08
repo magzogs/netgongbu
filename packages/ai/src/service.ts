@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { AiError } from '@magvirtualedu/llm/node';
+import { AiError } from '@netgongbu/llm/node';
 import { z } from 'zod';
-import type { Scenario, ValidationIssue } from '@magvirtualedu/schema';
+import type { Scenario, ValidationIssue } from '@netgongbu/schema';
 import { generateScenario, GenerationError, type ScenarioModel } from './generate';
 import { newScenarioId, type ScenarioStore, type StoredEntry } from './store';
 import type { TopologyLibrary } from './topologies';

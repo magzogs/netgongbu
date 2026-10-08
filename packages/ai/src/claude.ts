@@ -1,7 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
-import { FALLBACK_CAPABLE } from '@magvirtualedu/llm/node';
-import { ScenarioDraftSchema } from '@magvirtualedu/schema';
+import { FALLBACK_CAPABLE } from '@netgongbu/llm/node';
+import { ScenarioDraftSchema } from '@netgongbu/schema';
 import type { ScenarioModel } from './generate';
 
 export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;

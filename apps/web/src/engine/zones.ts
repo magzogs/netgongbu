@@ -1,5 +1,5 @@
 import { Vector3 } from 'three';
-import { surfacePatch, type Globe, type Zone } from '@magvirtualedu/schema';
+import { surfacePatch, type Globe, type Zone } from '@netgongbu/schema';
 
 export type ZonePlacer = (x: number, z: number, height?: number) => Vector3;
 

@@ -51,7 +51,7 @@ function makeHub(opened: string[] = []) {
   hub = new AiHub({
     prefs: { read: () => saved, write: (p) => (saved = p) },
     secrets: memorySecrets(),
-    workDir: mkdtempSync(join(tmpdir(), 'magve-hub-')),
+    workDir: mkdtempSync(join(tmpdir(), 'netgongbu-hub-')),
     log: () => undefined,
     openExternal: (url) => opened.push(url),
     fetchImpl: fakeFetch,

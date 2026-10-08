@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PerspectiveCamera, Vector3 } from 'three';
 import { frame, frameGlobe, framingPoints, globeEye, viewDirection } from '../src/engine/framing';
-import { geoToPosition, northAxis, type Topology } from '@magvirtualedu/schema';
+import { geoToPosition, northAxis, type Topology } from '@netgongbu/schema';
 import { hiddenBehind } from '../src/scene/labels';
 
 // A long, thin layout like the sample topology: 60 wide (x), 10 deep (z).

@@ -1,5 +1,5 @@
 import { PerspectiveCamera, Vector3, type Camera } from 'three';
-import type { Globe, NetNode } from '@magvirtualedu/schema';
+import type { Globe, NetNode } from '@netgongbu/schema';
 import { above } from '../engine/curves';
 import type { World } from '../store/viewer';
 import { NODE_HEIGHT } from './NodeShape';

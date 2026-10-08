@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
-import type { Hop } from '@magvirtualedu/schema';
-import {
-  dissect,
-  type DissectedLayer,
-  type Dissection,
-  type Field,
-} from '@magvirtualedu/protocols';
+import type { Hop } from '@netgongbu/schema';
+import { dissect, type DissectedLayer, type Dissection, type Field } from '@netgongbu/protocols';
 import { PROTOCOL_COLORS } from '../../scene/theme';
 import { useViewer } from '../../store/viewer';
 import { Encapsulation, type Selection } from './Encapsulation';
@@ -20,8 +15,8 @@ import { FloatingWindow, fullRect } from '../FloatingWindow';
 import { openPopout, PopoutWindow, type Popout } from '../PopoutWindow';
 import { handleShortcut } from '../useKeyboardShortcuts';
 
-const RADIX_KEY = 'magve.lab.radix';
-const RECT_KEY = 'magve.lab.rect';
+const RADIX_KEY = 'netgongbu.lab.radix';
+const RECT_KEY = 'netgongbu.lab.rect';
 const MIN_SIZE = { w: 560, h: 340 };
 
 /** How the window around the anatomy view is handled, for its header buttons. */

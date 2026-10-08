@@ -2,7 +2,7 @@
 // without one: `pnpm dev:fake` at the repo root.
 import { join } from 'node:path';
 import { serve } from '@hono/node-server';
-import { cannedModel, ScenarioService, ScenarioStore, TopologyLibrary } from '@magvirtualedu/ai';
+import { cannedModel, ScenarioService, ScenarioStore, TopologyLibrary } from '@netgongbu/ai';
 import { createApp } from '../src/app';
 import { loadConfig } from '../src/config';
 import { createHub } from '../src/hub';

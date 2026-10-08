@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GeoSchema } from '@magvirtualedu/schema';
+import { GeoSchema } from '@netgongbu/schema';
 
 /**
  * Everything one page load measured on the learner's computer. It is the evidence: the topology

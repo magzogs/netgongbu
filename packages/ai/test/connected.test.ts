@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AiHub } from '@magvirtualedu/llm/node';
+import type { AiHub } from '@netgongbu/llm/node';
 import { jsonOf, textModel } from '../src/connected';
 import { generateScenario } from '../src/generate';
 import { goodDraft, sample, topology } from './fakes';
