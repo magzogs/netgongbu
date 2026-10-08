@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Net Gongbu">
+  <rect width="128" height="128" rx="28" fill="#17100b"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="10">
+    <path d="M32,24 H94 V48" stroke="#FFD166"/>
+    <path d="M64,56 V70 M26,70 H102" stroke="#FF9F1C"/>
+    <circle cx="64" cy="96" r="16" stroke="#FF6B35"/>
+  </g>
+  <g fill="#FFFFFF" stroke="#5A2E1A" stroke-width="4.5">
+    <circle cx="32" cy="24" r="7"/><circle cx="94" cy="48" r="7"/>
+    <circle cx="26" cy="70" r="7"/><circle cx="102" cy="70" r="7"/>
+  </g>
+  <circle cx="64" cy="24" r="8" fill="#06D6A0" stroke="#FFFFFF" stroke-width="3"/>
+</svg>

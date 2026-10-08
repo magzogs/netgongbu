@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Net Gongbu">
+  <rect width="128" height="128" rx="28" fill="#17100b"/>
+  <!-- bottom slab: link layer -->
+  <polygon points="20,88 64,110 64,118 20,96" fill="#B23D14"/>
+  <polygon points="64,110 108,88 108,96 64,118" fill="#8F2F0E"/>
+  <polygon points="64,66 108,88 64,110 20,88" fill="#FF6B35"/>
+  <!-- middle slab: transport layer -->
+  <polygon points="20,66 64,88 64,96 20,74" fill="#C26A08"/>
+  <polygon points="64,88 108,66 108,74 64,96" fill="#9E5506"/>
+  <polygon points="64,44 108,66 64,88 20,66" fill="#FF9F1C"/>
+  <!-- top slab: application layer -->
+  <polygon points="20,44 64,66 64,74 20,52" fill="#D9A23A"/>
+  <polygon points="64,66 108,44 108,52 64,74" fill="#B9852A"/>
+  <polygon points="64,22 108,44 64,66 20,44" fill="#FFD166"/>
+  <!-- packet dropping into the stack -->
+  <path d="M64,10 V36" stroke="#06D6A0" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 7"/>
+  <circle cx="64" cy="44" r="9" fill="#06D6A0" stroke="#FFFFFF" stroke-width="3.5"/>
+</svg>
