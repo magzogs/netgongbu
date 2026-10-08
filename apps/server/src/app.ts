@@ -11,6 +11,7 @@ import {
   type ChatEvent,
 } from '@netgongbu/llm';
 import type { AiHub } from '@netgongbu/llm/node';
+import { isLocale, setLocale } from '@netgongbu/schema';
 
 const STATUS: Record<AskErrorCode, 400 | 404 | 422 | 429 | 502 | 503> = {
   'bad-request': 400,
@@ -51,6 +52,9 @@ export function createApp({ scenarios, hub }: AppDeps): Hono {
     if (site === 'cross-site' || site === 'same-site') return c.json({ error: 'Forbidden' }, 403);
     if (c.req.method !== 'GET' && !c.req.header('content-type')?.startsWith('application/json'))
       return c.json({ error: 'JSON only' }, 415);
+    // The viewer's language, for messages and the AI's answers (one learner per server).
+    const locale = c.req.header('x-netgongbu-locale');
+    if (isLocale(locale)) setLocale(locale);
     await next();
   });
 

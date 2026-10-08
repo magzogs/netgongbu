@@ -8,6 +8,7 @@ import type {
   PrefsChange,
   ProviderId,
 } from '@netgongbu/llm';
+import { localeHeaders } from '../i18n';
 import { lab } from './backend';
 
 /**
@@ -84,11 +85,8 @@ async function call<T>(path: string, init?: { body: unknown }): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${API}${path}`, {
-      ...(init && {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(init.body),
-      }),
+      headers: { ...localeHeaders, ...(init && { 'content-type': 'application/json' }) },
+      ...(init && { method: 'POST', body: JSON.stringify(init.body) }),
     });
   } catch {
     throw new Error(OFFLINE);
@@ -132,7 +130,7 @@ const viaServer: AiClient = {
     try {
       res = await fetch(`${API}/chat`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...localeHeaders },
         body: JSON.stringify({ id: newId(), messages }),
         signal,
       });

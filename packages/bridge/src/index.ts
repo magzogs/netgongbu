@@ -8,7 +8,7 @@ import type {
   PrefsChange,
   ProviderId,
 } from '@netgongbu/llm';
-import type { Scenario, ValidationIssue } from '@netgongbu/schema';
+import type { Locale, Scenario, ValidationIssue } from '@netgongbu/schema';
 import type { Hop, TraceReport } from '@netgongbu/trace';
 
 export { Channels } from './channels';
@@ -85,6 +85,8 @@ export interface LabApi {
   };
   settings: {
     get: () => Promise<Settings>;
+    /** The viewer's language, for the main process's messages and the AI's answers. */
+    setLocale: (locale: Locale) => Promise<void>;
   };
   trace: {
     start: (request: TraceStart) => Promise<void>;

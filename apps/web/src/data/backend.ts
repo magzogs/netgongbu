@@ -9,10 +9,14 @@ import {
   type AiEntry,
   type AiStatus,
 } from './aiApi';
+import { locale } from '../i18n';
 
 /** The desktop app's main process, exposed by its preload script; undefined on the web. */
 export const lab: LabApi | undefined = (globalThis as { lab?: LabApi }).lab;
 export const isDesktop = lab !== undefined;
+
+// Before any other call, so the main process answers in the viewer's language from the start.
+if (lab) void lab.settings.setLocale(locale);
 
 /** Where AI scenarios come from: the HTTP server (web) or the main process (desktop). */
 export interface Backend {

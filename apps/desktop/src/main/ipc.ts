@@ -7,6 +7,7 @@ import {
   type Settings,
   type TraceEvent,
 } from '@netgongbu/bridge';
+import { isLocale, setLocale } from '@netgongbu/schema';
 import type { DesktopAi } from './ai';
 import type { LabBrowser } from './lab-browser';
 import type { GeoIpDb } from './trace/geo';
@@ -52,6 +53,9 @@ export function registerAiIpc(ai: DesktopAi): void {
 
 export function registerSettingsIpc(deps: SettingsDeps): void {
   handle(Channels.settingsGet, () => settingsSnapshot(deps));
+  handle(Channels.settingsLocale, (locale: unknown) => {
+    if (isLocale(locale)) setLocale(locale);
+  });
 }
 
 export interface TraceIpcDeps {

@@ -4,6 +4,7 @@ import {
   TopologySchema,
   validateScenario,
   validateTopology,
+  getLocale,
   type Catalog,
   type CatalogEntry,
   type Scenario,
@@ -30,7 +31,9 @@ export class ScenarioLoadError extends Error {
 }
 
 async function fetchJson(path: string): Promise<unknown> {
-  const res = await fetch(`${import.meta.env.BASE_URL}data/${path}`);
+  // English examples sit in data/en/, with the same names.
+  const dir = getLocale() === 'en' ? 'data/en' : 'data';
+  const res = await fetch(`${import.meta.env.BASE_URL}${dir}/${path}`);
   if (!res.ok)
     throw new ScenarioLoadError(`${path}을(를) 불러오지 못했습니다 (HTTP ${res.status}).`);
   return res.json();
