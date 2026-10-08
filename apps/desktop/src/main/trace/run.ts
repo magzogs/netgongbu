@@ -1,4 +1,5 @@
 import type { TraceEvent } from '@netgongbu/bridge';
+import { tr } from '@netgongbu/schema';
 import {
   TraceReportSchema,
   type CapturedRequest,
@@ -37,7 +38,7 @@ export interface TraceRunDeps {
 }
 
 function stopIfCancelled(signal: AbortSignal): void {
-  if (signal.aborted) throw new Error('측정을 취소했습니다.');
+  if (signal.aborted) throw new Error(tr('측정을 취소했습니다.', 'Measurement canceled.'));
 }
 
 /**
@@ -51,13 +52,24 @@ export async function runTrace(
   signal: AbortSignal,
 ): Promise<TraceReport> {
   const startedAt = (deps.now?.() ?? new Date()).toISOString();
-  deps.emit({ type: 'phase', phase: 'browser', message: `${input}을(를) 여는 중…` });
+  deps.emit({
+    type: 'phase',
+    phase: 'browser',
+    message: tr(`${input}을(를) 여는 중…`, `Opening ${input}…`),
+  });
   const localPromise = deps.local();
   const page = await deps.capture(input, signal);
   stopIfCancelled(signal);
   deps.emit({ type: 'page', url: page.finalUrl, title: page.title });
 
-  deps.emit({ type: 'phase', phase: 'local', message: '이 컴퓨터의 네트워크 설정을 읽는 중…' });
+  deps.emit({
+    type: 'phase',
+    phase: 'local',
+    message: tr(
+      '이 컴퓨터의 네트워크 설정을 읽는 중…',
+      "Reading this computer's network settings…",
+    ),
+  });
   const local = await localPromise;
 
   const mainId = page.documentChain.at(-1);
@@ -66,7 +78,11 @@ export async function runTrace(
   let target: string | null = null;
   if (main) {
     const host = new URL(main.url).hostname;
-    deps.emit({ type: 'phase', phase: 'dns', message: `${host}의 주소를 확인하는 중…` });
+    deps.emit({
+      type: 'phase',
+      phase: 'dns',
+      message: tr(`${host}의 주소를 확인하는 중…`, `Resolving the address of ${host}…`),
+    });
     dns = await deps.dns(host, local.dnsServers);
     target = main.remoteIp ?? dns?.addresses[0]?.address ?? null;
   }
@@ -78,10 +94,14 @@ export async function runTrace(
     target,
     hops,
     complete: false,
-    error: '서버 주소를 알 수 없습니다.',
+    error: tr('서버 주소를 알 수 없습니다.', 'Could not find the server address.'),
   };
   if (target) {
-    deps.emit({ type: 'phase', phase: 'path', message: `${target}까지 경로를 추적하는 중…` });
+    deps.emit({
+      type: 'phase',
+      phase: 'path',
+      message: tr(`${target}까지 경로를 추적하는 중…`, `Tracing the route to ${target}…`),
+    });
     const result = await deps.traceroute(
       target,
       (line) => {
@@ -94,7 +114,11 @@ export async function runTrace(
       },
       signal,
     );
-    deps.emit({ type: 'phase', phase: 'enrich', message: '라우터 이름과 위치를 정리하는 중…' });
+    deps.emit({
+      type: 'phase',
+      phase: 'enrich',
+      message: tr('라우터 이름과 위치를 정리하는 중…', 'Looking up router names and locations…'),
+    });
     await enriching;
     path = { target, hops, complete: result.complete, error: result.error };
   }

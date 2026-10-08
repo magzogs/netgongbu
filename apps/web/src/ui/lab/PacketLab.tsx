@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
-import type { Hop } from '@netgongbu/schema';
+import { tr, type Hop } from '@netgongbu/schema';
 import { dissect, type DissectedLayer, type Dissection, type Field } from '@netgongbu/protocols';
 import { PROTOCOL_COLORS } from '../../scene/theme';
 import { useViewer } from '../../store/viewer';
@@ -111,7 +111,7 @@ function LabShell({
     return (
       <PopoutWindow
         popout={popout}
-        title={`패킷 해부 — ${hop.packet.summary}`}
+        title={tr(`패킷 해부 — ${hop.packet.summary}`, `Packet anatomy — ${hop.packet.summary}`)}
         onClose={() => {
           close(null);
         }}
@@ -152,9 +152,10 @@ function innerOf(d: Dissection, ref: LayerRef): LayerRef | null {
 function payloadLabel(d: Dissection, ref: LayerRef, next: LayerRef | null): string {
   const inner = next ? layerAt(d, next) : null;
   if (next?.part === 'inner' && ref.part === 'wire') {
-    return `🔒 암호문 (풀면 ${inner ? MODEL[inner.kind].short : '내용'})`;
+    const plain = inner ? MODEL[inner.kind].short : tr('내용', 'content');
+    return tr(`🔒 암호문 (풀면 ${plain})`, `🔒 Ciphertext (decrypts to ${plain})`);
   }
-  return inner ? `${MODEL[inner.kind].short} ${MODEL[inner.kind].unit}` : '내용';
+  return inner ? `${MODEL[inner.kind].short} ${MODEL[inner.kind].unit}` : tr('내용', 'Content');
 }
 
 const rangeOf = (f: Field): Range => ({
@@ -236,7 +237,10 @@ function PacketLabView({
   const askAbout = (f: Field): void => {
     if (!layer) return;
     void ask(
-      `${layer.title} 헤더의 ${f.name} 필드(값 ${f.value || '—'})는 무슨 뜻이고, 이 패킷에서 왜 이 값인가요?`,
+      tr(
+        `${layer.title} 헤더의 ${f.name} 필드(값 ${f.value || '—'})는 무슨 뜻이고, 이 패킷에서 왜 이 값인가요?`,
+        `What does the ${f.name} field (value ${f.value || '—'}) in the ${layer.title} header mean, and why does it have this value in this packet?`,
+      ),
     );
   };
 
@@ -258,11 +262,19 @@ function PacketLabView({
   }
 
   return (
-    <section className={`lab panel lab--${frame.place}`} role="dialog" aria-label="패킷 해부">
+    <section
+      className={`lab panel lab--${frame.place}`}
+      role="dialog"
+      aria-label={tr('패킷 해부', 'Packet anatomy')}
+    >
       <header
         className="lab__header"
         data-drag-handle
-        title={frame.place === 'panel' ? '끌어서 옮기고, 두 번 눌러 크게 봅니다' : undefined}
+        title={
+          frame.place === 'panel'
+            ? tr('끌어서 옮기고, 두 번 눌러 크게 봅니다', 'Drag to move; double-click to enlarge')
+            : undefined
+        }
       >
         <span className="chip" style={{ borderColor: PROTOCOL_COLORS[hop.packet.protocol] }}>
           {hop.packet.protocol}
@@ -280,24 +292,32 @@ function PacketLabView({
                 aria-pressed={frame.maximized}
                 onClick={frame.onMaximize}
               >
-                {frame.maximized ? '원래 크기' : '크게'}
+                {frame.maximized ? tr('원래 크기', 'Restore') : tr('크게', 'Maximize')}
               </button>
               <button
                 type="button"
                 className="text-button"
                 title={
                   frame.blocked
-                    ? '브라우저가 팝업을 막았습니다. 주소창의 팝업 차단을 풀고 다시 눌러 주세요.'
-                    : '별도의 창으로 띄웁니다. 다른 화면으로 옮기거나 크기를 마음대로 바꿀 수 있습니다.'
+                    ? tr(
+                        '브라우저가 팝업을 막았습니다. 주소창의 팝업 차단을 풀고 다시 눌러 주세요.',
+                        'The browser blocked the pop-up. Allow pop-ups from the address bar and click again.',
+                      )
+                    : tr(
+                        '별도의 창으로 띄웁니다. 다른 화면으로 옮기거나 크기를 마음대로 바꿀 수 있습니다.',
+                        'Opens in a separate window that you can move to another screen or resize freely.',
+                      )
                 }
                 onClick={frame.onPopout}
               >
-                {frame.blocked ? '새 창 (팝업 차단됨)' : '새 창으로 ⧉'}
+                {frame.blocked
+                  ? tr('새 창 (팝업 차단됨)', 'New window (pop-up blocked)')
+                  : tr('새 창으로 ⧉', 'New window ⧉')}
               </button>
             </>
           ) : (
             <button type="button" className="text-button" onClick={frame.onDock}>
-              앱 안으로 ⇲
+              {tr('앱 안으로 ⇲', 'Back into app ⇲')}
             </button>
           )}
           <button
@@ -307,7 +327,7 @@ function PacketLabView({
               close(null);
             }}
           >
-            닫기 (Esc)
+            {tr('닫기 (Esc)', 'Close (Esc)')}
           </button>
         </span>
       </header>
@@ -315,8 +335,15 @@ function PacketLabView({
       {!dissection || !stack ? (
         <div className="lab__empty">
           <p>
-            이 단계의 메시지는 네트워크로 나가는 패킷이 아니라 <strong>한 컴퓨터 안의 호출</strong>
-            (함수 호출이나 시스템 호출)입니다. 바이트로 된 헤더가 없어 해부할 수 없습니다.
+            {tr(
+              '이 단계의 메시지는 네트워크로 나가는 패킷이 아니라 ',
+              'The message at this step is not a packet going out to the network but ',
+            )}
+            <strong>{tr('한 컴퓨터 안의 호출', 'a call inside one computer')}</strong>
+            {tr(
+              '(함수 호출이나 시스템 호출)입니다. 바이트로 된 헤더가 없어 해부할 수 없습니다.',
+              ' (a function call or system call). It has no byte-level headers, so it cannot be dissected.',
+            )}
           </p>
           <ul>
             {hop.packet.layers.flatMap((l) =>
@@ -329,7 +356,11 @@ function PacketLabView({
       ) : (
         <>
           <div className="lab__toolbar">
-            <div className="segmented" role="radiogroup" aria-label="값 표시">
+            <div
+              className="segmented"
+              role="radiogroup"
+              aria-label={tr('값 표시', 'Value display')}
+            >
               {(['hex', 'bin'] as const).map((r) => (
                 <button
                   key={r}
@@ -340,7 +371,7 @@ function PacketLabView({
                     onRadix(r);
                   }}
                 >
-                  {r === 'hex' ? 'HEX 16진수' : 'BIN 2진수'}
+                  {r === 'hex' ? tr('HEX 16진수', 'HEX') : tr('BIN 2진수', 'BIN')}
                 </button>
               ))}
             </div>
@@ -354,15 +385,23 @@ function PacketLabView({
             </span>
             {dissection.completed.length > 0 && (
               <span className="muted lab__completed">
-                이 단계에 없던 {dissection.completed.join(', ')} 계층은 일반적인 값으로 채웠습니다.
+                {tr(
+                  `이 단계에 없던 ${dissection.completed.join(', ')} 계층은 일반적인 값으로 채웠습니다.`,
+                  `The ${dissection.completed.join(', ')} layers, missing at this step, were filled with typical values.`,
+                )}
               </span>
             )}
           </div>
 
           <div className="lab__scroll">
             <h3 className="lab__h">
-              캡슐화{' '}
-              <span className="muted">위 계층의 데이터가 아래 계층의 헤더에 싸여 내려갑니다</span>
+              {tr('캡슐화', 'Encapsulation')}{' '}
+              <span className="muted">
+                {tr(
+                  '위 계층의 데이터가 아래 계층의 헤더에 싸여 내려갑니다',
+                  "Each layer's data is wrapped in the header of the layer below on the way down",
+                )}
+              </span>
             </h3>
             <Encapsulation stack={stack} selected={selected} onSelect={select} />
 
@@ -370,15 +409,26 @@ function PacketLabView({
               <div className="lab__main">
                 <div className="lab__structure">
                   <h3 className="lab__h">
-                    {layer.title} 헤더 구조{' '}
+                    {tr(`${layer.title} 헤더 구조`, `${layer.title} header structure`)}{' '}
                     <span className="muted">
-                      {layer.standard} · 헤더 {layer.length}바이트
-                      {layer.trailer && ` · 트레일러 ${String(layer.trailer.length)}바이트`}
+                      {layer.standard} ·{' '}
+                      {tr(
+                        `헤더 ${String(layer.length)}바이트`,
+                        `header ${String(layer.length)} bytes`,
+                      )}
+                      {layer.trailer &&
+                        tr(
+                          ` · 트레일러 ${String(layer.trailer.length)}바이트`,
+                          ` · trailer ${String(layer.trailer.length)} bytes`,
+                        )}
                     </span>
                   </h3>
                   {layer.encrypted && (
                     <p className="lab__note">
-                      🔒 선로 위에서는 암호문입니다. 아래는 보내는 쪽이 암호화하기 전의 내용입니다.
+                      {tr(
+                        '🔒 선로 위에서는 암호문입니다. 아래는 보내는 쪽이 암호화하기 전의 내용입니다.',
+                        '🔒 On the wire this is ciphertext. Below is the content before the sender encrypted it.',
+                      )}
                     </p>
                   )}
                   {layer.note && <p className="lab__note">{layer.note}</p>}
@@ -409,10 +459,14 @@ function PacketLabView({
             )}
 
             <h3 className="lab__h">
-              실제 데이터{' '}
+              {tr('실제 데이터', 'Raw data')}{' '}
               <span className="muted">
-                {ref?.part === 'inner' ? '🔒 암호화 전 내용' : '선로 위 프레임'} {bytes.length}
-                바이트 · {radix === 'hex' ? '16진수' : '2진수'} · 바이트를 누르면 그 계층을 엽니다
+                {ref?.part === 'inner'
+                  ? tr('🔒 암호화 전 내용', '🔒 Content before encryption')
+                  : tr('선로 위 프레임', 'Frame on the wire')}{' '}
+                {tr(`${String(bytes.length)}바이트`, `${String(bytes.length)} bytes`)} ·{' '}
+                {radix === 'hex' ? tr('16진수', 'hex') : tr('2진수', 'binary')} ·{' '}
+                {tr('바이트를 누르면 그 계층을 엽니다', 'click a byte to open its layer')}
               </span>
             </h3>
             <RawDump

@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { AiPrefsSchema, type AiPrefs, type ProviderId } from '@netgongbu/llm';
 import type { PrefsStore, SecretStore } from '@netgongbu/llm/node';
+import { tr } from '@netgongbu/schema';
 
 interface SettingsFile {
   /** API keys encrypted with the OS keychain (safeStorage), base64, per provider. */
@@ -75,7 +76,12 @@ export class SettingsStore {
           ...settings.apiKeys,
         };
         if (key !== null && !this.canSaveKey)
-          throw new Error('이 컴퓨터에서는 키를 암호화해 저장할 수 없습니다.');
+          throw new Error(
+            tr(
+              '이 컴퓨터에서는 키를 암호화해 저장할 수 없습니다.',
+              'This computer cannot store the key encrypted.',
+            ),
+          );
         const others = Object.entries(keys).filter(([name]) => name !== provider);
         const apiKeys = Object.fromEntries(
           key === null

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ScenarioSchema, type Packet } from '@netgongbu/schema';
+import { ScenarioSchema, setLocale, type Packet } from '@netgongbu/schema';
 import {
   dissect,
   hpackEncode,
@@ -225,4 +225,76 @@ describe('dissect', () => {
       }
     }
   });
+});
+
+describe('language', () => {
+  it('describes the fields in English when the viewer is in English', () => {
+    setLocale('en');
+    try {
+      const { fields } = hpackEncode([{ name: ':method', value: 'GET', source: 'typical' }]);
+      expect(fields[0]?.meaning).toBe('Points straight to static table entry 2 (1 byte)');
+      const d = dissect(packetOf(example, 'dns-query-lan'))!;
+      expect(field(layer(d, 'ipv4')!.fields, 'ttl')?.meaning).toContain(
+        'traceroute relies on this',
+      );
+      expect(field(layer(d, 'udp')!.fields, 'length')?.value).toMatch(/^\d+ bytes$/);
+      expect(layer(d, 'dns')?.title).toBe('DNS (query)');
+      const all = JSON.stringify(d.layers);
+      expect(all).not.toMatch(/[\uAC00-\uD7A3]/);
+    } finally {
+      setLocale('ko');
+    }
+  });
+});
+
+describe('scenario language parity', () => {
+  const english = (name: string) =>
+    ScenarioSchema.parse(
+      JSON.parse(readFileSync(join(data, '..', 'en', 'scenarios', `${name}.json`), 'utf8')),
+    );
+  /** Every field's position and source, children included, in order. */
+  const shape = (layers: Dissection['layers']): string[] => {
+    const out: string[] = [];
+    const walk = (fields: Field[], path: string): void => {
+      fields.forEach((f, i) => {
+        out.push(`${path}${String(i)} @${String(f.bitOffset)}+${String(f.bitLength)} ${f.source}`);
+        if (f.children) walk(f.children, `${path}${String(i)}.`);
+      });
+    };
+    for (const l of layers) {
+      out.push(
+        `${l.kind} ${String(l.start)}+${String(l.length)}${l.note ? ` note: ${l.note}` : ''}`,
+      );
+      walk(l.fields, `${l.kind}:`);
+    }
+    return out;
+  };
+  const hex = (b: Uint8Array | undefined): string => (b ? Buffer.from(b).toString('hex') : '');
+
+  for (const name of ['visit-example-com', 'trace-demo']) {
+    it(`reads the same values from the Korean and English ${name}`, () => {
+      const ko = scenario(name);
+      const en = english(name);
+      expect(en.beats.length).toBe(ko.beats.length);
+      let compared = 0;
+      ko.beats.forEach((beat, b) => {
+        const enBeat = en.beats[b]!;
+        expect(enBeat.hops.length).toBe(beat.hops.length);
+        beat.hops.forEach((hop, h) => {
+          const where = `${beat.id} hop ${String(h)}`;
+          const a = dissect(hop.packet);
+          const z = dissect(enBeat.hops[h]!.packet);
+          expect(z === null, where).toBe(a === null);
+          if (!a || !z) return;
+          compared++;
+          expect(hex(z.frame), where).toBe(hex(a.frame));
+          expect(hex(z.inner?.bytes), where).toBe(hex(a.inner?.bytes));
+          expect(shape(z.layers), where).toEqual(shape(a.layers));
+          expect(shape(z.inner?.layers ?? []), where).toEqual(shape(a.inner?.layers ?? []));
+          expect(z.completed, where).toEqual(a.completed);
+        });
+      });
+      expect(compared).toBeGreaterThan(5);
+    });
+  }
 });

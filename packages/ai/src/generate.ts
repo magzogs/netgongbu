@@ -8,6 +8,7 @@ import {
   type Scenario,
   type Topology,
   type ValidationIssue,
+  tr,
 } from '@netgongbu/schema';
 import type { ZodError } from 'zod';
 import { correctionMessage, questionMessage, systemPrompt } from './prompt';
@@ -109,11 +110,17 @@ export async function generateScenario(req: GenerateRequest): Promise<GenerateRe
   for (let attempt = 1; attempt <= req.maxAttempts; attempt++) {
     const reply = await req.model.reply(system, messages);
     if (reply.stopReason === 'refusal') {
-      throw new GenerationError('AI가 이 질문에 대한 답변을 거절했습니다.', 'refused');
+      throw new GenerationError(
+        tr('AI가 이 질문에 대한 답변을 거절했습니다.', 'The AI declined to answer this question.'),
+        'refused',
+      );
     }
     if (reply.stopReason === 'max_tokens') {
       throw new GenerationError(
-        '답변이 너무 길어서 중간에 끊겼습니다. 질문 범위를 좁혀 주세요.',
+        tr(
+          '답변이 너무 길어서 중간에 끊겼습니다. 질문 범위를 좁혀 주세요.',
+          'The answer was too long and got cut off. Try a narrower question.',
+        ),
         'truncated',
       );
     }
@@ -131,7 +138,10 @@ export async function generateScenario(req: GenerateRequest): Promise<GenerateRe
     );
   }
   throw new GenerationError(
-    `AI가 ${req.maxAttempts}번 시도했지만 재생할 수 있는 시나리오를 만들지 못했습니다.`,
+    tr(
+      `AI가 ${req.maxAttempts}번 시도했지만 재생할 수 있는 시나리오를 만들지 못했습니다.`,
+      `The AI tried ${req.maxAttempts} times but could not produce a playable scenario.`,
+    ),
     'invalid',
     lastProblems,
   );

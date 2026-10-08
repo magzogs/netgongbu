@@ -1,4 +1,4 @@
-import { isLocale, setLocale, type Locale } from '@netgongbu/schema';
+import { getLocale, isLocale, setLocale, type Locale } from '@netgongbu/schema';
 
 // Imported first by main.tsx, so the language is set before any module builds its labels.
 
@@ -6,6 +6,8 @@ const LOCALE_KEY = 'netgongbu.locale';
 
 /** The language picked in the settings, else the browser's: Korean for Korean, English otherwise. */
 function startLocale(): Locale {
+  // Outside a browser (tests): the default, Korean.
+  if (typeof window === 'undefined') return getLocale();
   try {
     const saved = localStorage.getItem(LOCALE_KEY);
     if (isLocale(saved)) return saved;
@@ -17,7 +19,7 @@ function startLocale(): Locale {
 
 export const locale: Locale = startLocale();
 setLocale(locale);
-document.documentElement.lang = locale;
+if (typeof document !== 'undefined') document.documentElement.lang = locale;
 
 /** Sent with every request to the AI server, which answers in this language. */
 export const localeHeaders = { 'x-netgongbu-locale': locale } as const;

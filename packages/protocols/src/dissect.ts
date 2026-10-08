@@ -15,6 +15,18 @@ interface Slot {
   layer: Layer | undefined;
 }
 
+/** Layers of calls inside one computer, as Korean and English scenarios name them. */
+const LOCAL_LAYERS = new Set([
+  '함수 호출',
+  '함수 결과',
+  '시스템 호출',
+  '조회',
+  'function call',
+  'function result',
+  'system call',
+  'lookup',
+]);
+
 /** Which protocol a scenario layer is, from the names scenarios use. LOCAL calls have none. */
 function kindOf(layer: Layer): LayerKind | 'local' | null {
   const n = layer.name.toLowerCase();
@@ -29,7 +41,7 @@ function kindOf(layer: Layer): LayerKind | 'local' | null {
   if (n === 'dns') return 'dns';
   if (n === 'tls') return 'tls';
   if (n === 'http') return 'http1';
-  if (['함수 호출', '함수 결과', '시스템 호출', '조회'].includes(layer.name)) return 'local';
+  if (LOCAL_LAYERS.has(n)) return 'local';
   return null;
 }
 
@@ -83,7 +95,7 @@ function speaksH2(packet: Packet): boolean {
   return packet.layers.some(
     (l) =>
       Object.keys(l.fields).some((k) => k.startsWith(':')) ||
-      Object.values(l.fields).some((v) => /\bh2\b|HTTP\/2|HEADERS 프레임/.test(v)),
+      Object.values(l.fields).some((v) => /\bh2\b|HTTP\/2|HEADERS (?:프레임|frame)/.test(v)),
   );
 }
 

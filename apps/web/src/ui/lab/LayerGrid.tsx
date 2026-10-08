@@ -12,6 +12,7 @@ import {
   type Radix,
   type Segment,
 } from './grid';
+import { tr } from '@netgongbu/schema';
 import { LAYER_COLORS } from './theme';
 
 /** Characters of a name that fit per bit of cell width. */
@@ -40,7 +41,7 @@ function Cell({ segment, row, bytes, radix, focused, onHover, onPin }: CellProps
   const name = segment.first
     ? cellName(f.name, segment.span)
     : segment.span >= 16
-      ? `${f.name} (이어서)`
+      ? tr(`${f.name} (이어서)`, `${f.name} (cont.)`)
       : segment.span >= 6
         ? f.name
         : '';
@@ -77,7 +78,7 @@ function Cell({ segment, row, bytes, radix, focused, onHover, onPin }: CellProps
 function Ruler(): ReactElement {
   return (
     <div className="lgrid__row lgrid__row--ruler" aria-hidden="true">
-      <span className="lgrid__offset">바이트</span>
+      <span className="lgrid__offset">{tr('바이트', 'Byte')}</span>
       <div className="lgrid__cells">
         {Array.from({ length: ROW_BITS }, (_, i) => (
           <span key={i} className={`lgrid__tick${i % 8 === 0 ? ' is-major' : ''}`}>
@@ -117,7 +118,10 @@ function Rows({ rows, bytes, radix, focus, base, onHover, onPin, onExpand }: Row
               onExpand(fieldId(f));
             }}
           >
-            ⋮ {f.name} 이어서 {row.bytes}바이트 ({row.bytes / 4}줄 접음 · 눌러서 펼치기)
+            {tr(
+              `⋮ ${f.name} 이어서 ${String(row.bytes)}바이트 (${String(row.bytes / 4)}줄 접음 · 눌러서 펼치기)`,
+              `⋮ ${f.name} continues for ${String(row.bytes)} bytes (${String(row.bytes / 4)} rows folded · click to expand)`,
+            )}
           </button>
         </div>
       );
@@ -216,14 +220,20 @@ export function LayerGrid({ layer, bytes, radix, focus, onHover, onPin, payload 
             disabled={!payload.onOpen}
             onClick={payload.onOpen ?? undefined}
           >
-            <strong>Data</strong> {payload.length}바이트 — {payload.label}
-            {payload.onOpen && <span className="lgrid__open">구조 보기 ▸</span>}
+            <strong>Data</strong>{' '}
+            {tr(`${String(payload.length)}바이트`, `${String(payload.length)} bytes`)} —{' '}
+            {payload.label}
+            {payload.onOpen && (
+              <span className="lgrid__open">{tr('구조 보기 ▸', 'View structure ▸')}</span>
+            )}
           </button>
         </div>
       )}
       {trailer && layer.trailer && (
         <>
-          <p className="lgrid__caption">트레일러: 데이터 뒤에 붙는 부분</p>
+          <p className="lgrid__caption">
+            {tr('트레일러: 데이터 뒤에 붙는 부분', 'Trailer: the part added after the data')}
+          </p>
           <Rows rows={trailer} base={layer.trailer.start - layer.start} {...rows} />
         </>
       )}

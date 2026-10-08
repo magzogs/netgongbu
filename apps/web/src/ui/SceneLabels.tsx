@@ -1,6 +1,7 @@
 import { useMemo, type HTMLAttributes, type ReactElement } from 'react';
 import { Vector3 } from 'three';
 import type { Hop, NetNode, NodeAction, Zone } from '@netgongbu/schema';
+import { tr } from '@netgongbu/schema';
 import { foldedNodes, type FoldedCluster } from '../engine/clusters';
 import { zonePlacer } from '../engine/zones';
 import { clusterTopSource, useFoldedClusters } from '../scene/Clusters';
@@ -136,7 +137,10 @@ function ClusterLabel({
     <div ref={ref} className="anchor anchor--above">
       <div
         className={`node-label cluster-label${selected ? ' is-selected' : ''}`}
-        title={`두 번 눌러서 ${cluster.label}의 장비 ${count}개 자세히 보기`}
+        title={tr(
+          `두 번 눌러서 ${cluster.label}의 장비 ${count}개 자세히 보기`,
+          `Double-click to see the ${count} devices in ${cluster.label}`,
+        )}
         {...handlers}
       >
         <span className="node-label__name">

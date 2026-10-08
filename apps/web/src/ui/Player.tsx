@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { tr } from '@netgongbu/schema';
 import { showAll, toggleFollow } from '../commands';
 import { PROTOCOL_COLORS } from '../scene/theme';
 import { SPEEDS } from '../store/playback';
@@ -27,12 +28,17 @@ function Narration(): ReactElement | null {
         <button
           type="button"
           className="text-button narration__ask"
-          title="AI에게 이 단계를 자세히 묻습니다"
+          title={tr('AI에게 이 단계를 자세히 묻습니다', 'Ask the AI about this step in detail')}
           onClick={() => {
-            void ask('지금 단계에서 무슨 일이 일어나는지 자세히 설명해 줘');
+            void ask(
+              tr(
+                '지금 단계에서 무슨 일이 일어나는지 자세히 설명해 줘',
+                'Explain in detail what is happening in this step',
+              ),
+            );
           }}
         >
-          이 단계 AI에게 묻기
+          {tr('이 단계 AI에게 묻기', 'Ask the AI about this step')}
         </button>
       </div>
       <p className="narration__text">{entry.beat.narration}</p>
@@ -48,12 +54,12 @@ function ScenarioNote(): ReactElement | null {
     <div className="scenario-note">
       {scenario.question && (
         <p className="scenario-note__question" title={scenario.question}>
-          질문 · {scenario.question}
+          {tr('질문', 'Question')} · {scenario.question}
         </p>
       )}
       {scenario.unsupported && (
         <details className="scenario-note__gap">
-          <summary>이 지도로 보여 줄 수 없는 부분</summary>
+          <summary>{tr('이 지도로 보여 줄 수 없는 부분', 'What this map can’t show')}</summary>
           <p>{scenario.unsupported}</p>
         </details>
       )}
@@ -62,11 +68,21 @@ function ScenarioNote(): ReactElement | null {
 }
 
 const MAP_VIEWS: readonly { view: MapView; label: string; hint: string }[] = [
-  { view: 'globe', label: '지구본', hint: '드래그로 지구를 돌리고 휠로 확대합니다 (G)' },
+  {
+    view: 'globe',
+    label: tr('지구본', 'Globe'),
+    hint: tr(
+      '드래그로 지구를 돌리고 휠로 확대합니다 (G)',
+      'Drag to spin the globe, scroll to zoom (G)',
+    ),
+  },
   {
     view: 'flat',
-    label: '평면 지도',
-    hint: '드래그로 지도를 옮기고, 오른쪽 드래그로 기울입니다 (G)',
+    label: tr('평면 지도', 'Flat map'),
+    hint: tr(
+      '드래그로 지도를 옮기고, 오른쪽 드래그로 기울입니다 (G)',
+      'Drag to move the map, right-drag to tilt it (G)',
+    ),
   },
 ];
 
@@ -77,7 +93,11 @@ function MapViewSwitch(): ReactElement | null {
   const setMapView = useViewer((s) => s.setMapView);
   if (!hasGlobe) return null;
   return (
-    <div className="segmented map-switch" role="radiogroup" aria-label="지도 보기">
+    <div
+      className="segmented map-switch"
+      role="radiogroup"
+      aria-label={tr('지도 보기', 'Map view')}
+    >
       {MAP_VIEWS.map(({ view, label, hint }) => (
         <button
           key={view}
@@ -106,21 +126,26 @@ function Controls(): ReactElement {
   const following = useViewer((s) => s.cameraMode === 'follow');
   const { togglePlay, prev, next, setSpeed, setPauseBetweenBeats } = useViewer.getState();
 
-  let playLabel = '재생 (Space)';
+  let playLabel = tr('재생 (Space)', 'Play (Space)');
   let PlayGlyph = PlayIcon;
   if (playing) {
-    playLabel = '일시정지 (Space)';
+    playLabel = tr('일시정지 (Space)', 'Pause (Space)');
     PlayGlyph = PauseIcon;
   } else if (atEnd) {
-    playLabel = '처음부터 다시 (Space)';
+    playLabel = tr('처음부터 다시 (Space)', 'Replay from start (Space)');
     PlayGlyph = ReplayIcon;
   }
 
   return (
     <div className="controls">
-      <button type="button" className="icon-button" onClick={prev} title="이전 단계 (←)">
+      <button
+        type="button"
+        className="icon-button"
+        onClick={prev}
+        title={tr('이전 단계 (←)', 'Previous step (←)')}
+      >
         <PrevIcon />
-        <span className="visually-hidden">이전 단계</span>
+        <span className="visually-hidden">{tr('이전 단계', 'Previous step')}</span>
       </button>
       <button
         type="button"
@@ -131,9 +156,14 @@ function Controls(): ReactElement {
         <PlayGlyph />
         <span className="visually-hidden">{playLabel}</span>
       </button>
-      <button type="button" className="icon-button" onClick={next} title="다음 단계 (→)">
+      <button
+        type="button"
+        className="icon-button"
+        onClick={next}
+        title={tr('다음 단계 (→)', 'Next step (→)')}
+      >
         <NextIcon />
-        <span className="visually-hidden">다음 단계</span>
+        <span className="visually-hidden">{tr('다음 단계', 'Next step')}</span>
       </button>
       <div className="controls__divider" />
       <button
@@ -141,9 +171,12 @@ function Controls(): ReactElement {
         className="pill-button"
         aria-pressed={following}
         onClick={toggleFollow}
-        title="카메라가 움직이는 패킷을 따라갑니다 (F)"
+        title={tr(
+          '카메라가 움직이는 패킷을 따라갑니다 (F)',
+          'The camera follows the moving packet (F)',
+        )}
       >
-        따라가기
+        {tr('따라가기', 'Follow')}
       </button>
       <button
         type="button"
@@ -151,13 +184,19 @@ function Controls(): ReactElement {
         onClick={() => {
           showAll();
         }}
-        title="전체 보기 (R)"
+        title={tr('전체 보기 (R)', 'Show all (R)')}
       >
-        전체 보기
+        {tr('전체 보기', 'Show all')}
       </button>
       <MapViewSwitch />
       <div className="controls__spacer" />
-      <label className="toggle" title="각 단계가 끝나면 멈춰서 설명을 읽을 수 있게 합니다">
+      <label
+        className="toggle"
+        title={tr(
+          '각 단계가 끝나면 멈춰서 설명을 읽을 수 있게 합니다',
+          'Pause after each step so you can read the explanation',
+        )}
+      >
         <input
           type="checkbox"
           checked={pauseBetweenBeats}
@@ -165,10 +204,10 @@ function Controls(): ReactElement {
             setPauseBetweenBeats(e.target.checked);
           }}
         />
-        단계마다 멈춤
+        {tr('단계마다 멈춤', 'Pause each step')}
       </label>
       <label className="speed">
-        <span className="visually-hidden">재생 속도</span>
+        <span className="visually-hidden">{tr('재생 속도', 'Playback speed')}</span>
         <select
           value={speed}
           onChange={(e) => {
@@ -191,7 +230,7 @@ export function Player(): ReactElement | null {
   const timeline = useViewer((s) => s.timeline);
   if (!timeline) return null;
   return (
-    <section className="player panel" aria-label="재생">
+    <section className="player panel" aria-label={tr('재생', 'Playback')}>
       <ScenarioNote />
       <Narration />
       <Scrubber timeline={timeline} />

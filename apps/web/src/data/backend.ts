@@ -1,5 +1,5 @@
 import type { LabApi } from '@netgongbu/bridge';
-import type { Scenario } from '@netgongbu/schema';
+import { tr, type Scenario } from '@netgongbu/schema';
 import {
   askScenario,
   AskError,
@@ -44,7 +44,8 @@ function desktopBackend(api: LabApi): Backend {
     aiCatalog: () => api.ai.catalog().catch(() => []),
     aiScenario: async (id) => {
       const scenario = await api.ai.scenario(id);
-      if (!scenario) throw new Error('AI 시나리오를 찾을 수 없습니다.');
+      if (!scenario)
+        throw new Error(tr('AI 시나리오를 찾을 수 없습니다.', 'AI scenario not found.'));
       return scenario;
     },
     ask: async (topologyId, question) => {

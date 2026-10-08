@@ -1,5 +1,6 @@
 import type { ChildProcess } from 'node:child_process';
 import { z } from 'zod';
+import { tr } from '@netgongbu/schema';
 import type { AccountState, ModelOption } from '../types';
 import { AiError } from './http';
 import { cliEnv, onLines, spawnCli, tail } from './process';
@@ -95,10 +96,21 @@ const PLAN_LABELS: Record<string, string> = {
 function turnError(error: { message: string; codexErrorInfo?: unknown }): AiError {
   const info = typeof error.codexErrorInfo === 'string' ? error.codexErrorInfo : null;
   if (info === 'unauthorized')
-    return new AiError('ChatGPT 로그인이 만료되었습니다. 다시 로그인해 주세요.', 'auth');
+    return new AiError(
+      tr(
+        'ChatGPT 로그인이 만료되었습니다. 다시 로그인해 주세요.',
+        'Your ChatGPT sign-in has expired. Please sign in again.',
+      ),
+      'auth',
+    );
   if (info === 'usageLimitExceeded')
-    return new AiError(`사용 한도에 도달했습니다. ${error.message}`.trim());
-  return new AiError(error.message || 'Codex가 답하지 못했습니다.');
+    return new AiError(
+      tr(
+        `사용 한도에 도달했습니다. ${error.message}`,
+        `Usage limit reached. ${error.message}`,
+      ).trim(),
+    );
+  return new AiError(error.message || tr('Codex가 답하지 못했습니다.', 'Codex could not answer.'));
 }
 
 export class CodexAppServer implements Provider {
@@ -139,13 +151,24 @@ export class CodexAppServer implements Provider {
         this.receive(line);
       });
       child.on('error', (err) => {
-        this.stopped(new AiError(`Codex CLI를 실행하지 못했습니다: ${err.message}`, 'connect'));
+        this.stopped(
+          new AiError(
+            tr(
+              `Codex CLI를 실행하지 못했습니다: ${err.message}`,
+              `Could not run Codex CLI: ${err.message}`,
+            ),
+            'connect',
+          ),
+        );
         reject(err);
       });
       child.on('exit', (code) => {
         this.stopped(
           new AiError(
-            `Codex CLI가 종료되었습니다 (코드 ${String(code)})${this.stderr ? `: ${tail(this.stderr, 2)}` : ''}`,
+            tr(
+              `Codex CLI가 종료되었습니다 (코드 ${String(code)})${this.stderr ? `: ${tail(this.stderr, 2)}` : ''}`,
+              `Codex CLI exited (code ${String(code)})${this.stderr ? `: ${tail(this.stderr, 2)}` : ''}`,
+            ),
             'connect',
           ),
         );
@@ -200,7 +223,9 @@ export class CodexAppServer implements Provider {
     clearTimeout(p.timer);
     if (msg.error) {
       const error = msg.error as { message?: string };
-      p.reject(new AiError(error.message ?? 'Codex 요청이 실패했습니다.'));
+      p.reject(
+        new AiError(error.message ?? tr('Codex 요청이 실패했습니다.', 'The Codex request failed.')),
+      );
     } else {
       p.resolve(msg.result);
     }
@@ -219,7 +244,12 @@ export class CodexAppServer implements Provider {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(id);
-        reject(new AiError(`Codex가 ${method}에 답하지 않습니다.`, 'connect'));
+        reject(
+          new AiError(
+            tr(`Codex가 ${method}에 답하지 않습니다.`, `Codex is not answering ${method}.`),
+            'connect',
+          ),
+        );
       }, timeoutMs);
       this.pending.set(id, { resolve, reject, timer });
       this.write(params === undefined ? { id, method } : { id, method, params });
@@ -238,9 +268,14 @@ export class CodexAppServer implements Provider {
     if (account.type === 'chatgpt') {
       const plan = account.planType ? (PLAN_LABELS[account.planType] ?? account.planType) : null;
       const label = [account.email, plan && `ChatGPT ${plan}`].filter(Boolean).join(' · ');
-      return { state: 'signed-in', kind: 'subscription', label: label || 'ChatGPT 계정' };
+      return {
+        state: 'signed-in',
+        kind: 'subscription',
+        label: label || tr('ChatGPT 계정', 'ChatGPT account'),
+      };
     }
-    if (account.type === 'apiKey') return { state: 'signed-in', kind: 'apiKey', label: 'API 키' };
+    if (account.type === 'apiKey')
+      return { state: 'signed-in', kind: 'apiKey', label: tr('API 키', 'API key') };
     return { state: 'signed-in', kind: 'other', label: account.type };
   }
 
@@ -253,7 +288,10 @@ export class CodexAppServer implements Provider {
       if (method !== 'account/login/completed') return;
       if (params.loginId !== null && params.loginId !== result.loginId) return;
       off();
-      const error = typeof params.error === 'string' ? params.error : '로그인하지 못했습니다.';
+      const error =
+        typeof params.error === 'string'
+          ? params.error
+          : tr('로그인하지 못했습니다.', 'Could not sign in.');
       onDone(params.success === true ? null : error);
     });
     return { loginId: result.loginId, url: result.authUrl };
@@ -365,9 +403,10 @@ export class CodexAppServer implements Provider {
       seen.turnId = started.turn.id;
       if (ask.signal?.aborted) abort();
       const { status, error } = await finished;
-      if (status === 'failed') throw error ?? new AiError('Codex가 답하지 못했습니다.');
+      if (status === 'failed')
+        throw error ?? new AiError(tr('Codex가 답하지 못했습니다.', 'Codex could not answer.'));
       if (status === 'interrupted' && !ask.signal?.aborted)
-        throw error ?? new AiError('답이 중간에 멈췄습니다.');
+        throw error ?? new AiError(tr('답이 중간에 멈췄습니다.', 'The answer stopped partway.'));
       const text = seen.last ? (messages.get(seen.last) ?? '') : '';
       return { text, stop: 'end', model: thread.model ?? (ask.model || null) };
     } finally {

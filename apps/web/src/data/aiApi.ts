@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CatalogEntrySchema, ScenarioSchema, type Scenario } from '@netgongbu/schema';
+import { CatalogEntrySchema, ScenarioSchema, tr, type Scenario } from '@netgongbu/schema';
 import { localeHeaders } from '../i18n';
 
 // Client for apps/server. In development Vite proxies /api to it (see vite.config.ts).
@@ -45,7 +45,13 @@ export async function fetchAiScenario(id: string): Promise<unknown> {
   const res = await fetch(`${API}/scenarios/${encodeURIComponent(id)}`, {
     headers: localeHeaders,
   });
-  if (!res.ok) throw new Error(`AI 시나리오를 불러오지 못했습니다 (HTTP ${String(res.status)}).`);
+  if (!res.ok)
+    throw new Error(
+      tr(
+        `AI 시나리오를 불러오지 못했습니다 (HTTP ${String(res.status)}).`,
+        `Could not load the AI scenario (HTTP ${String(res.status)}).`,
+      ),
+    );
   return res.json();
 }
 
@@ -81,14 +87,19 @@ export async function askScenario(
       body: JSON.stringify({ topologyId, question }),
     });
   } catch {
-    throw new AskError('AI 서버에 연결하지 못했습니다.');
+    throw new AskError(tr('AI 서버에 연결하지 못했습니다.', 'Could not connect to the AI server.'));
   }
   const body: unknown = await res.json().catch(() => null);
   if (!res.ok) {
     const error = ErrorBodySchema.safeParse(body);
     throw error.success
       ? new AskError(error.data.error, error.data.issues)
-      : new AskError(`AI 서버 오류 (HTTP ${String(res.status)})`);
+      : new AskError(
+          tr(
+            `AI 서버 오류 (HTTP ${String(res.status)})`,
+            `AI server error (HTTP ${String(res.status)})`,
+          ),
+        );
   }
   return AskResponseSchema.parse(body);
 }

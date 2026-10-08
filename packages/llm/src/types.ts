@@ -1,3 +1,4 @@
+import { tr } from '@netgongbu/schema';
 import { z } from 'zod';
 
 /*
@@ -56,15 +57,24 @@ export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
   },
   local: {
     id: 'local',
-    label: '로컬 LLM',
-    vendor: 'OpenAI 호환 서버',
+    // Getters: the labels follow the language at the time they are read.
+    get label() {
+      return tr('로컬 LLM', 'Local LLM');
+    },
+    get vendor() {
+      return tr('OpenAI 호환 서버', 'OpenAI-compatible server');
+    },
     methods: ['api'],
   },
 };
 
 export const METHOD_LABELS: Record<Method, string> = {
-  oauth: '계정 로그인',
-  api: 'API 키',
+  get oauth() {
+    return tr('계정 로그인', 'Account sign-in');
+  },
+  get api() {
+    return tr('API 키', 'API key');
+  },
   cli: 'CLI',
 };
 
@@ -77,28 +87,33 @@ export const LOCAL_PRESETS = [
 
 export const DEFAULT_LOCAL_URL: string = LOCAL_PRESETS[0].baseUrl;
 
-const EFFORT_LABELS: Record<string, string> = {
-  none: '없음',
-  minimal: '최소',
-  low: '낮음',
-  medium: '보통',
-  high: '높음',
-  xhigh: '매우 높음',
-  max: '최대',
-  ultra: '울트라',
+const EFFORT_LABELS: Record<string, readonly [ko: string, en: string]> = {
+  none: ['없음', 'None'],
+  minimal: ['최소', 'Minimal'],
+  low: ['낮음', 'Low'],
+  medium: ['보통', 'Medium'],
+  high: ['높음', 'High'],
+  xhigh: ['매우 높음', 'Extra high'],
+  max: ['최대', 'Max'],
+  ultra: ['울트라', 'Ultra'],
 };
 
 /** "보통 (medium)" for the levels we know, the raw name otherwise. */
 export function effortLabel(effort: string): string {
-  const label = EFFORT_LABELS[effort];
-  return label ? `${label} (${effort})` : effort;
+  const label = Object.hasOwn(EFFORT_LABELS, effort) ? EFFORT_LABELS[effort] : undefined;
+  if (!label) return effort;
+  // English: the name itself is already English ("Medium"), so no raw name in parentheses.
+  return tr(`${label[0]} (${effort})`, label[1]);
 }
 
 export const BaseUrlSchema = z
   .string()
   .trim()
   .max(2048)
-  .refine((u) => /^https?:\/\/[^\s/]+/.test(u), 'http:// 또는 https:// 주소가 필요합니다.');
+  .refine((u) => /^https?:\/\/[^\s/]+/.test(u), {
+    error: () =>
+      tr('http:// 또는 https:// 주소가 필요합니다.', 'Enter an http:// or https:// address.'),
+  });
 
 export const ProviderPrefsSchema = z.object({
   method: z.enum(METHODS),

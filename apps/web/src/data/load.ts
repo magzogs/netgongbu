@@ -5,6 +5,7 @@ import {
   validateScenario,
   validateTopology,
   getLocale,
+  tr,
   type Catalog,
   type CatalogEntry,
   type Scenario,
@@ -35,7 +36,12 @@ async function fetchJson(path: string): Promise<unknown> {
   const dir = getLocale() === 'en' ? 'data/en' : 'data';
   const res = await fetch(`${import.meta.env.BASE_URL}${dir}/${path}`);
   if (!res.ok)
-    throw new ScenarioLoadError(`${path}을(를) 불러오지 못했습니다 (HTTP ${res.status}).`);
+    throw new ScenarioLoadError(
+      tr(
+        `${path}을(를) 불러오지 못했습니다 (HTTP ${res.status}).`,
+        `Could not load ${path} (HTTP ${res.status}).`,
+      ),
+    );
   return res.json();
 }
 
@@ -59,7 +65,13 @@ export async function fetchScenario(entry: ViewerEntry): Promise<LoadedScenario>
   const scenario = ScenarioSchema.parse(rawScenario);
   const issues = [...validateTopology(topology), ...validateScenario(topology, scenario)];
   if (issues.length > 0) {
-    throw new ScenarioLoadError(`"${entry.title}" 시나리오에 문제가 있습니다.`, issues);
+    throw new ScenarioLoadError(
+      tr(
+        `"${entry.title}" 시나리오에 문제가 있습니다.`,
+        `The scenario "${entry.title}" has problems.`,
+      ),
+      issues,
+    );
   }
   return { topology, scenario };
 }
@@ -67,12 +79,18 @@ export async function fetchScenario(entry: ViewerEntry): Promise<LoadedScenario>
 /** A measured page load, rebuilt into a topology and scenario from its saved report. */
 async function traceScenario(entry: ViewerEntry): Promise<LoadedScenario> {
   const report = lab ? await lab.trace.get(entry.id) : null;
-  if (!report) throw new ScenarioLoadError('측정 기록을 찾을 수 없습니다.');
+  if (!report)
+    throw new ScenarioLoadError(
+      tr('측정 기록을 찾을 수 없습니다.', 'Measurement record not found.'),
+    );
   const { topology, scenario } = buildFromReport(report, entry.id);
   const issues = [...validateTopology(topology), ...validateScenario(topology, scenario)];
   if (issues.length > 0) {
     throw new ScenarioLoadError(
-      `"${entry.title}" 측정 기록으로 시나리오를 만들지 못했습니다.`,
+      tr(
+        `"${entry.title}" 측정 기록으로 시나리오를 만들지 못했습니다.`,
+        `Could not build a scenario from the measurement "${entry.title}".`,
+      ),
       issues,
     );
   }

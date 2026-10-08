@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { tr } from '@netgongbu/schema';
 import { z } from 'zod';
 import type { AccountState, ModelOption } from '../types';
 import { AiError, parseDataUrl } from './http';
@@ -101,7 +102,9 @@ export class ClaudeCli implements Provider {
     } catch {
       return {
         state: 'error',
-        message: tail(stderr || stdout) || '로그인 상태를 읽지 못했습니다.',
+        message:
+          tail(stderr || stdout) ||
+          tr('로그인 상태를 읽지 못했습니다.', 'Could not read the sign-in status.'),
       };
     }
     const status = StatusSchema.safeParse(json);
@@ -113,8 +116,12 @@ export class ClaudeCli implements Provider {
     const plan = s.subscriptionType ? `Claude ${capitalize(s.subscriptionType)}` : null;
     const label = [s.email, plan, s.orgName].filter(Boolean).join(' · ') || (s.authMethod ?? '');
     if (method.includes('api') || method.includes('console'))
-      return { state: 'signed-in', kind: 'apiKey', label: label || 'API 키' };
-    return { state: 'signed-in', kind: 'subscription', label: label || 'Claude 계정' };
+      return { state: 'signed-in', kind: 'apiKey', label: label || tr('API 키', 'API key') };
+    return {
+      state: 'signed-in',
+      kind: 'subscription',
+      label: label || tr('Claude 계정', 'Claude account'),
+    };
   }
 
   /**
@@ -148,7 +155,16 @@ export class ClaudeCli implements Provider {
       child.on('close', (code) => {
         clearTimeout(timer);
         if (code === 0) resolve();
-        else reject(new Error(tail(output) || `claude auth login 실패 (코드 ${String(code)})`));
+        else
+          reject(
+            new Error(
+              tail(output) ||
+                tr(
+                  `claude auth login 실패 (코드 ${String(code)})`,
+                  `claude auth login failed (code ${String(code)})`,
+                ),
+            ),
+          );
       });
     });
     return {
@@ -165,7 +181,10 @@ export class ClaudeCli implements Provider {
       env: cliEnv(),
       timeoutMs: 20_000,
     });
-    if (code !== 0) throw new Error(tail(stderr || stdout) || 'claude auth logout 실패');
+    if (code !== 0)
+      throw new Error(
+        tail(stderr || stdout) || tr('claude auth logout 실패', 'claude auth logout failed'),
+      );
   }
 
   /** The models Claude Code offers this account, from its `initialize` handshake. */
@@ -191,7 +210,15 @@ export class ClaudeCli implements Provider {
         else resolve(result);
       };
       const timer = setTimeout(() => {
-        finish(new AiError('Claude Code가 모델 목록에 답하지 않습니다.', 'connect'));
+        finish(
+          new AiError(
+            tr(
+              'Claude Code가 모델 목록에 답하지 않습니다.',
+              'Claude Code is not answering the model list request.',
+            ),
+            'connect',
+          ),
+        );
       }, 30_000);
       onLines(child.stdout, (raw) => {
         let line: Line;
@@ -202,12 +229,28 @@ export class ClaudeCli implements Provider {
         }
         if (line.type !== 'control_response' || line.response?.request_id !== 'models') return;
         if (line.response.subtype === 'error') {
-          finish(new AiError(line.response.error ?? 'Claude Code가 모델 목록을 주지 않았습니다.'));
+          finish(
+            new AiError(
+              line.response.error ??
+                tr(
+                  'Claude Code가 모델 목록을 주지 않았습니다.',
+                  'Claude Code did not return a model list.',
+                ),
+            ),
+          );
           return;
         }
         const listed = z.object({ models: z.array(ModelSchema) }).safeParse(line.response.response);
         if (!listed.success) {
-          finish(new AiError('Claude Code의 모델 목록 형식을 알 수 없습니다.', 'format'));
+          finish(
+            new AiError(
+              tr(
+                'Claude Code의 모델 목록 형식을 알 수 없습니다.',
+                "Claude Code's model list is in an unknown format.",
+              ),
+              'format',
+            ),
+          );
           return;
         }
         finish(
@@ -222,12 +265,23 @@ export class ClaudeCli implements Provider {
         );
       });
       child.on('error', (err) => {
-        finish(new AiError(`Claude Code를 실행하지 못했습니다: ${err.message}`, 'connect'));
+        finish(
+          new AiError(
+            tr(
+              `Claude Code를 실행하지 못했습니다: ${err.message}`,
+              `Could not run Claude Code: ${err.message}`,
+            ),
+            'connect',
+          ),
+        );
       });
       child.on('close', (code) => {
         finish(
           new AiError(
-            `Claude Code가 종료되었습니다 (코드 ${String(code)})${stderr ? `: ${tail(stderr, 2)}` : ''}`,
+            tr(
+              `Claude Code가 종료되었습니다 (코드 ${String(code)})${stderr ? `: ${tail(stderr, 2)}` : ''}`,
+              `Claude Code exited (code ${String(code)})${stderr ? `: ${tail(stderr, 2)}` : ''}`,
+            ),
             'connect',
           ),
         );
@@ -304,7 +358,9 @@ export class ClaudeCli implements Provider {
           if (text) finalText = text;
         } else if (line.type === 'result') {
           if (line.is_error) {
-            const message = line.result ?? 'Claude Code가 답하지 못했습니다.';
+            const message =
+              line.result ??
+              tr('Claude Code가 답하지 못했습니다.', 'Claude Code could not answer.');
             out.answer = new AiError(
               message,
               /login|authenticat|credential/i.test(message) ? 'auth' : 'http',
@@ -334,7 +390,15 @@ export class ClaudeCli implements Provider {
       ask.signal?.addEventListener('abort', abort);
       child.on('error', (err) => {
         ask.signal?.removeEventListener('abort', abort);
-        reject(new AiError(`Claude Code를 실행하지 못했습니다: ${err.message}`, 'connect'));
+        reject(
+          new AiError(
+            tr(
+              `Claude Code를 실행하지 못했습니다: ${err.message}`,
+              `Could not run Claude Code: ${err.message}`,
+            ),
+            'connect',
+          ),
+        );
       });
       child.on('close', (code) => {
         ask.signal?.removeEventListener('abort', abort);
@@ -345,7 +409,10 @@ export class ClaudeCli implements Provider {
         else
           reject(
             new AiError(
-              `Claude Code가 답 없이 끝났습니다 (코드 ${String(code)})${stderr ? `: ${tail(stderr, 3)}` : ''}`,
+              tr(
+                `Claude Code가 답 없이 끝났습니다 (코드 ${String(code)})${stderr ? `: ${tail(stderr, 3)}` : ''}`,
+                `Claude Code ended without an answer (code ${String(code)})${stderr ? `: ${tail(stderr, 3)}` : ''}`,
+              ),
             ),
           );
       });

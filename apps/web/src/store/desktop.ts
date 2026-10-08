@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { GeoEvent, TraceEntry, TraceEvent } from '@netgongbu/bridge';
+import { tr } from '@netgongbu/schema';
 import { buildFromReport, type Hop } from '@netgongbu/trace';
 import { lab } from '../data/backend';
 import type { ViewerEntry } from '../data/load';
@@ -46,7 +47,7 @@ export function traceEntry(e: TraceEntry): ViewerEntry {
   return {
     id: e.id,
     topologyId: e.id,
-    title: `${e.host} 접속 실측 (${date})`,
+    title: tr(`${e.host} 접속 실측 (${date})`, `${e.host} connection, measured (${date})`),
     question: e.input,
     source: 'trace',
   };
@@ -124,7 +125,7 @@ export const createDesktopSlice: StateCreator<ViewerState, [], [], DesktopSlice>
         traceRun: {
           kind: 'running',
           input,
-          message: `${input}을(를) 여는 중…`,
+          message: tr(`${input}을(를) 여는 중…`, `Opening ${input}…`),
           page: null,
           hops: [],
         },

@@ -1,4 +1,5 @@
 import type { LabApi } from '@netgongbu/bridge';
+import { tr } from '@netgongbu/schema';
 import type {
   AiStatus,
   ChatEvent,
@@ -79,7 +80,10 @@ function viaMain(api: LabApi): AiClient {
 }
 
 const API = `${import.meta.env.BASE_URL}api/ai`;
-const OFFLINE = 'AI 서버에 연결하지 못했습니다. 저장소 루트에서 pnpm dev로 함께 실행하세요.';
+const OFFLINE = tr(
+  'AI 서버에 연결하지 못했습니다. 저장소 루트에서 pnpm dev로 함께 실행하세요.',
+  'Could not connect to the AI server. Start them together with pnpm dev from the repository root.',
+);
 
 async function call<T>(path: string, init?: { body: unknown }): Promise<T> {
   let res: Response;

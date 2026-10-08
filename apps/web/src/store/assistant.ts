@@ -8,7 +8,7 @@ import {
   type PrefsChange,
   type ProviderId,
 } from '@netgongbu/llm';
-import type { ValidationIssue } from '@netgongbu/schema';
+import { getLocale, tr, type ValidationIssue } from '@netgongbu/schema';
 import { ai, errorText } from '../data/ai';
 import { AskError, type AiStatus as ScenarioAvailability } from '../data/aiApi';
 import { backend } from '../data/backend';
@@ -87,14 +87,25 @@ export interface AssistantSlice {
   setLabFocus: (focus: LabFocus | null) => void;
 }
 
-const SYSTEM = [
-  '당신은 네트워크 교육 앱 "Net Gongbu"의 튜터입니다. 이 앱은 메시지가 브라우저에서 출발해 운영체제, 랜카드, 공유기, 통신사 라우터를 거쳐 서버까지 가는 과정을 3D 지도 위에서 단계별로 보여 주고, 패킷을 계층별 헤더와 실제 바이트로 해부해 보여 줍니다.',
-  '학습자가 지금 보고 있는 화면의 내용이 질문과 함께 [화면] 아래에 글로 주어집니다(그림이 함께 오면 3D 장면의 모습입니다). 그 내용을 근거로 학습자의 질문에 한국어로 답하세요.',
-  '- 화면에 있는 값(주소, 포트, 헤더 필드, 장비)을 그대로 짚어 가며 설명하고, 장비는 화면의 번호와 이름으로 부르세요(예: "3번 공유기").',
-  '- 화면에 없는 내용은 일반적인 네트워크 지식으로 보충하되, 그렇다고 밝히세요. 모르는 것은 지어내지 마세요.',
-  '- 처음 배우는 사람이 이해하도록 짧은 문단과 목록으로, 필요하면 간단한 비유를 쓰세요. 용어는 처음 나올 때 풀어 쓰세요.',
-  '- 지금 화면에 없는 과정(다른 명령, 다른 상황)을 궁금해하면, 질문 칸의 "시나리오로 보기"를 누르면 그 과정을 3D로 만들어 재생할 수 있다고 알려 주세요.',
-].join('\n');
+const SYSTEM = (
+  getLocale() === 'en'
+    ? [
+        'You are the tutor of "Net Gongbu", a networking education app. The app shows, step by step on a 3D map, how a message leaves the browser and travels through the operating system, the network card, the home router and the ISP routers to the server, and it dissects packets into their per-layer headers and actual bytes.',
+        "What the learner is looking at right now is given as text under [Screen] along with the question (if an image comes with it, it shows the 3D scene). Answer the learner's question in English, based on that content.",
+        '- Explain by pointing to the values on the screen (addresses, ports, header fields, devices) exactly as they appear, and refer to devices by their number and name on the screen (e.g. "router 3").',
+        '- Fill in what is not on the screen with general networking knowledge, but say that you are doing so. Do not make up what you do not know.',
+        '- Write for a first-time learner: short paragraphs and lists, with a simple analogy when it helps. Explain each term the first time it appears.',
+        '- If the learner wonders about a process that is not on the screen (another command, another situation), tell them that pressing "Show as scenario" in the question box builds that process in 3D and plays it.',
+      ]
+    : [
+        '당신은 네트워크 교육 앱 "Net Gongbu"의 튜터입니다. 이 앱은 메시지가 브라우저에서 출발해 운영체제, 랜카드, 공유기, 통신사 라우터를 거쳐 서버까지 가는 과정을 3D 지도 위에서 단계별로 보여 주고, 패킷을 계층별 헤더와 실제 바이트로 해부해 보여 줍니다.',
+        '학습자가 지금 보고 있는 화면의 내용이 질문과 함께 [화면] 아래에 글로 주어집니다(그림이 함께 오면 3D 장면의 모습입니다). 그 내용을 근거로 학습자의 질문에 한국어로 답하세요.',
+        '- 화면에 있는 값(주소, 포트, 헤더 필드, 장비)을 그대로 짚어 가며 설명하고, 장비는 화면의 번호와 이름으로 부르세요(예: "3번 공유기").',
+        '- 화면에 없는 내용은 일반적인 네트워크 지식으로 보충하되, 그렇다고 밝히세요. 모르는 것은 지어내지 마세요.',
+        '- 처음 배우는 사람이 이해하도록 짧은 문단과 목록으로, 필요하면 간단한 비유를 쓰세요. 용어는 처음 나올 때 풀어 쓰세요.',
+        '- 지금 화면에 없는 과정(다른 명령, 다른 상황)을 궁금해하면, 질문 칸의 "시나리오로 보기"를 누르면 그 과정을 3D로 만들어 재생할 수 있다고 알려 주세요.',
+      ]
+).join('\n');
 
 /** Earlier questions and answers sent with a new question; the screen goes only with the last. */
 const HISTORY_TURNS = 6;
@@ -247,7 +258,10 @@ export const createAssistantSlice: StateCreator<ViewerState, [], [], AssistantSl
           role: m.role,
           content: m.role === 'assistant' ? splitThinking(m.text).answer : m.text,
         }));
-      const prompt = `[화면]\n${context.text}\n\n[질문]\n${text}`;
+      const prompt = tr(
+        `[화면]\n${context.text}\n\n[질문]\n${text}`,
+        `[Screen]\n${context.text}\n\n[Question]\n${text}`,
+      );
       const messages: ChatMessage[] = [
         { role: 'system', content: SYSTEM },
         ...history,
@@ -334,7 +348,10 @@ export const createAssistantSlice: StateCreator<ViewerState, [], [], AssistantSl
         set((s) => ({ catalog: [{ ...entry, source: 'ai' as const }, ...s.catalog] }));
         update({
           pending: false,
-          text: `“${entry.title}” 시나리오를 만들었습니다. 지금 재생합니다.`,
+          text: tr(
+            `“${entry.title}” 시나리오를 만들었습니다. 지금 재생합니다.`,
+            `Built the scenario “${entry.title}”. Playing it now.`,
+          ),
           scenarioId: entry.id,
         });
         await get().open(entry.id);

@@ -1,0 +1,1057 @@
+{
+  "id": "trace-demo",
+  "topologyId": "trace-demo",
+  "title": "Measured example: from Seoul to a US server (demo data)",
+  "question": "example.org",
+  "beats": [
+    {
+      "id": "b-1",
+      "narration": "You typed \"example.org\" into the address bar and pressed Enter. The browser first parses the address into a protocol (https), host (example.org), port (443) and path (/).",
+      "hops": [],
+      "nodeActions": [
+        {
+          "node": "d-browser",
+          "text": "Parse URL: https://example.org:443/",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "b-2",
+      "narration": "This site is registered for HSTS (a promise to always connect over HTTPS), so the browser changes http://example.org/ to https://example.org/ without even asking the server. No unencrypted request ever goes out.",
+      "hops": [],
+      "nodeActions": [
+        {
+          "node": "d-browser",
+          "text": "HSTS: http → https (measured)",
+          "kind": "rewrite"
+        }
+      ]
+    },
+    {
+      "id": "b-3",
+      "narration": "The browser asks the operating system, \"What is the IP address of example.org?\" Turning names into addresses is the job of the OS's DNS resolver.",
+      "hops": [
+        {
+          "path": ["d-browser", "d-resolver"],
+          "packet": {
+            "protocol": "LOCAL",
+            "summary": "getaddrinfo(example.org)",
+            "layers": [
+              {
+                "name": "Function call",
+                "fields": {
+                  "function": "getaddrinfo",
+                  "name": "example.org",
+                  "request": "IPv4 and IPv6 addresses"
+                },
+                "sources": {
+                  "function": "typical",
+                  "name": "observed",
+                  "request": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "d-resolver",
+          "text": "Check OS DNS cache → miss, ask the DNS server",
+          "kind": "lookup"
+        }
+      ]
+    },
+    {
+      "id": "b-4",
+      "narration": "The resolver sends a query to the DNS server 192.168.4.1 on UDP port 53. The destination IP is the DNS server, but on the first link the destination MAC is the home router.",
+      "hops": [
+        {
+          "path": ["d-resolver", "d-stack", "d-nic", "h-router"],
+          "packet": {
+            "protocol": "DNS",
+            "summary": "example.org A?",
+            "layers": [
+              {
+                "name": "802.11 (Wi-Fi)",
+                "fields": {
+                  "Address 1 (AP)": "router's wireless MAC",
+                  "Address 2 (sender)": "02:00:5e:10:00:02",
+                  "Address 3 (destination)": "02:4c:a0:3d:05:0e"
+                },
+                "sources": {
+                  "Address 1 (AP)": "typical",
+                  "Address 2 (sender)": "observed",
+                  "Address 3 (destination)": "observed"
+                }
+              },
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.168.4.23",
+                  "dst": "192.168.4.1",
+                  "ttl": "64",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "UDP",
+                "fields": {
+                  "srcPort": "ephemeral port",
+                  "dstPort": "53"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "typical"
+                }
+              },
+              {
+                "name": "DNS",
+                "fields": {
+                  "question": "example.org A",
+                  "id": "random 16-bit value"
+                },
+                "sources": {
+                  "question": "observed",
+                  "id": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "h-router",
+          "text": "The router's DNS forwarder asks the ISP's DNS on the laptop's behalf",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "b-5",
+      "narration": "The DNS server answers example.org = 192.0.2.10. The browser actually waited 18.2 ms for DNS.",
+      "hops": [
+        {
+          "path": ["h-router", "d-nic", "d-stack", "d-resolver"],
+          "packet": {
+            "protocol": "DNS",
+            "summary": "example.org = 192.0.2.10",
+            "layers": [
+              {
+                "name": "UDP",
+                "fields": {
+                  "srcPort": "53",
+                  "dstPort": "ephemeral port"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "typical"
+                }
+              },
+              {
+                "name": "DNS",
+                "fields": {
+                  "answer": "192.0.2.10",
+                  "TTL": "cacheable for 300 s"
+                },
+                "sources": {
+                  "answer": "observed",
+                  "TTL": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-6",
+      "narration": "The resolver returns the list of addresses to the browser. The browser decides to connect to 192.0.2.10.",
+      "hops": [
+        {
+          "path": ["d-resolver", "d-browser"],
+          "packet": {
+            "protocol": "LOCAL",
+            "summary": "Address list",
+            "layers": [
+              {
+                "name": "Function result",
+                "fields": {
+                  "addresses": "192.0.2.10",
+                  "chosen": "192.0.2.10"
+                },
+                "sources": {
+                  "addresses": "observed",
+                  "chosen": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-7",
+      "narration": "The browser asks the operating system to open a socket and connect to 192.0.2.10:443 (the connect() system call). From here on, the kernel's TCP/IP stack builds the packets.",
+      "hops": [
+        {
+          "path": ["d-browser", "d-stack"],
+          "packet": {
+            "protocol": "LOCAL",
+            "summary": "connect(192.0.2.10:443)",
+            "layers": [
+              {
+                "name": "System call",
+                "fields": {
+                  "call": "connect",
+                  "destination": "192.0.2.10:443"
+                },
+                "sources": {
+                  "call": "typical",
+                  "destination": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-8",
+      "narration": "The kernel looks up the way to the destination in the routing table (default route → gateway 192.168.4.1) and finds the gateway's MAC address in the ARP cache. Both values were actually read from this computer.",
+      "hops": [
+        {
+          "path": ["d-stack", "d-route"],
+          "packet": {
+            "protocol": "LOCAL",
+            "summary": "Route lookup",
+            "layers": [
+              {
+                "name": "Lookup",
+                "fields": {
+                  "destination": "192.0.2.10",
+                  "result": "default → 192.168.4.1 (en1)"
+                },
+                "sources": {
+                  "destination": "observed",
+                  "result": "observed"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "path": ["d-stack", "d-arp"],
+          "packet": {
+            "protocol": "LOCAL",
+            "summary": "MAC lookup",
+            "layers": [
+              {
+                "name": "Lookup",
+                "fields": {
+                  "IP": "192.168.4.1",
+                  "MAC": "02:4c:a0:3d:05:0e"
+                },
+                "sources": {
+                  "IP": "observed",
+                  "MAC": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "d-route",
+          "text": "default → 192.168.4.1 (en1)",
+          "kind": "lookup"
+        },
+        {
+          "node": "d-arp",
+          "text": "192.168.4.1 → 02:4c:a0:3d:05:0e",
+          "kind": "lookup"
+        }
+      ]
+    },
+    {
+      "id": "b-9",
+      "narration": "The first step of the TCP connection, SYN, goes out. A Wi-Fi (802.11) frame has three address fields, so the AP, sender and destination are written separately.",
+      "hops": [
+        {
+          "path": ["d-stack", "d-nic", "h-router"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN",
+            "layers": [
+              {
+                "name": "802.11 (Wi-Fi)",
+                "fields": {
+                  "Address 1 (AP)": "router's wireless MAC",
+                  "Address 2 (sender)": "02:00:5e:10:00:02",
+                  "Address 3 (destination)": "02:4c:a0:3d:05:0e"
+                },
+                "sources": {
+                  "Address 1 (AP)": "typical",
+                  "Address 2 (sender)": "observed",
+                  "Address 3 (destination)": "observed"
+                }
+              },
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.168.4.23",
+                  "dst": "192.0.2.10",
+                  "ttl": "64",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "ephemeral port (49152–65535)",
+                  "dstPort": "443",
+                  "flags": "SYN",
+                  "seq": "random initial value"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed",
+                  "seq": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-10",
+      "narration": "The home router uses NAT to change the source to the public IP, and the packet enters the DEMO-ISP-KR network through the modem. It passes 4 routers (Seoul, KR). Round trip to here: 3.7 ms (measured by traceroute).",
+      "hops": [
+        {
+          "path": ["h-router", "h-modem", "n-hop-2", "n-hop-3", "n-hop-4", "n-hop-5"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN",
+            "layers": [
+              {
+                "name": "L2 (ISP network)",
+                "fields": {
+                  "MAC address": "rewritten at every router"
+                },
+                "sources": {
+                  "MAC address": "typical"
+                }
+              },
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "public IP (after NAT)",
+                  "dst": "192.0.2.10",
+                  "ttl": "64 − 5 = 59",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "typical",
+                  "dst": "observed",
+                  "ttl": "derived",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "ephemeral port (49152–65535)",
+                  "dstPort": "443",
+                  "flags": "SYN",
+                  "seq": "random initial value"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed",
+                  "seq": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "h-router",
+          "text": "NAT: 192.168.4.23 → public IP",
+          "kind": "rewrite"
+        },
+        {
+          "node": "h-modem",
+          "text": "Electrical ↔ optical signal conversion",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "b-11",
+      "narration": "It crosses the DEMO-TRANSIT network (3 routers) (Los Angeles, US). Round trip to here: 132 ms (measured by traceroute). This stretch is about 9586 km, so light in fibre alone needs at least 48 ms one way.",
+      "hops": [
+        {
+          "path": ["n-hop-5", "n-hop-6", "n-hop-7", "n-hop-8"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN",
+            "layers": [
+              {
+                "name": "L2 (ISP network)",
+                "fields": {
+                  "MAC address": "rewritten at every router"
+                },
+                "sources": {
+                  "MAC address": "typical"
+                }
+              },
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "public IP (after NAT)",
+                  "dst": "192.0.2.10",
+                  "ttl": "64 − 8 = 56",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "typical",
+                  "dst": "observed",
+                  "ttl": "derived",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "ephemeral port (49152–65535)",
+                  "dstPort": "443",
+                  "flags": "SYN",
+                  "seq": "random initial value"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed",
+                  "seq": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-12",
+      "narration": "It crosses the DEMO-HOSTING network (1 router) (San Jose, US). Round trip to here: 139 ms (measured by traceroute).",
+      "hops": [
+        {
+          "path": ["n-hop-8", "n-hop-9"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN",
+            "layers": [
+              {
+                "name": "L2 (ISP network)",
+                "fields": {
+                  "MAC address": "rewritten at every router"
+                },
+                "sources": {
+                  "MAC address": "typical"
+                }
+              },
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "public IP (after NAT)",
+                  "dst": "192.0.2.10",
+                  "ttl": "64 − 9 = 55",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "typical",
+                  "dst": "observed",
+                  "ttl": "derived",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "ephemeral port (49152–65535)",
+                  "dstPort": "443",
+                  "flags": "SYN",
+                  "seq": "random initial value"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed",
+                  "seq": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-13",
+      "narration": "Over the last stretch it reaches the example.org server (192.0.2.10) (San Jose, US). Round trip to here: 140 ms (measured by traceroute).",
+      "hops": [
+        {
+          "path": ["n-hop-9", "n-server"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN",
+            "layers": [
+              {
+                "name": "L2 (ISP network)",
+                "fields": {
+                  "MAC address": "rewritten at every router"
+                },
+                "sources": {
+                  "MAC address": "typical"
+                }
+              },
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "public IP (after NAT)",
+                  "dst": "192.0.2.10",
+                  "ttl": "64 − 9 = 55",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "typical",
+                  "dst": "observed",
+                  "ttl": "derived",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "ephemeral port (49152–65535)",
+                  "dstPort": "443",
+                  "flags": "SYN",
+                  "seq": "random initial value"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed",
+                  "seq": "typical"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-14",
+      "narration": "The server answers with SYN-ACK, and the packet comes back the same way in reverse. The home router checks its NAT table and forwards it to the laptop.",
+      "hops": [
+        {
+          "path": [
+            "n-server",
+            "n-hop-9",
+            "n-hop-8",
+            "n-hop-7",
+            "n-hop-6",
+            "n-hop-5",
+            "n-hop-4",
+            "n-hop-3",
+            "n-hop-2",
+            "h-modem",
+            "h-router",
+            "d-nic",
+            "d-stack"
+          ],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN-ACK",
+            "layers": [
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.0.2.10",
+                  "dst": "192.168.4.23",
+                  "ttl": "set by the server",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "ephemeral port (49152–65535)",
+                  "dstPort": "443",
+                  "flags": "SYN, ACK"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "h-router",
+          "text": "Reverse NAT: public IP → laptop",
+          "kind": "rewrite"
+        }
+      ]
+    },
+    {
+      "id": "b-15",
+      "narration": "When the laptop sends ACK, the TCP three-way handshake is complete. The measured TCP connection time is 140 ms (one round trip).",
+      "hops": [
+        {
+          "path": [
+            "d-stack",
+            "d-nic",
+            "h-router",
+            "h-modem",
+            "n-hop-2",
+            "n-hop-3",
+            "n-hop-4",
+            "n-hop-5",
+            "n-hop-6",
+            "n-hop-7",
+            "n-hop-8",
+            "n-hop-9",
+            "n-server"
+          ],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "ACK",
+            "layers": [
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.168.4.23",
+                  "dst": "192.0.2.10",
+                  "ttl": "64",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "ephemeral port (49152–65535)",
+                  "dstPort": "443",
+                  "flags": "ACK"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-16",
+      "narration": "Now the encrypted channel is set up. The browser sends a ClientHello with the name it wants to reach (SNI: example.org), the ciphers it supports and its key exchange value.",
+      "hops": [
+        {
+          "path": [
+            "d-stack",
+            "d-nic",
+            "h-router",
+            "h-modem",
+            "n-hop-2",
+            "n-hop-3",
+            "n-hop-4",
+            "n-hop-5",
+            "n-hop-6",
+            "n-hop-7",
+            "n-hop-8",
+            "n-hop-9",
+            "n-server"
+          ],
+          "packet": {
+            "protocol": "TLS",
+            "summary": "ClientHello",
+            "layers": [
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.168.4.23",
+                  "dst": "192.0.2.10",
+                  "ttl": "64",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "ephemeral port (49152–65535)",
+                  "dstPort": "443",
+                  "flags": "PSH, ACK"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed"
+                }
+              },
+              {
+                "name": "TLS",
+                "fields": {
+                  "message": "ClientHello",
+                  "SNI": "example.org",
+                  "ALPN": "h2, http/1.1",
+                  "key exchange group": "X25519MLKEM768"
+                },
+                "sources": {
+                  "message": "typical",
+                  "SNI": "observed",
+                  "ALPN": "typical",
+                  "key exchange group": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-17",
+      "narration": "The server answers with TLS 1.3 and sends its certificate (example.org, issued by Demo Issuing CA). The browser checks the certificate and computes the session keys. TLS took 141 ms (measured).",
+      "hops": [
+        {
+          "path": [
+            "n-server",
+            "n-hop-9",
+            "n-hop-8",
+            "n-hop-7",
+            "n-hop-6",
+            "n-hop-5",
+            "n-hop-4",
+            "n-hop-3",
+            "n-hop-2",
+            "h-modem",
+            "h-router",
+            "d-nic",
+            "d-stack"
+          ],
+          "packet": {
+            "protocol": "TLS",
+            "summary": "ServerHello",
+            "layers": [
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.0.2.10",
+                  "dst": "192.168.4.23",
+                  "ttl": "set by the server",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "ephemeral port (49152–65535)",
+                  "dstPort": "443",
+                  "flags": "ACK"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed"
+                }
+              },
+              {
+                "name": "TLS",
+                "fields": {
+                  "message": "ServerHello, Certificate, Finished",
+                  "version": "TLS 1.3",
+                  "cipher": "AES_128_GCM",
+                  "certificate": "example.org",
+                  "issuer": "Demo Issuing CA",
+                  "expires": "2027-03-01"
+                },
+                "sources": {
+                  "message": "typical",
+                  "version": "observed",
+                  "cipher": "observed",
+                  "certificate": "observed",
+                  "issuer": "observed",
+                  "expires": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "d-browser",
+          "text": "Certificate check: example.org ← Demo Issuing CA",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "b-18",
+      "narration": "The browser sends the HTTP request. In HTTP/2 the request becomes a binary frame (HEADERS) and the headers are compressed (HPACK) and carried inside encrypted TLS. Routers along the way can see only the IPs and ports.",
+      "hops": [
+        {
+          "path": [
+            "d-browser",
+            "d-stack",
+            "d-nic",
+            "h-router",
+            "h-modem",
+            "n-hop-2",
+            "n-hop-3",
+            "n-hop-4",
+            "n-hop-5",
+            "n-hop-6",
+            "n-hop-7",
+            "n-hop-8",
+            "n-hop-9",
+            "n-server"
+          ],
+          "packet": {
+            "protocol": "HTTP",
+            "summary": "GET /",
+            "layers": [
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.168.4.23",
+                  "dst": "192.0.2.10",
+                  "ttl": "64",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "ephemeral port (49152–65535)",
+                  "dstPort": "443",
+                  "flags": "PSH, ACK"
+                },
+                "sources": {
+                  "srcPort": "typical",
+                  "dstPort": "observed",
+                  "flags": "observed"
+                }
+              },
+              {
+                "name": "TLS",
+                "fields": {
+                  "record": "Application Data",
+                  "note": "everything below is encrypted"
+                },
+                "sources": {
+                  "record": "typical",
+                  "note": "typical"
+                }
+              },
+              {
+                "name": "HTTP",
+                "fields": {
+                  "request line": "GET / (h2 HEADERS frame)",
+                  ":method": "GET",
+                  ":path": "/",
+                  ":authority": "example.org",
+                  ":scheme": "https",
+                  "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, li…",
+                  "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                  "accept-language": "ko-KR,ko;q=0.9",
+                  "accept-encoding": "gzip, deflate, br, zstd",
+                  "(other headers)": "1"
+                },
+                "sources": {
+                  "request line": "observed",
+                  ":method": "observed",
+                  ":path": "observed",
+                  ":authority": "observed",
+                  ":scheme": "observed",
+                  "user-agent": "observed",
+                  "accept": "observed",
+                  "accept-language": "observed",
+                  "accept-encoding": "observed",
+                  "(other headers)": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-19",
+      "narration": "The server handles the request. From sending the request to the first byte of the response took 142 ms (measured).",
+      "hops": [],
+      "nodeActions": [
+        {
+          "node": "n-server",
+          "text": "Preparing the response (waited 142 ms)",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "b-20",
+      "narration": "The response 200  comes back. Compressed size 1.2 KB, received in 1.2 ms.",
+      "hops": [
+        {
+          "path": [
+            "n-server",
+            "n-hop-9",
+            "n-hop-8",
+            "n-hop-7",
+            "n-hop-6",
+            "n-hop-5",
+            "n-hop-4",
+            "n-hop-3",
+            "n-hop-2",
+            "h-modem",
+            "h-router",
+            "d-nic",
+            "d-stack",
+            "d-browser"
+          ],
+          "packet": {
+            "protocol": "HTTP",
+            "summary": "200 OK",
+            "layers": [
+              {
+                "name": "IPv4",
+                "fields": {
+                  "src": "192.0.2.10",
+                  "dst": "192.168.4.23",
+                  "ttl": "set by the server",
+                  "protocol": "TCP (6)"
+                },
+                "sources": {
+                  "src": "observed",
+                  "dst": "observed",
+                  "ttl": "typical",
+                  "protocol": "typical"
+                }
+              },
+              {
+                "name": "TLS",
+                "fields": {
+                  "record": "Application Data"
+                },
+                "sources": {
+                  "record": "typical"
+                }
+              },
+              {
+                "name": "HTTP",
+                "fields": {
+                  "status": "200",
+                  ":status": "200",
+                  "content-type": "text/html; charset=UTF-8",
+                  "content-encoding": "gzip",
+                  "server": "demo-origin",
+                  "cache-control": "max-age=3600",
+                  "age": "120",
+                  "alt-svc": "h3=\":443\"; ma=86400"
+                },
+                "sources": {
+                  "status": "observed",
+                  ":status": "observed",
+                  "content-type": "observed",
+                  "content-encoding": "observed",
+                  "server": "observed",
+                  "cache-control": "observed",
+                  "age": "observed",
+                  "alt-svc": "observed"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b-21",
+      "narration": "While reading the HTML, the browser requests the other files it needs: 2 (Image 1, Script 1). 1 of them reused a connection that was already open, and they came from 2 different servers.",
+      "hops": [],
+      "nodeActions": [
+        {
+          "node": "d-browser",
+          "text": "2 more requests · 1 connections reused (measured)",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "b-22",
+      "narration": "The browser draws what it received on the screen. That is everything that happened on the network from the moment you pressed Enter until the page appeared.",
+      "hops": [],
+      "nodeActions": [
+        {
+          "node": "d-browser",
+          "text": "Rendering",
+          "kind": "process"
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import { useRef, type PointerEvent, type ReactElement } from 'react';
+import { tr } from '@netgongbu/schema';
 import type { Timeline } from '../engine/timeline';
 import { PROTOCOL_COLORS } from '../scene/theme';
 import { useViewer } from '../store/viewer';
@@ -52,7 +53,7 @@ export function Scrubber({ timeline }: { timeline: Timeline }): ReactElement {
       className="scrubber"
       role="slider"
       tabIndex={-1}
-      aria-label="재생 위치"
+      aria-label={tr('재생 위치', 'Playback position')}
       aria-valuemin={1}
       aria-valuemax={timeline.beats.length}
       aria-valuenow={beatIndex + 1}

@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactElement } from 'react';
 import type { LinkMedium, Protocol } from '@netgongbu/schema';
+import { tr } from '@netgongbu/schema';
 import { MEDIUM_COLORS, PROTOCOL_COLORS } from '../scene/theme';
 import { NARROW_QUERY, useViewer } from '../store/viewer';
 import { MEDIUM_NAMES } from './names';
@@ -24,7 +25,10 @@ export function Legend(): ReactElement | null {
 
   if (!scenario || !world) return null;
   return (
-    <section className={`legend panel${open ? '' : ' is-collapsed'}`} aria-label="범례">
+    <section
+      className={`legend panel${open ? '' : ' is-collapsed'}`}
+      aria-label={tr('범례', 'Legend')}
+    >
       <button
         type="button"
         className="legend__toggle"
@@ -33,7 +37,7 @@ export function Legend(): ReactElement | null {
           setOpen(!open);
         }}
       >
-        범례
+        {tr('범례', 'Legend')}
       </button>
       {open && (
         <div className="legend__body">

@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { tr } from '@netgongbu/schema';
 import type { ModelOption } from '../types';
 import { AiError, parseDataUrl } from './http';
 import type { Answer, Ask, Provider, Turn } from './provider';
@@ -35,13 +36,29 @@ export function anthropicFailure(err: unknown): unknown {
     err instanceof Anthropic.AuthenticationError ||
     err instanceof Anthropic.PermissionDeniedError
   )
-    return new AiError('Anthropic API 키가 올바르지 않습니다.', 'auth');
+    return new AiError(
+      tr('Anthropic API 키가 올바르지 않습니다.', 'The Anthropic API key is not valid.'),
+      'auth',
+    );
   if (err instanceof Anthropic.RateLimitError)
-    return new AiError('요청이 많습니다. 잠시 후 다시 시도해 주세요.');
+    return new AiError(
+      tr(
+        '요청이 많습니다. 잠시 후 다시 시도해 주세요.',
+        'Rate limit reached. Please try again in a moment.',
+      ),
+    );
   if (err instanceof Anthropic.APIConnectionError)
-    return new AiError('Anthropic API에 연결하지 못했습니다.', 'connect');
+    return new AiError(
+      tr('Anthropic API에 연결하지 못했습니다.', 'Could not connect to the Anthropic API.'),
+      'connect',
+    );
   if (err instanceof Anthropic.APIError)
-    return new AiError(`Claude API 오류 (${String(err.status)}): ${err.message}`);
+    return new AiError(
+      tr(
+        `Claude API 오류 (${String(err.status)}): ${err.message}`,
+        `Claude API error (${String(err.status)}): ${err.message}`,
+      ),
+    );
   return err;
 }
 
@@ -70,7 +87,8 @@ export function anthropicApi(client: Anthropic): Provider {
     },
 
     async ask(ask: Ask): Promise<Answer> {
-      if (!ask.model) throw new AiError('사용할 모델을 고르세요.', 'format');
+      if (!ask.model)
+        throw new AiError(tr('사용할 모델을 고르세요.', 'Choose a model to use.'), 'format');
       const fallback = FALLBACK_CAPABLE.has(ask.model);
       try {
         const stream = client.beta.messages.stream(

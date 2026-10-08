@@ -1,4 +1,5 @@
 import type { DissectedLayer, Dissection, LayerKind } from '@netgongbu/protocols';
+import { tr } from '@netgongbu/schema';
 
 // The encapsulation picture: each layer's unit (message, segment, packet, frame) as its own
 // header in front of everything the layer above handed down, application on top.
@@ -14,18 +15,42 @@ export const sameRef = (a: LayerRef | null, b: LayerRef | null): boolean =>
 
 /** Where each protocol sits in the TCP/IP model, and what its unit is called. */
 export const MODEL: Record<LayerKind, { level: string; unit: string; short: string }> = {
-  ethernet: { level: '데이터 링크', unit: '프레임', short: 'Ethernet' },
-  wifi: { level: '데이터 링크', unit: '프레임', short: '802.11' },
-  arp: { level: '네트워크', unit: 'ARP 메시지', short: 'ARP' },
-  ipv4: { level: '네트워크', unit: '패킷 (데이터그램)', short: 'IP' },
-  icmp: { level: '네트워크', unit: 'ICMP 메시지', short: 'ICMP' },
-  udp: { level: '전송', unit: '데이터그램', short: 'UDP' },
-  tcp: { level: '전송', unit: '세그먼트', short: 'TCP' },
-  quic: { level: '전송', unit: 'QUIC 패킷', short: 'QUIC' },
-  tls: { level: '응용 (보안)', unit: 'TLS 레코드', short: 'TLS' },
-  dns: { level: '응용', unit: 'DNS 메시지', short: 'DNS' },
-  http1: { level: '응용', unit: 'HTTP 메시지', short: 'HTTP' },
-  http2: { level: '응용', unit: 'HTTP/2 프레임', short: 'HTTP/2' },
+  ethernet: {
+    level: tr('데이터 링크', 'Data link'),
+    unit: tr('프레임', 'Frame'),
+    short: 'Ethernet',
+  },
+  wifi: { level: tr('데이터 링크', 'Data link'), unit: tr('프레임', 'Frame'), short: '802.11' },
+  arp: { level: tr('네트워크', 'Network'), unit: tr('ARP 메시지', 'ARP message'), short: 'ARP' },
+  ipv4: {
+    level: tr('네트워크', 'Network'),
+    unit: tr('패킷 (데이터그램)', 'Packet (datagram)'),
+    short: 'IP',
+  },
+  icmp: {
+    level: tr('네트워크', 'Network'),
+    unit: tr('ICMP 메시지', 'ICMP message'),
+    short: 'ICMP',
+  },
+  udp: { level: tr('전송', 'Transport'), unit: tr('데이터그램', 'Datagram'), short: 'UDP' },
+  tcp: { level: tr('전송', 'Transport'), unit: tr('세그먼트', 'Segment'), short: 'TCP' },
+  quic: { level: tr('전송', 'Transport'), unit: tr('QUIC 패킷', 'QUIC packet'), short: 'QUIC' },
+  tls: {
+    level: tr('응용 (보안)', 'Application (security)'),
+    unit: tr('TLS 레코드', 'TLS record'),
+    short: 'TLS',
+  },
+  dns: { level: tr('응용', 'Application'), unit: tr('DNS 메시지', 'DNS message'), short: 'DNS' },
+  http1: {
+    level: tr('응용', 'Application'),
+    unit: tr('HTTP 메시지', 'HTTP message'),
+    short: 'HTTP',
+  },
+  http2: {
+    level: tr('응용', 'Application'),
+    unit: tr('HTTP/2 프레임', 'HTTP/2 frame'),
+    short: 'HTTP/2',
+  },
 };
 
 export type BoxKind = LayerKind | 'data' | 'cipher' | 'preamble' | 'gap';
@@ -77,7 +102,7 @@ const headerBox = (l: DissectedLayer, own: boolean): StackBox => ({
 const trailerBox = (l: DissectedLayer, own: boolean): StackBox => ({
   key: `t-${l.kind}`,
   kind: l.kind,
-  label: (l.trailer?.length ?? 0) > 4 ? '패딩 + FCS' : 'FCS',
+  label: (l.trailer?.length ?? 0) > 4 ? tr('패딩 + FCS', 'Padding + FCS') : 'FCS',
   bytes: l.trailer?.length ?? 0,
   own,
 });
@@ -115,7 +140,13 @@ export function stackRows(d: Dissection): Stack {
     inner.layers.forEach((layer, index) => {
       const boxes = inner.layers.slice(index).map((l, k) => headerBox(l, k === 0));
       if (rest > 0)
-        boxes.push({ key: 'data-inner', kind: 'data', label: '데이터', bytes: rest, own: false });
+        boxes.push({
+          key: 'data-inner',
+          kind: 'data',
+          label: tr('데이터', 'Data'),
+          bytes: rest,
+          own: false,
+        });
       rows.push(rowOf('inner', index, layer, [{ col: center, span: 1, boxes }]));
     });
     rows.reverse();
@@ -125,8 +156,14 @@ export function stackRows(d: Dissection): Stack {
   const restBox: StackBox | null =
     rest > 0
       ? inner
-        ? { key: 'cipher', kind: 'cipher', label: '🔒 암호문', bytes: rest, own: false }
-        : { key: 'data', kind: 'data', label: '데이터', bytes: rest, own: false }
+        ? {
+            key: 'cipher',
+            kind: 'cipher',
+            label: tr('🔒 암호문', '🔒 Ciphertext'),
+            bytes: rest,
+            own: false,
+          }
+        : { key: 'data', kind: 'data', label: tr('데이터', 'Data'), bytes: rest, own: false }
       : null;
   const wireRows: StackRow[] = wire.map((layer, index) => {
     const cells: StackCell[] = [];
@@ -161,7 +198,9 @@ export function stackRows(d: Dissection): Stack {
           {
             key: 'preamble',
             kind: 'preamble',
-            label: ethernet ? '프리앰블 + SFD' : 'PHY 프리앰블',
+            label: ethernet
+              ? tr('프리앰블 + SFD', 'Preamble + SFD')
+              : tr('PHY 프리앰블', 'PHY preamble'),
             bytes: ethernet ? 8 : null,
             own: true,
           },
@@ -171,7 +210,13 @@ export function stackRows(d: Dissection): Stack {
         col: 1,
         span: ifg - 1,
         boxes: [
-          { key: 'frame', kind: link.kind, label: '프레임', bytes: d.frame.length, own: false },
+          {
+            key: 'frame',
+            kind: link.kind,
+            label: tr('프레임', 'Frame'),
+            bytes: d.frame.length,
+            own: false,
+          },
         ],
       },
     ];
@@ -179,14 +224,24 @@ export function stackRows(d: Dissection): Stack {
       cells.push({
         col: ifg,
         span: 1,
-        boxes: [{ key: 'ifg', kind: 'gap', label: '프레임 간격', bytes: 12, own: true }],
+        boxes: [
+          {
+            key: 'ifg',
+            kind: 'gap',
+            label: tr('프레임 간격', 'Interframe gap'),
+            bytes: 12,
+            own: true,
+          },
+        ],
       });
     }
     rows.push({
       ref: null,
-      level: '물리',
-      title: ethernet ? '이더넷 PHY' : 'Wi-Fi PHY',
-      unit: ethernet ? '비트 → 전기 신호' : '비트 → 전파',
+      level: tr('물리', 'Physical'),
+      title: ethernet ? tr('이더넷 PHY', 'Ethernet PHY') : 'Wi-Fi PHY',
+      unit: ethernet
+        ? tr('비트 → 전기 신호', 'Bits → electrical signal')
+        : tr('비트 → 전파', 'Bits → radio waves'),
       cells,
       bytes: d.frame.length + (ethernet ? 20 : 0),
     });

@@ -1,4 +1,4 @@
-import { distanceKm, type Geo } from '@netgongbu/schema';
+import { distanceKm, tr, type Geo } from '@netgongbu/schema';
 
 /** Light in optical fibre travels about 200 km per millisecond. */
 export const FIBER_KM_PER_MS = 200;
@@ -27,9 +27,12 @@ export function checkGeo(origin: Geo | null, geo: Geo, rttMs: number | null): Ge
 
 export function implausibleNote(geo: Geo, rttMs: number, verdict: GeoVerdict): string {
   const place = geo.place ?? `${geo.lat.toFixed(1)}, ${geo.lon.toFixed(1)}`;
-  return (
+  return tr(
     `위치 데이터베이스에는 ${place}(약 ${String(Math.round(verdict.distanceKm ?? 0))} km 떨어진 곳)로 나오지만, ` +
-    `왕복 ${rttMs.toFixed(1)} ms 안에 빛이 광섬유로 다녀올 수 있는 거리는 최대 약 ${String(Math.round(verdict.maxKm ?? 0))} km입니다. ` +
-    '같은 IP 주소를 여러 지역에서 함께 쓰는 애니캐스트이거나 데이터베이스가 틀린 것으로, 실제로는 훨씬 가까운 곳에서 응답했습니다.'
+      `왕복 ${rttMs.toFixed(1)} ms 안에 빛이 광섬유로 다녀올 수 있는 거리는 최대 약 ${String(Math.round(verdict.maxKm ?? 0))} km입니다. ` +
+      '같은 IP 주소를 여러 지역에서 함께 쓰는 애니캐스트이거나 데이터베이스가 틀린 것으로, 실제로는 훨씬 가까운 곳에서 응답했습니다.',
+    `The location database puts it in ${place} (about ${String(Math.round(verdict.distanceKm ?? 0))} km away), ` +
+      `but in a ${rttMs.toFixed(1)} ms round trip light in fibre can reach at most about ${String(Math.round(verdict.maxKm ?? 0))} km. ` +
+      'Either this is anycast (one IP address shared by many locations) or the database is wrong: the reply really came from much closer.',
   );
 }
