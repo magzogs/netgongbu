@@ -69,9 +69,8 @@ export function registerControls(instance: CameraControlsImpl | null): void {
 
 /**
  * Sets mouse and touch handling, limits and the camera's up direction for the world's view.
- * While following a packet nothing pans, so the camera does not fight the user.
  */
-export function configureControls(world: World | null, following: boolean): void {
+export function configureControls(world: World | null): void {
   const ctl = controls;
   if (!ctl) return;
   const view = world?.view ?? 'floor';
@@ -100,21 +99,25 @@ export function configureControls(world: World | null, following: boolean): void
   ctl.dollyToCursor = true;
   ctl.minPolarAngle = 0;
   ctl.maxPolarAngle = FLAT_MAX_POLAR;
+  // The map and floor plans: the left button pans (also while following; a pan ends following,
+  // see isPanning), the right button turns the view.
+  ctl.mouseButtons.left = ACTION.SCREEN_PAN;
+  ctl.mouseButtons.right = ACTION.ROTATE;
+  ctl.touches.one = ACTION.TOUCH_SCREEN_PAN;
+  ctl.touches.two = ACTION.TOUCH_DOLLY_ROTATE;
   if (view === 'map' && world?.flatMap) {
-    ctl.mouseButtons.left = following ? ACTION.ROTATE : ACTION.SCREEN_PAN;
-    ctl.mouseButtons.right = ACTION.ROTATE;
-    ctl.touches.one = following ? ACTION.TOUCH_ROTATE : ACTION.TOUCH_SCREEN_PAN;
-    ctl.touches.two = ACTION.TOUCH_DOLLY_ROTATE;
     ctl.minDistance = 1.5;
     ctl.maxDistance = world.flatMap.width * 1.1;
     return;
   }
-  ctl.mouseButtons.left = ACTION.ROTATE;
-  ctl.mouseButtons.right = following ? ACTION.NONE : ACTION.TRUCK;
-  ctl.touches.one = ACTION.TOUCH_ROTATE;
-  ctl.touches.two = following ? ACTION.TOUCH_DOLLY : ACTION.TOUCH_DOLLY_TRUCK;
   ctl.minDistance = 3;
   ctl.maxDistance = 220;
+}
+
+/** Whether the drag in progress pans the camera (the left button or one finger off the globe). */
+export function isPanning(): boolean {
+  const action = controls?.currentAction ?? ACTION.NONE;
+  return (action & (ACTION.SCREEN_PAN | ACTION.TOUCH_SCREEN_PAN)) !== 0;
 }
 
 /**

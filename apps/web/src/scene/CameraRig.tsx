@@ -9,6 +9,7 @@ import {
   configureControls,
   followHeight,
   followPoint,
+  isPanning,
   keepFocalShift,
   registerControls,
   trackPoint,
@@ -27,9 +28,8 @@ export function CameraRig(): ReactElement {
 
   // Before framing: the globe turns the camera's up to the Earth's axis.
   useEffect(() => {
-    const following = cameraMode === 'follow';
-    configureControls(world, following);
-    if (following) approach(world);
+    configureControls(world);
+    if (cameraMode === 'follow') approach(world);
   }, [world, cameraMode]);
 
   // Frame a newly opened scenario (or view) once the player card is on screen, so its height
@@ -61,14 +61,15 @@ export function CameraRig(): ReactElement {
     <CameraControls
       ref={(instance: CameraControlsImpl | null) => {
         registerControls(instance);
-        configureControls(useViewer.getState().world, useViewer.getState().cameraMode === 'follow');
+        configureControls(useViewer.getState().world);
       }}
       makeDefault
       onControlStart={() => {
         // Over the globe the follow camera turns round the centre to stay above the packet, and
         // would undo any drag: a drag there ends following (the wheel still zooms while following).
+        // Elsewhere the follow camera would undo a pan the same way, so a pan ends following too.
         const state = useViewer.getState();
-        if (state.cameraMode === 'follow' && state.world?.view === 'globe') {
+        if (state.cameraMode === 'follow' && (state.world?.view === 'globe' || isPanning())) {
           state.setCameraMode('orbit');
         }
       }}
