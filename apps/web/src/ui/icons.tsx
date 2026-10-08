@@ -41,3 +41,35 @@ export const NextIcon = (): ReactElement => (
     <path d="M5 6.2v11.6a1 1 0 0 0 1.55.83l8.4-5.8a1 1 0 0 0 0-1.66l-8.4-5.8A1 1 0 0 0 5 6.2Z" />
   </svg>
 );
+
+/** Arrows pointing out to the corners: a folded zone opens into its devices. */
+export const ExpandIcon = (): ReactElement => (
+  <svg
+    {...base}
+    width={12}
+    height={12}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.6}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M14 4h6v6M10 20H4v-6M20 4l-6.5 6.5M4 20l6.5-6.5" />
+  </svg>
+);
+
+/** Arrows pointing in from the corners: an open zone folds into one again. */
+export const CollapseIcon = (): ReactElement => (
+  <svg
+    {...base}
+    width={12}
+    height={12}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.6}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M20 10h-6V4M4 14h6v6M14 10l6.5-6.5M10 14l-6.5 6.5" />
+  </svg>
+);

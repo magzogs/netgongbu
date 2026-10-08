@@ -1,4 +1,4 @@
-import { useMemo, type HTMLAttributes, type ReactElement } from 'react';
+import { useCallback, useMemo, type HTMLAttributes, type MouseEvent, type ReactElement } from 'react';
 import { Vector3 } from 'three';
 import type { Hop, NetNode, NodeAction, Zone } from '@netgongbu/schema';
 import { tr } from '@netgongbu/schema';
@@ -11,12 +11,20 @@ import { PROTOCOL_COLORS } from '../scene/theme';
 import { useLabelAnchor } from '../scene/labels';
 import { markerMax, nodeTopSource } from '../scene/markers';
 import { useViewer } from '../store/viewer';
-import { focusNode, openZone, selectNode, selectZone } from '../commands';
+import { closeZone, focusNode, openZone, selectNode, selectZone } from '../commands';
+import { CollapseIcon, ExpandIcon } from './icons';
 import { ACTION_NAMES } from './names';
 
 /** A press that moves farther than this (CSS pixels) is a drag of the view, not a click. */
 const CLICK_SLOP = 5;
 let pressedAt: { x: number; y: number } | null = null;
+
+/** Whether a click ends a press that did not move (one that did turned the view). */
+function wasClick(e: MouseEvent): boolean {
+  const moved = pressedAt && Math.hypot(e.clientX - pressedAt.x, e.clientY - pressedAt.y);
+  pressedAt = null;
+  return moved === null || moved <= CLICK_SLOP;
+}
 
 function canvasOf(el: Element): HTMLCanvasElement | null {
   return el.closest('.app')?.querySelector('canvas.scene, .scene canvas') ?? null;
@@ -43,10 +51,7 @@ export function overlayHandlers(
       e.preventDefault();
     },
     onClick(e) {
-      const moved = pressedAt && Math.hypot(e.clientX - pressedAt.x, e.clientY - pressedAt.y);
-      pressedAt = null;
-      if (moved !== null && moved > CLICK_SLOP) return;
-      onClick();
+      if (wasClick(e)) onClick();
     },
     ...(onDoubleClick && {
       onDoubleClick() {
@@ -105,7 +110,57 @@ function NodeLabel({ node, selected }: { node: NetNode; selected: boolean }): Re
   );
 }
 
-/** A folded zone: its name and how many nodes it holds. Click selects it, double-click opens it. */
+/**
+ * A button inside a label drawn over the scene: a click does its own thing and not the label's,
+ * while a drag started on it still turns the view (the press goes on to the label).
+ */
+function LabelButton({
+  className,
+  title,
+  onPress,
+  children,
+}: {
+  className: string;
+  title: string;
+  /** Kept the same between renders (handlers are made once per function). */
+  onPress: () => void;
+  children: (ReactElement | string)[];
+}): ReactElement {
+  const handlers = useMemo(() => overlayHandlers(onPress), [onPress]);
+  return (
+    <button
+      type="button"
+      className={className}
+      title={title}
+      {...handlers}
+      // The label around it has handlers of its own.
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        handlers.onPointerDown?.(e);
+      }}
+      onWheel={(e) => {
+        e.stopPropagation();
+        handlers.onWheel?.(e);
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        handlers.onClick?.(e);
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * A folded zone: its name and how many nodes it holds, drawn as a stack of cards so it reads as
+ * holding more than one thing, with a button that opens it (as a double-click does). Zones
+ * joined into one marker (the computer and the home, from far away) each show their own name
+ * and count. Click selects it.
+ */
 function ClusterLabel({
   cluster,
   selected,
@@ -114,6 +169,11 @@ function ClusterLabel({
   selected: boolean;
 }): ReactElement {
   const globe = useViewer((s) => s.world?.topology.globe);
+  const zones = useViewer((s) => s.world?.clusters);
+  const parts = useMemo(
+    () => cluster.zoneIds.flatMap((id) => zones?.find((z) => z.zoneId === id) ?? []),
+    [cluster.zoneIds, zones],
+  );
   const point = useMemo(() => clusterTopSource(cluster, globe), [cluster, globe]);
   // Before the nodes reached later, as it stands for the first of them.
   const first = useViewer((s) =>
@@ -133,30 +193,53 @@ function ClusterLabel({
     [cluster.key],
   );
   const count = cluster.members.length;
+  const open = useCallback(() => {
+    openZone(cluster.key);
+  }, [cluster.key]);
+  const title = tr(
+    `${cluster.label}의 장비 ${String(count)}개를 펼쳐 봅니다 (두 번 눌러도 됩니다)`,
+    `Expand the ${String(count)} devices in ${cluster.label} (or double-click)`,
+  );
   return (
     <div ref={ref} className="anchor anchor--above">
       <div
-        className={`node-label cluster-label${selected ? ' is-selected' : ''}`}
-        title={tr(
-          `두 번 눌러서 ${cluster.label}의 장비 ${count}개 자세히 보기`,
-          `Double-click to see the ${count} devices in ${cluster.label}`,
-        )}
+        className={`node-label cluster-label${parts.length > 1 ? ' cluster-label--joined' : ''}${selected ? ' is-selected' : ''}`}
+        title={title}
         {...handlers}
       >
         <span className="node-label__name">
-          {cluster.label}
-          <span className="cluster-label__count">{count}</span>
+          {parts.map((p, i) => (
+            <span key={p.zoneId} className="cluster-label__part">
+              {i > 0 && <span className="cluster-label__plus">+</span>}
+              {p.label}
+              <span className="cluster-label__count">{p.members.length}</span>
+            </span>
+          ))}
         </span>
+        <LabelButton className="cluster-label__open" title={title} onPress={open}>
+          <ExpandIcon />
+          {tr('펼치기', 'Expand')}
+        </LabelButton>
       </div>
-      <span className={`label-badge${selected ? ' is-selected' : ''}`} {...handlers}>
+      <span
+        className={`label-badge label-badge--cluster${selected ? ' is-selected' : ''}`}
+        title={title}
+        {...handlers}
+      >
+        <ExpandIcon />
         {count}
       </span>
     </div>
   );
 }
 
+/**
+ * A zone's name in its corner. A zone the learner opened (one that folds on the globe and the
+ * map) also has a button that folds it into one node again.
+ */
 function ZoneLabel({ zone }: { zone: Zone }): ReactElement {
   const globe = useViewer((s) => s.world?.topology.globe);
+  const foldable = useViewer((s) => s.world?.clusters.some((c) => c.zoneId === zone.id) ?? false);
   const point = useMemo(() => {
     const [minX, minZ, maxX, maxZ] = zone.bounds;
     // In from the corner, by less for a small zone (the computer on a globe is ~0.5 units wide).
@@ -164,10 +247,26 @@ function ZoneLabel({ zone }: { zone: Zone }): ReactElement {
     return zonePlacer(zone, globe)(minX + inset, maxZ - inset);
   }, [zone, globe]);
   const ref = useLabelAnchor(`zone:${zone.id}`, point);
+  const fold = useCallback(() => {
+    closeZone(zone.id);
+  }, [zone.id]);
   return (
     <div ref={ref} className="anchor anchor--corner">
       <div className="zone-label" style={{ borderColor: zone.color }}>
         {zone.label}
+        {foldable && (
+          <LabelButton
+            className="zone-label__fold"
+            title={tr(
+              `${zone.label}의 장비를 다시 하나로 접습니다`,
+              `Fold the devices in ${zone.label} back into one`,
+            )}
+            onPress={fold}
+          >
+            <CollapseIcon />
+            {tr('접기', 'Fold')}
+          </LabelButton>
+        )}
       </div>
     </div>
   );

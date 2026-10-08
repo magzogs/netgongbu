@@ -134,6 +134,11 @@ body,
   left: 0;
 }
 
+/* A zone's name is small, and an open zone's fold button must stay reachable over node labels. */
+.anchor--corner {
+  z-index: 1;
+}
+
 .node-label {
   display: flex;
   flex-direction: column;
@@ -164,9 +169,39 @@ body,
   color: var(--text-muted);
 }
 
-/* A zone folded into one marker (engine/clusters.ts): its name and how many nodes it holds. */
+/*
+ * A zone folded into one marker (engine/clusters.ts): its name and how many nodes it holds,
+ * drawn as a stack of cards so it reads as holding more, with a button that opens it.
+ */
 .cluster-label {
+  gap: 3px;
+  padding: 4px 8px 5px;
   border-style: dashed;
+  box-shadow:
+    3px -3px 0 -1px rgb(42 28 18 / 0.72),
+    3px -3px 0 0 var(--panel-border),
+    6px -6px 0 -1px rgb(42 28 18 / 0.5),
+    6px -6px 0 0 color-mix(in srgb, var(--panel-border) 60%, transparent);
+}
+
+.cluster-label.is-selected {
+  box-shadow:
+    3px -3px 0 -1px rgb(42 28 18 / 0.72),
+    3px -3px 0 0 color-mix(in srgb, var(--accent) 70%, transparent),
+    6px -6px 0 -1px rgb(42 28 18 / 0.5),
+    6px -6px 0 0 color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.cluster-label__part {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Zones joined into one marker (the computer and the home from far away). */
+.cluster-label__plus {
+  margin: 0 6px;
+  font-weight: 700;
+  color: var(--text-muted);
 }
 
 .cluster-label__count {
@@ -184,6 +219,67 @@ body,
   color: var(--text);
   background: rgb(255 255 255 / 0.14);
   border-radius: 999px;
+}
+
+.cluster-label__open,
+.zone-label__fold {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 999px;
+}
+
+.cluster-label__open {
+  color: #2a1505;
+  background: var(--accent);
+  border: none;
+  animation: cluster-hint 1.6s ease-in-out 3;
+}
+
+.cluster-label__open:hover,
+.cluster-label__open:focus-visible {
+  background: color-mix(in srgb, var(--accent) 80%, white);
+}
+
+/* A short glow when a marker appears, so the learner sees it opens. */
+@keyframes cluster-hint {
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+}
+
+/* Shrunk to its count where labels crowd: still marked as opening. */
+.anchor[data-compact] > .label-badge--cluster {
+  gap: 3px;
+  grid-auto-flow: column;
+  border-style: dashed;
+  box-shadow: 3px -3px 0 -1px rgb(42 28 18 / 0.6);
+}
+
+.zone-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zone-label__fold {
+  color: var(--text);
+  background: rgb(42 28 18 / 0.8);
+  border: 1px solid var(--panel-border);
+}
+
+.zone-label__fold:hover,
+.zone-label__fold:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* The node's number in the scenario (the order it is reached). */
@@ -1141,6 +1237,10 @@ body,
 @media (prefers-reduced-motion: reduce) {
   .spinner {
     animation-duration: 3s;
+  }
+
+  .cluster-label__open {
+    animation: none;
   }
 }
 
