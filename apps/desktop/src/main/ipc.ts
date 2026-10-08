@@ -7,6 +7,7 @@ import {
   type Settings,
   type TraceEvent,
 } from '@netgongbu/bridge';
+import { isLocale, setLocale, tr } from '@netgongbu/schema';
 import type { DesktopAi } from './ai';
 import type { LabBrowser } from './lab-browser';
 import type { GeoIpDb } from './trace/geo';
@@ -52,6 +53,9 @@ export function registerAiIpc(ai: DesktopAi): void {
 
 export function registerSettingsIpc(deps: SettingsDeps): void {
   handle(Channels.settingsGet, () => settingsSnapshot(deps));
+  handle(Channels.settingsLocale, (locale: unknown) => {
+    if (isLocale(locale)) setLocale(locale);
+  });
 }
 
 export interface TraceIpcDeps {
@@ -73,7 +77,7 @@ export function registerTraceIpc({ win, browser, store, geo, agent, log }: Trace
 
   handle(Channels.traceStart, (raw: unknown) => {
     const request = TraceStartSchema.parse(raw);
-    if (running) throw new Error('이미 측정 중입니다.');
+    if (running) throw new Error(tr('이미 측정 중입니다.', 'A measurement is already running.'));
     const controller = new AbortController();
     running = controller;
     const emit = (event: TraceEvent): void => {

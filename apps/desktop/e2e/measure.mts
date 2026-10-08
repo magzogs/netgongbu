@@ -29,15 +29,28 @@ const executablePath = createRequire(import.meta.url)('electron') as unknown as 
 
 const app = await electron.launch({
   executablePath,
-  args: [join(here, '..')],
+  // Korean, whatever the system's language: the steps find controls by their Korean labels.
+  args: ['--lang=ko', join(here, '..')],
   env: { ...process.env, ...(userData && { NETGONGBU_USER_DATA: userData }) },
 });
 app.process().stdout?.on('data', (d: Buffer) => process.stdout.write(`[app] ${d.toString()}`));
+
+const LOCALE_KEY = 'netgongbu.locale';
+let savedLocale: string | null = null;
 
 try {
   const win = await app.firstWindow();
   await win.setViewportSize({ width: 1440, height: 900 });
   await win.waitForSelector('.player', { timeout: 20_000 });
+  // A language picked in the settings outlasts --lang: use Korean for this run, then put it back.
+  savedLocale = await win.evaluate((key) => localStorage.getItem(key), LOCALE_KEY);
+  if (savedLocale && savedLocale !== 'ko') {
+    await win.evaluate((key) => {
+      localStorage.setItem(key, 'ko');
+    }, LOCALE_KEY);
+    await win.reload();
+    await win.waitForSelector('.player', { timeout: 20_000 });
+  }
 
   if (flag('--download-geo')) {
     await win.locator('.settings-button').click();
@@ -100,5 +113,17 @@ try {
     );
   }
 } finally {
+  if (savedLocale && savedLocale !== 'ko') {
+    const restore = savedLocale;
+    const win = await app.firstWindow();
+    await win
+      .evaluate(
+        ([key, value]) => {
+          localStorage.setItem(key, value);
+        },
+        [LOCALE_KEY, restore] as const,
+      )
+      .catch(() => undefined);
+  }
   await app.close();
 }

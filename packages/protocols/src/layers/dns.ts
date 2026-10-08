@@ -1,3 +1,4 @@
+import { tr } from '@netgongbu/schema';
 import { ascii, BitWriter, hex } from '../bits';
 import type { ByteSource, Field } from '../model';
 import { ipBytes, IPV4, type Values } from '../values';
@@ -44,7 +45,10 @@ export function dns(values: Values, _payload: Uint8Array, ctx: EncodeContext): E
     key: 'id',
     name: 'Transaction ID',
     value: hex(id, 4),
-    meaning: '질문과 답을 짝짓는 번호. 답은 같은 번호로 돌아옵니다',
+    meaning: tr(
+      '질문과 답을 짝짓는 번호. 답은 같은 번호로 돌아옵니다',
+      'Number that pairs a query with its answer. The answer comes back with the same number',
+    ),
     source: idText ? 'observed' : 'typical',
   });
   const flagStart = w.bitLength;
@@ -57,20 +61,65 @@ export function dns(values: Values, _payload: Uint8Array, ctx: EncodeContext): E
       source: key === 'qr' ? 'derived' : 'typical',
     });
   };
-  flag('qr', 'QR', 1, response ? 1 : 0, '0이면 질문, 1이면 답');
-  flag('opcode', 'Opcode', 4, 0, '0: 일반 질의');
-  flag('aa', 'AA', 1, 0, '권한 있는 서버의 답이면 1 (리졸버의 캐시 답은 0)');
-  flag('tc', 'TC', 1, 0, '512바이트를 넘어 잘렸으면 1');
-  flag('rd', 'RD', 1, 1, '재귀 질의 요청: 리졸버가 끝까지 찾아 달라는 뜻');
-  flag('ra', 'RA', 1, response ? 1 : 0, '서버가 재귀 질의를 해 줄 수 있으면 1');
-  flag('z', 'Z', 3, 0, '예약');
-  flag('rcode', 'RCODE', 4, 0, '0: 오류 없음, 3: 그런 이름 없음(NXDOMAIN)');
+  flag(
+    'qr',
+    'QR',
+    1,
+    response ? 1 : 0,
+    tr('0이면 질문, 1이면 답', '0 for a query, 1 for a response'),
+  );
+  flag('opcode', 'Opcode', 4, 0, tr('0: 일반 질의', '0: standard query'));
+  flag(
+    'aa',
+    'AA',
+    1,
+    0,
+    tr(
+      '권한 있는 서버의 답이면 1 (리졸버의 캐시 답은 0)',
+      "1 if the answer is from an authoritative server (0 for a resolver's cached answer)",
+    ),
+  );
+  flag(
+    'tc',
+    'TC',
+    1,
+    0,
+    tr('512바이트를 넘어 잘렸으면 1', '1 if truncated for exceeding 512 bytes'),
+  );
+  flag(
+    'rd',
+    'RD',
+    1,
+    1,
+    tr(
+      '재귀 질의 요청: 리졸버가 끝까지 찾아 달라는 뜻',
+      'Recursion desired: asks the resolver to find the answer all the way',
+    ),
+  );
+  flag(
+    'ra',
+    'RA',
+    1,
+    response ? 1 : 0,
+    tr('서버가 재귀 질의를 해 줄 수 있으면 1', '1 if the server can do recursive queries'),
+  );
+  flag('z', 'Z', 3, 0, tr('예약', 'Reserved'));
+  flag(
+    'rcode',
+    'RCODE',
+    4,
+    0,
+    tr('0: 오류 없음, 3: 그런 이름 없음(NXDOMAIN)', '0: no error, 3: no such name (NXDOMAIN)'),
+  );
   w.group(
     {
       key: 'flags',
       name: 'Flags',
       value: response ? hex(0x8180, 4) : hex(0x0100, 4),
-      meaning: '질문인지 답인지, 재귀 요청 여부 등',
+      meaning: tr(
+        '질문인지 답인지, 재귀 요청 여부 등',
+        'Query or response, whether recursion is wanted, etc.',
+      ),
       source: 'derived',
     },
     flagStart,
@@ -79,28 +128,28 @@ export function dns(values: Values, _payload: Uint8Array, ctx: EncodeContext): E
     key: 'qdcount',
     name: 'Questions',
     value: '1',
-    meaning: '질문 수',
+    meaning: tr('질문 수', 'Number of questions'),
     source: 'derived',
   });
   w.uint(ips.length, 16, {
     key: 'ancount',
     name: 'Answer RRs',
     value: String(ips.length),
-    meaning: '답 레코드 수',
+    meaning: tr('답 레코드 수', 'Number of answer records'),
     source: 'derived',
   });
   w.uint(0, 16, {
     key: 'nscount',
     name: 'Authority RRs',
     value: '0',
-    meaning: '권한 서버 레코드 수',
+    meaning: tr('권한 서버 레코드 수', 'Number of authority records'),
     source: 'typical',
   });
   w.uint(0, 16, {
     key: 'arcount',
     name: 'Additional RRs',
     value: '0',
-    meaning: '추가 레코드 수',
+    meaning: tr('추가 레코드 수', 'Number of additional records'),
     source: 'typical',
   });
 
@@ -114,7 +163,7 @@ export function dns(values: Values, _payload: Uint8Array, ctx: EncodeContext): E
       key: `label-${label}`,
       name: `Label "${label}"`,
       value: `${String(label.length)} + "${label}"`,
-      meaning: '길이 1바이트 + 글자',
+      meaning: tr('길이 1바이트 + 글자', '1 length byte + characters'),
       source: hostSource,
       bitOffset: s,
       bitLength: w.bitLength - s,
@@ -126,7 +175,10 @@ export function dns(values: Values, _payload: Uint8Array, ctx: EncodeContext): E
       key: 'qname',
       name: 'QNAME',
       value: host,
-      meaning: '점 대신 각 부분 앞에 길이를 적고 0으로 끝냅니다',
+      meaning: tr(
+        '점 대신 각 부분 앞에 길이를 적고 0으로 끝냅니다',
+        'Instead of dots, each part is preceded by its length, ending with 0',
+      ),
       source: hostSource,
       children: labels,
     },
@@ -136,14 +188,17 @@ export function dns(values: Values, _payload: Uint8Array, ctx: EncodeContext): E
     key: 'qtype',
     name: 'QTYPE',
     value: '1 (A)',
-    meaning: 'A = IPv4 주소를 묻는 질문 (AAAA는 28)',
+    meaning: tr(
+      'A = IPv4 주소를 묻는 질문 (AAAA는 28)',
+      'A = asks for an IPv4 address (AAAA is 28)',
+    ),
     source: 'typical',
   });
   w.uint(1, 16, {
     key: 'qclass',
     name: 'QCLASS',
     value: '1 (IN)',
-    meaning: '인터넷 클래스',
+    meaning: tr('인터넷 클래스', 'Internet class'),
     source: 'spec',
   });
 
@@ -153,43 +208,46 @@ export function dns(values: Values, _payload: Uint8Array, ctx: EncodeContext): E
     w.uint(0xc00c, 16, {
       key: `an${String(i)}-name`,
       name: 'Name (pointer)',
-      value: '0xc00c → 12번째 바이트의 QNAME',
-      meaning: '같은 이름을 다시 쓰지 않고 앞의 위치를 가리킵니다(압축)',
+      value: tr('0xc00c → 12번째 바이트의 QNAME', '0xc00c → the QNAME at byte 12'),
+      meaning: tr(
+        '같은 이름을 다시 쓰지 않고 앞의 위치를 가리킵니다(압축)',
+        'Points to the earlier position instead of repeating the name (compression)',
+      ),
       source: 'spec',
     });
     w.uint(1, 16, {
       key: `an${String(i)}-type`,
       name: 'Type',
       value: '1 (A)',
-      meaning: 'IPv4 주소 레코드',
+      meaning: tr('IPv4 주소 레코드', 'IPv4 address record'),
       source: 'derived',
     });
     w.uint(1, 16, {
       key: `an${String(i)}-class`,
       name: 'Class',
       value: '1 (IN)',
-      meaning: '인터넷',
+      meaning: tr('인터넷', 'Internet'),
       source: 'spec',
     });
     w.uint(ttl, 32, {
       key: `an${String(i)}-ttl`,
       name: 'TTL',
-      value: `${String(ttl)}초`,
-      meaning: '이 답을 캐시에 둘 수 있는 시간',
+      value: tr(`${String(ttl)}초`, `${String(ttl)} s`),
+      meaning: tr('이 답을 캐시에 둘 수 있는 시간', 'How long this answer may be cached'),
       source: values.get('TTL', 'ttl')?.source ?? 'typical',
     });
     w.uint(4, 16, {
       key: `an${String(i)}-len`,
       name: 'RDLENGTH',
       value: '4',
-      meaning: '주소 길이',
+      meaning: tr('주소 길이', 'Address length'),
       source: 'derived',
     });
     w.bytes(ipBytes(ip), {
       key: `an${String(i)}-addr`,
       name: 'Address',
       value: ip,
-      meaning: '답: 이 이름의 IPv4 주소',
+      meaning: tr('답: 이 이름의 IPv4 주소', "Answer: this name's IPv4 address"),
       source: answerSource,
     });
     w.group(
@@ -197,7 +255,7 @@ export function dns(values: Values, _payload: Uint8Array, ctx: EncodeContext): E
         key: `an${String(i)}`,
         name: `Answer ${String(i + 1)}`,
         value: `${host} A ${ip}`,
-        meaning: '답 레코드',
+        meaning: tr('답 레코드', 'Answer record'),
         source: answerSource,
       },
       s,
@@ -206,9 +264,12 @@ export function dns(values: Values, _payload: Uint8Array, ctx: EncodeContext): E
 
   return {
     kind: 'dns',
-    title: response ? 'DNS (응답)' : 'DNS (질문)',
+    title: response ? tr('DNS (응답)', 'DNS (response)') : tr('DNS (질문)', 'DNS (query)'),
     standard: 'RFC 1035',
     header: w,
-    note: '일반 DNS는 암호화되지 않아 경로의 장비가 어떤 이름을 찾는지 볼 수 있습니다(DNS over HTTPS는 예외).',
+    note: tr(
+      '일반 DNS는 암호화되지 않아 경로의 장비가 어떤 이름을 찾는지 볼 수 있습니다(DNS over HTTPS는 예외).',
+      'Plain DNS is not encrypted, so devices on the path can see which name is looked up (DNS over HTTPS is the exception).',
+    ),
   };
 }

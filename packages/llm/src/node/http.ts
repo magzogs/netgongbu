@@ -1,3 +1,4 @@
+import { tr } from '@netgongbu/schema';
 /** A failed call, with a message the viewer can show as is. */
 export class AiError extends Error {
   constructor(
@@ -36,13 +37,19 @@ export async function request(
   } catch (err) {
     if (err instanceof Error && (err.name === 'AbortError' || err.name === 'TimeoutError'))
       throw err;
-    throw new AiError(`${what}에 연결하지 못했습니다.`, 'connect');
+    throw new AiError(
+      tr(`${what}에 연결하지 못했습니다.`, `Could not connect to ${what}.`),
+      'connect',
+    );
   }
   if (!res.ok) {
     const detail = errorDetail(await res.text().catch(() => ''));
     const kind = res.status === 401 || res.status === 403 ? 'auth' : 'http';
     throw new AiError(
-      `${what} 오류 (HTTP ${String(res.status)})${detail ? `: ${detail}` : ''}`,
+      tr(
+        `${what} 오류 (HTTP ${String(res.status)})${detail ? `: ${detail}` : ''}`,
+        `${what} error (HTTP ${String(res.status)})${detail ? `: ${detail}` : ''}`,
+      ),
       kind,
     );
   }

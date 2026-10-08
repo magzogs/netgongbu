@@ -1717,7 +1717,7 @@ body,
   }
 }
 
-/* ---- desktop settings ---- */
+/* ---- settings ---- */
 
 .settings-button {
   margin-left: auto;
@@ -1727,6 +1727,10 @@ body,
 .settings__status {
   margin: 0 0 8px;
   font-size: 13px;
+}
+
+.settings__language {
+  margin-bottom: 6px;
 }
 
 /* ---- the laptop's browser (desktop app) ---- */

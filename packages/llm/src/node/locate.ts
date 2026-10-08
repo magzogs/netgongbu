@@ -2,6 +2,7 @@ import { constants } from 'node:fs';
 import { access, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { basename, delimiter, isAbsolute, join } from 'node:path';
+import { tr } from '@netgongbu/schema';
 import { PROVIDERS, type CliProvider } from '../types';
 import { cliEnv, runCli } from './process';
 
@@ -98,12 +99,14 @@ export async function findCli(
 
 /** `<cli> --version`, e.g. "2.1.282 (Claude Code)" or "codex-cli 0.160.0". */
 export async function cliVersion(path: string): Promise<string> {
-  if (!(await executable(path))) throw new Error(`실행할 수 없는 파일입니다: ${path}`);
+  if (!(await executable(path)))
+    throw new Error(tr(`실행할 수 없는 파일입니다: ${path}`, `Not an executable file: ${path}`));
   const { code, stdout, stderr } = await runCli(path, ['--version'], {
     env: cliEnv(),
     timeoutMs: 15_000,
   });
   const version = stdout.trim().split('\n')[0] ?? '';
-  if (code !== 0 || !version) throw new Error(stderr.trim() || `${path} --version 실패`);
+  if (code !== 0 || !version)
+    throw new Error(stderr.trim() || tr(`${path} --version 실패`, `${path} --version failed`));
   return version;
 }

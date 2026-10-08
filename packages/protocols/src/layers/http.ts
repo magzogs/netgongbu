@@ -1,3 +1,4 @@
+import { tr } from '@netgongbu/schema';
 import { ascii, BitWriter } from '../bits';
 import type { ByteSource } from '../model';
 import type { Given, Values } from '../values';
@@ -9,6 +10,8 @@ const META = new Set([
   '요청 줄',
   '상태',
   '(그 밖의 헤더)',
+  'request line',
+  '(other headers)',
   'method',
   'path',
   'status',
@@ -28,7 +31,7 @@ interface Message {
 
 /** Reads method/path/status and headers from the many shapes scenarios use. */
 function readMessage(values: Values, ctx: EncodeContext): Message {
-  const line = values.get('요청 줄');
+  const line = values.get('요청 줄', 'request line');
   const status = values.get('상태', ':status', 'status');
   const method = values.get(':method', 'method');
   const path = values.get(':path', 'path');
@@ -61,26 +64,49 @@ export function http1(values: Values, _payload: Uint8Array, ctx: EncodeContext):
     w.bytes(ascii(`${text}\r\n`), { key: `line-${name}`, name, value: text, meaning, source });
   };
   if (m.request) {
-    line(`${m.method} ${m.path} HTTP/1.1`, 'Request Line', '메서드, 경로, 버전', m.sources.line);
+    line(
+      `${m.method} ${m.path} HTTP/1.1`,
+      'Request Line',
+      tr('메서드, 경로, 버전', 'Method, path, version'),
+      m.sources.line,
+    );
     if (m.authority && !m.headers.some((h) => h.name === 'host')) {
       line(
         `Host: ${m.authority}`,
         'Host',
-        '어느 사이트에 대한 요청인지 (HTTP/1.1에서 필수)',
+        tr(
+          '어느 사이트에 대한 요청인지 (HTTP/1.1에서 필수)',
+          'Which site the request is for (required in HTTP/1.1)',
+        ),
         'derived',
       );
     }
   } else {
-    line(`HTTP/1.1 ${m.status}`, 'Status Line', '버전, 상태 코드, 이유 문구', m.sources.line);
+    line(
+      `HTTP/1.1 ${m.status}`,
+      'Status Line',
+      tr('버전, 상태 코드, 이유 문구', 'Version, status code, reason phrase'),
+      m.sources.line,
+    );
   }
-  for (const h of m.headers) line(`${h.name}: ${h.value}`, h.name, '헤더', h.source);
-  line('', '빈 줄', '헤더의 끝 (CRLF만 있는 줄)', 'spec');
+  for (const h of m.headers) line(`${h.name}: ${h.value}`, h.name, tr('헤더', 'Header'), h.source);
+  line(
+    '',
+    tr('빈 줄', 'Empty line'),
+    tr('헤더의 끝 (CRLF만 있는 줄)', 'End of headers (a line with only CRLF)'),
+    'spec',
+  );
   return {
     kind: 'http1',
     title: 'HTTP/1.1',
     standard: 'RFC 9112',
     header: w,
-    note: m.request ? undefined : '본문(HTML 등)은 헤더 다음에 이어지지만 여기서는 생략했습니다.',
+    note: m.request
+      ? undefined
+      : tr(
+          '본문(HTML 등)은 헤더 다음에 이어지지만 여기서는 생략했습니다.',
+          'The body (HTML, etc.) follows the headers but is left out here.',
+        ),
   };
 }
 
@@ -109,48 +135,79 @@ export function http2(values: Values, _payload: Uint8Array, ctx: EncodeContext):
   w.uint(block.bytes.length, 24, {
     key: 'length',
     name: 'Length',
-    value: `${String(block.bytes.length)}바이트`,
-    meaning: '프레임 헤더(9바이트)를 뺀 내용 길이',
+    value: tr(`${String(block.bytes.length)}바이트`, `${String(block.bytes.length)} bytes`),
+    meaning: tr(
+      '프레임 헤더(9바이트)를 뺀 내용 길이',
+      'Length of the content, not counting the 9-byte frame header',
+    ),
     source: 'derived',
   });
   w.uint(0x01, 8, {
     key: 'type',
     name: 'Type',
     value: `0x1 (${FRAME_TYPES})`,
-    meaning: '헤더를 담는 프레임 (DATA는 0x0)',
+    meaning: tr('헤더를 담는 프레임 (DATA는 0x0)', 'Frame that carries headers (DATA is 0x0)'),
     source: 'spec',
   });
   w.uint(flags, 8, {
     key: 'flags',
     name: 'Flags',
     value: [endStream ? 'END_STREAM' : '', 'END_HEADERS'].filter(Boolean).join(' | '),
-    meaning: 'END_HEADERS: 헤더가 이 프레임에서 끝남, END_STREAM: 이 요청에 본문이 없음',
+    meaning: tr(
+      'END_HEADERS: 헤더가 이 프레임에서 끝남, END_STREAM: 이 요청에 본문이 없음',
+      'END_HEADERS: the headers end in this frame, END_STREAM: this request has no body',
+    ),
     source: 'derived',
   });
-  w.uint(0, 1, { key: 'r', name: 'R', value: '0', meaning: '예약 비트', source: 'spec' });
+  w.uint(0, 1, {
+    key: 'r',
+    name: 'R',
+    value: '0',
+    meaning: tr('예약 비트', 'Reserved bit'),
+    source: 'spec',
+  });
   w.uint(1, 31, {
     key: 'stream',
     name: 'Stream Identifier',
     value: '1',
-    meaning: '한 연결 안의 요청 번호. 브라우저가 연 요청은 홀수(1, 3, 5…)',
+    meaning: tr(
+      '한 연결 안의 요청 번호. 브라우저가 연 요청은 홀수(1, 3, 5…)',
+      'Request number within one connection. Requests the browser opens are odd (1, 3, 5…)',
+    ),
     source: 'typical',
   });
   const blockStart = w.bitLength;
   w.bytes(block.bytes, {
     key: 'hpack',
     name: 'Header Block (HPACK)',
-    value: `헤더 ${String(block.fields.length)}개 → ${String(block.bytes.length)}바이트`,
-    meaning: '헤더를 정적·동적 테이블 번호와 글자로 압축한 것',
+    value: tr(
+      `헤더 ${String(block.fields.length)}개 → ${String(block.bytes.length)}바이트`,
+      `${String(block.fields.length)} headers → ${String(block.bytes.length)} bytes`,
+    ),
+    meaning: tr(
+      '헤더를 정적·동적 테이블 번호와 글자로 압축한 것',
+      'Headers compressed into static/dynamic table indexes and literal text',
+    ),
     source: 'derived',
     children: block.fields.map((f) => ({ ...f, bitOffset: f.bitOffset + blockStart })),
   });
   return {
     kind: 'http2',
-    title: m.request ? 'HTTP/2 HEADERS (요청)' : 'HTTP/2 HEADERS (응답)',
+    title: m.request
+      ? tr('HTTP/2 HEADERS (요청)', 'HTTP/2 HEADERS (request)')
+      : tr('HTTP/2 HEADERS (응답)', 'HTTP/2 HEADERS (response)'),
     standard: 'RFC 9113 · RFC 7541',
     header: w,
     note:
-      'HTTP/2는 연결을 연 뒤 먼저 연결 서문(PRI * HTTP/2.0…)과 SETTINGS 프레임을 주고받습니다. 실제 브라우저는 헤더 글자를 허프만 부호로 더 줄이지만, 여기서는 읽을 수 있게 허프만 없이 보여 줍니다.' +
-      (m.request ? '' : ' 본문은 뒤따르는 DATA 프레임에 실립니다.'),
+      tr(
+        'HTTP/2는 연결을 연 뒤 먼저 연결 서문(PRI * HTTP/2.0…)과 SETTINGS 프레임을 주고받습니다. 실제 브라우저는 헤더 글자를 허프만 부호로 더 줄이지만, 여기서는 읽을 수 있게 허프만 없이 보여 줍니다.',
+        'After opening the connection, HTTP/2 first exchanges a connection preface (PRI * HTTP/2.0…) and SETTINGS frames. Real browsers shrink header text further with Huffman coding; it is shown without Huffman here so it stays readable.',
+      ) +
+      (m.request
+        ? ''
+        : tr(
+            ' 본문은 뒤따르는 DATA 프레임에 실립니다.',
+            ' The body is carried in the DATA frames that follow.',
+          )),
   };
 }

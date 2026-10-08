@@ -11,6 +11,7 @@ import {
   type ChatEvent,
 } from '@netgongbu/llm';
 import type { AiHub } from '@netgongbu/llm/node';
+import { isLocale, setLocale, tr } from '@netgongbu/schema';
 
 const STATUS: Record<AskErrorCode, 400 | 404 | 422 | 429 | 502 | 503> = {
   'bad-request': 400,
@@ -51,6 +52,9 @@ export function createApp({ scenarios, hub }: AppDeps): Hono {
     if (site === 'cross-site' || site === 'same-site') return c.json({ error: 'Forbidden' }, 403);
     if (c.req.method !== 'GET' && !c.req.header('content-type')?.startsWith('application/json'))
       return c.json({ error: 'JSON only' }, 415);
+    // The viewer's language, for messages and the AI's answers (one learner per server).
+    const locale = c.req.header('x-netgongbu-locale');
+    if (isLocale(locale)) setLocale(locale);
     await next();
   });
 
@@ -60,7 +64,9 @@ export function createApp({ scenarios, hub }: AppDeps): Hono {
 
   app.get('/scenarios/:id', async (c) => {
     const scenario = await scenarios.scenario(c.req.param('id'));
-    return scenario ? c.json(scenario) : c.json({ error: '시나리오를 찾을 수 없습니다.' }, 404);
+    return scenario
+      ? c.json(scenario)
+      : c.json({ error: tr('시나리오를 찾을 수 없습니다.', 'Scenario not found.') }, 404);
   });
 
   app.post('/scenarios', async (c) => {
@@ -90,7 +96,7 @@ function addAiRoutes(app: Hono, hub: AiHub): void {
 
   app.post('/ai/change', async (c) => {
     const change = PrefsChangeSchema.safeParse(await body(c));
-    if (!change.success) return invalid(c, '설정 값이 올바르지 않습니다.');
+    if (!change.success) return invalid(c, tr('설정 값이 올바르지 않습니다.', 'Invalid settings.'));
     try {
       return c.json(await hub.change(change.data));
     } catch (err) {
@@ -100,19 +106,20 @@ function addAiRoutes(app: Hono, hub: AiHub): void {
 
   app.post('/ai/key', async (c) => {
     const input = ApiKeyInputSchema.safeParse(await body(c));
-    if (!input.success) return invalid(c, 'API 키 형식이 올바르지 않습니다.');
+    if (!input.success)
+      return invalid(c, tr('API 키 형식이 올바르지 않습니다.', 'Invalid API key format.'));
     return c.json(hub.setKey(input.data.provider, input.data.key));
   });
 
   app.get('/ai/models', async (c) => {
     const provider = ProviderSchema.safeParse(c.req.query('provider'));
-    if (!provider.success) return invalid(c, '알 수 없는 AI입니다.');
+    if (!provider.success) return invalid(c, tr('알 수 없는 AI입니다.', 'Unknown AI.'));
     return c.json(await hub.models(provider.data, c.req.query('refresh') === '1'));
   });
 
   app.post('/ai/sign-in', async (c) => {
     const input = CliProviderSchema.safeParse(await body(c));
-    if (!input.success) return invalid(c, '알 수 없는 AI입니다.');
+    if (!input.success) return invalid(c, tr('알 수 없는 AI입니다.', 'Unknown AI.'));
     return c.json(await hub.signIn(input.data.provider));
   });
 
@@ -120,7 +127,7 @@ function addAiRoutes(app: Hono, hub: AiHub): void {
 
   app.post('/ai/sign-out', async (c) => {
     const input = CliProviderSchema.safeParse(await body(c));
-    if (!input.success) return invalid(c, '알 수 없는 AI입니다.');
+    if (!input.success) return invalid(c, tr('알 수 없는 AI입니다.', 'Unknown AI.'));
     try {
       return c.json(await hub.signOut(input.data.provider));
     } catch (err) {
@@ -131,7 +138,8 @@ function addAiRoutes(app: Hono, hub: AiHub): void {
   // The answer as server-sent events (ChatEvent); closing the request stops it.
   app.post('/ai/chat', async (c) => {
     const request = ChatRequestSchema.safeParse(await body(c));
-    if (!request.success) return invalid(c, '질문 형식이 올바르지 않습니다.');
+    if (!request.success)
+      return invalid(c, tr('질문 형식이 올바르지 않습니다.', 'Invalid question format.'));
     const { id, messages } = request.data;
     return streamSSE(c, async (stream) => {
       const controller = new AbortController();

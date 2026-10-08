@@ -1,5 +1,5 @@
 import type { LabApi } from '@netgongbu/bridge';
-import type { Scenario } from '@netgongbu/schema';
+import { tr, type Scenario } from '@netgongbu/schema';
 import {
   askScenario,
   AskError,
@@ -9,10 +9,14 @@ import {
   type AiEntry,
   type AiStatus,
 } from './aiApi';
+import { locale } from '../i18n';
 
 /** The desktop app's main process, exposed by its preload script; undefined on the web. */
 export const lab: LabApi | undefined = (globalThis as { lab?: LabApi }).lab;
 export const isDesktop = lab !== undefined;
+
+// Before any other call, so the main process answers in the viewer's language from the start.
+if (lab) void lab.settings.setLocale(locale);
 
 /** Where AI scenarios come from: the HTTP server (web) or the main process (desktop). */
 export interface Backend {
@@ -40,7 +44,8 @@ function desktopBackend(api: LabApi): Backend {
     aiCatalog: () => api.ai.catalog().catch(() => []),
     aiScenario: async (id) => {
       const scenario = await api.ai.scenario(id);
-      if (!scenario) throw new Error('AI 시나리오를 찾을 수 없습니다.');
+      if (!scenario)
+        throw new Error(tr('AI 시나리오를 찾을 수 없습니다.', 'AI scenario not found.'));
       return scenario;
     },
     ask: async (topologyId, question) => {

@@ -1,3 +1,4 @@
+import { tr } from '@netgongbu/schema';
 import { ascii, BitWriter } from '../bits';
 import type { ByteSource, Field } from '../model';
 
@@ -110,18 +111,27 @@ export function hpackEncode(headers: readonly HeaderLine[]): {
     let how: string;
     if (full >= 0) {
       bytes = hpackInteger(full + 1, 7, 0x80);
-      how = `정적 테이블 ${String(full + 1)}번을 그대로 가리킴 (1바이트)`;
+      how = tr(
+        `정적 테이블 ${String(full + 1)}번을 그대로 가리킴 (1바이트)`,
+        `Points straight to static table entry ${String(full + 1)} (1 byte)`,
+      );
     } else if (named >= 0) {
       bytes = [...hpackInteger(named + 1, 6, 0x40), ...hpackString(h.value)];
-      how = `이름은 정적 테이블 ${String(named + 1)}번, 값은 글자 그대로 (동적 테이블에 추가)`;
+      how = tr(
+        `이름은 정적 테이블 ${String(named + 1)}번, 값은 글자 그대로 (동적 테이블에 추가)`,
+        `Name from static table entry ${String(named + 1)}, value as literal text (added to the dynamic table)`,
+      );
     } else {
       bytes = [0x40, ...hpackString(name), ...hpackString(h.value)];
-      how = '이름과 값 모두 글자 그대로 (동적 테이블에 추가)';
+      how = tr(
+        '이름과 값 모두 글자 그대로 (동적 테이블에 추가)',
+        'Name and value both as literal text (added to the dynamic table)',
+      );
     }
     w.bytes(Uint8Array.from(bytes), {
       key: `h-${name}`,
       name: `${name}: ${h.value.length > 40 ? `${h.value.slice(0, 37)}…` : h.value}`,
-      value: `${String(bytes.length)}바이트`,
+      value: tr(`${String(bytes.length)}바이트`, `${String(bytes.length)} bytes`),
       meaning: how,
       source: h.source,
     });

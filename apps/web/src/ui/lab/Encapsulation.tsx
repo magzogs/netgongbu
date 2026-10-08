@@ -1,4 +1,5 @@
 import { Fragment, type CSSProperties, type ReactElement } from 'react';
+import { tr } from '@netgongbu/schema';
 import { sameRef, type LayerRef, type Stack } from './stack';
 import { BOX_COLORS } from './theme';
 
@@ -52,7 +53,7 @@ export function Encapsulation({ stack, selected, onSelect }: Props): ReactElemen
               <span className="encap__level">{row.level}</span>
               <span className="encap__title">{row.title}</span>
               <span className="encap__unit">
-                {row.unit} · {row.bytes}바이트
+                {row.unit} · {tr(`${String(row.bytes)}바이트`, `${String(row.bytes)} bytes`)}
               </span>
             </button>
             {row.cells.map((cell) => (
@@ -71,7 +72,12 @@ export function Encapsulation({ stack, selected, onSelect }: Props): ReactElemen
                     className={`encap__box encap__box--${box.kind}${box.own ? ' is-own' : ''}`}
                     style={{ '--layer': BOX_COLORS[box.kind] } as CSSProperties}
                     title={
-                      box.bytes === null ? box.label : `${box.label} ${String(box.bytes)}바이트`
+                      box.bytes === null
+                        ? box.label
+                        : tr(
+                            `${box.label} ${String(box.bytes)}바이트`,
+                            `${box.label} ${String(box.bytes)} bytes`,
+                          )
                     }
                   >
                     <span className="encap__box-label">{box.label}</span>

@@ -1,0 +1,14 @@
+{
+  "scenarios": [
+    {
+      "id": "visit-example-com",
+      "topologyId": "home-to-web",
+      "title": "Opening https://example.com in a browser"
+    },
+    {
+      "id": "trace-demo",
+      "topologyId": "trace-demo",
+      "title": "Measured example: from Seoul to a US server (demo data)"
+    }
+  ]
+}

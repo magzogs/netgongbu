@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { tr } from '@netgongbu/schema';
 import { lab } from '../data/backend';
 import { useViewer } from '../store/viewer';
 
@@ -46,7 +47,7 @@ export function LaptopBrowser(): ReactElement | null {
   };
 
   return (
-    <section className="browser panel" aria-label="노트북의 브라우저">
+    <section className="browser panel" aria-label={tr('노트북의 브라우저', 'Laptop browser')}>
       <header className="browser__bar">
         <span className="browser__dots" aria-hidden="true">
           <i />
@@ -68,17 +69,17 @@ export function LaptopBrowser(): ReactElement | null {
             disabled={running}
             spellCheck={false}
             autoComplete="off"
-            aria-label="주소"
-            placeholder="주소를 입력하고 Enter"
+            aria-label={tr('주소', 'Address')}
+            placeholder={tr('주소를 입력하고 Enter', 'Type an address and press Enter')}
           />
         </form>
         {running ? (
           <button type="button" className="text-button" onClick={cancelTrace}>
-            중지
+            {tr('중지', 'Stop')}
           </button>
         ) : (
           <button type="button" className="primary-button browser__go" onClick={go}>
-            이동
+            {tr('이동', 'Go')}
           </button>
         )}
         <button
@@ -88,7 +89,7 @@ export function LaptopBrowser(): ReactElement | null {
             setBrowserOpen(false);
           }}
         >
-          닫기
+          {tr('닫기', 'Close')}
         </button>
       </header>
 
@@ -96,11 +97,12 @@ export function LaptopBrowser(): ReactElement | null {
         <div ref={page} className="browser__page">
           {!showPage && (
             <div className="browser__intro">
-              <strong>노트북의 브라우저</strong>
+              <strong>{tr('노트북의 브라우저', 'Laptop browser')}</strong>
               <p>
-                주소를 입력하고 Enter를 누르면 이 컴퓨터에서 실제로 페이지를 엽니다. 그동안
-                브라우저가 보낸 요청을 모두 기록하고, 서버까지의 경로를 traceroute로 추적해 그
-                결과로 지도와 시나리오를 새로 만듭니다.
+                {tr(
+                  '주소를 입력하고 Enter를 누르면 이 컴퓨터에서 실제로 페이지를 엽니다. 그동안 브라우저가 보낸 요청을 모두 기록하고, 서버까지의 경로를 traceroute로 추적해 그 결과로 지도와 시나리오를 새로 만듭니다.',
+                  'Type an address and press Enter to actually open the page on this computer. Meanwhile every request the browser sends is recorded, and the route to the server is traced with traceroute; the results become a new map and scenario.',
+                )}
               </p>
               <label className="toggle">
                 <input
@@ -110,11 +112,17 @@ export function LaptopBrowser(): ReactElement | null {
                     setFreshLoad(e.target.checked);
                   }}
                 />
-                캐시를 비우고 처음 방문처럼 측정 (DNS·TCP·TLS가 모두 보이도록)
+                {tr(
+                  '캐시를 비우고 처음 방문처럼 측정 (DNS·TCP·TLS가 모두 보이도록)',
+                  'Clear the cache and measure as a first visit (so DNS, TCP and TLS all show)',
+                )}
               </label>
               {!geoInstalled && (
                 <p className="muted">
-                  위치 데이터베이스가 없으면 경로가 지구본 대신 평면으로 그려집니다.{' '}
+                  {tr(
+                    '위치 데이터베이스가 없으면 경로가 지구본 대신 평면으로 그려집니다.',
+                    'Without the location database, the route is drawn flat instead of on the globe.',
+                  )}{' '}
                   <button
                     type="button"
                     className="link-button"
@@ -122,7 +130,7 @@ export function LaptopBrowser(): ReactElement | null {
                       setSettingsOpen(true);
                     }}
                   >
-                    설정에서 내려받기
+                    {tr('설정에서 내려받기', 'Download it in Settings')}
                   </button>
                 </p>
               )}
@@ -174,7 +182,7 @@ export function BrowserButton(): ReactElement | null {
         setOpen(!open);
       }}
     >
-      노트북 브라우저
+      {tr('노트북 브라우저', 'Laptop browser')}
     </button>
   );
 }

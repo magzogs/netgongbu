@@ -1,5 +1,6 @@
 import { spawn as nodeSpawn } from 'node:child_process';
 import { lineSplitter, parseTracerouteLine, type TracerouteLine } from '@netgongbu/trace';
+import { tr } from '@netgongbu/schema';
 
 export interface TracerouteOptions {
   platform: NodeJS.Platform;
@@ -40,7 +41,10 @@ export function runTraceroute(
     return Promise.resolve({
       lines: [],
       complete: false,
-      error: 'Windows의 경로 추적은 아직 지원하지 않습니다.',
+      error: tr(
+        'Windows의 경로 추적은 아직 지원하지 않습니다.',
+        'Route tracing is not supported on Windows yet.',
+      ),
     });
   }
   const [file, args] = command(target, platform, maxHops);
@@ -61,11 +65,17 @@ export function runTraceroute(
       resolve({ lines, complete: lines.some((l) => l.ip === target), error });
     };
     const abort = (): void => {
-      error = '취소했습니다.';
+      error = tr('취소했습니다.', 'Canceled.');
       finish();
     };
     const timer = setTimeout(() => {
-      error = lines.length === 0 ? '경로 추적이 시간 안에 끝나지 않았습니다.' : null;
+      error =
+        lines.length === 0
+          ? tr(
+              '경로 추적이 시간 안에 끝나지 않았습니다.',
+              'The route trace did not finish in time.',
+            )
+          : null;
       finish();
     }, timeoutMs);
     signal?.addEventListener('abort', abort);
@@ -88,8 +98,14 @@ export function runTraceroute(
     child.on('error', (err: NodeJS.ErrnoException) => {
       error =
         err.code === 'ENOENT'
-          ? 'traceroute가 설치되어 있지 않습니다 (Linux: sudo apt install traceroute).'
-          : `traceroute를 실행하지 못했습니다: ${err.message}`;
+          ? tr(
+              'traceroute가 설치되어 있지 않습니다 (Linux: sudo apt install traceroute).',
+              'traceroute is not installed (Linux: sudo apt install traceroute).',
+            )
+          : tr(
+              `traceroute를 실행하지 못했습니다: ${err.message}`,
+              `Could not run traceroute: ${err.message}`,
+            );
       finish();
     });
     child.on('close', finish);

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   indexTopology,
+  tr,
   type Scenario,
   type Topology,
   type TopologyIndex,
@@ -199,7 +200,14 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
       const wanted = new URL(window.location.href).searchParams.get(SCENARIO_PARAM);
       const first = all.find((s) => s.id === wanted) ?? all[0];
       if (first) await get().open(first.id);
-      else set({ status: { kind: 'error', message: '시나리오가 없습니다.', issues: [] } });
+      else
+        set({
+          status: {
+            kind: 'error',
+            message: tr('시나리오가 없습니다.', 'There are no scenarios.'),
+            issues: [],
+          },
+        });
     } catch (err) {
       set({ status: errorStatus(err) });
     }

@@ -1,14 +1,16 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import {
+  getLocale,
   scenarioToDraft,
+  type Locale,
   type Scenario,
   type Topology,
   type ValidationIssue,
 } from '@netgongbu/schema';
 
-// The system prompt is two blocks: instructions that never change, then the topology and an
-// example for it. Both are stable per topology, so the cache breakpoint sits at the end of the
-// second block and only the question varies between requests.
+// The system prompt is two blocks: instructions that never change (one text per language), then
+// the topology and an example for it. Both are stable per topology and language, so the cache
+// breakpoint sits at the end of the second block and only the question varies between requests.
 
 const INSTRUCTIONS = `You write step-by-step scenarios for a 3D network teaching tool. A learner asks a question; you answer it by describing, beat by beat, which packets move between the nodes of the topology below and what each node does. The viewer animates your answer, so it has to match the topology exactly.
 
@@ -24,7 +26,14 @@ Scope
 - Show the real sequence, including steps learners tend to miss: ARP before the first frame, DNS before connecting, handshakes, and the responses coming back. Most answers need 6 to 20 beats; a short exchange may need fewer.
 - Only use nodes and links in the topology. If the question needs something the topology lacks (another device, a CDN, a failure the topology cannot show), show the closest faithful version and explain the gap in unsupported; otherwise set unsupported to null.
 - If the question is not about how data moves through a network, answer with one beat without hops whose narration says what kind of questions this tool can show, and explain why in unsupported.
-- Write title, narration, node action text and unsupported in Korean. Header names, field names and protocol values keep their usual technical spelling.`;
+- Write title, narration, node action text and unsupported in `;
+
+const LANGUAGE_NAMES: Record<Locale, string> = { ko: 'Korean', en: 'English' };
+
+/** The instructions for the current language: the text is fixed per language, so the cache holds. */
+function instructions(): string {
+  return `${INSTRUCTIONS}${LANGUAGE_NAMES[getLocale()]}. Header names, field names and protocol values keep their usual technical spelling.`;
+}
 
 export function systemPrompt(
   topology: Topology,
@@ -34,7 +43,7 @@ export function systemPrompt(
     ? `\n\nAn example answer for this topology, to a different question, in the output format:\n${JSON.stringify(scenarioToDraft(example))}`
     : '';
   return [
-    { type: 'text', text: INSTRUCTIONS },
+    { type: 'text', text: instructions() },
     {
       type: 'text',
       text: `Topology "${topology.id}":\n${JSON.stringify(topology)}${exampleText}`,

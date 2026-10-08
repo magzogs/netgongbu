@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { tr } from '@netgongbu/schema';
 import { useViewer } from '../store/viewer';
 import { NodeDetails } from './NodeDetails';
 import { PacketDetails } from './PacketDetails';
@@ -16,7 +17,7 @@ export function Inspector(): ReactElement | null {
   if (!ready) return null;
 
   const showingNode = selection?.kind === 'node';
-  const title = showingNode ? '장비 정보' : '패킷 헤더';
+  const title = showingNode ? tr('장비 정보', 'Device info') : tr('패킷 헤더', 'Packet headers');
 
   return (
     <aside className={`inspector panel${open ? '' : ' is-collapsed'}`} aria-label={title}>
@@ -30,7 +31,7 @@ export function Inspector(): ReactElement | null {
               select(null);
             }}
           >
-            패킷 보기
+            {tr('패킷 보기', 'Show packet')}
           </button>
         )}
         <button
@@ -41,7 +42,7 @@ export function Inspector(): ReactElement | null {
             setOpen(!open);
           }}
         >
-          {open ? '접기' : '펼치기'}
+          {open ? tr('접기', 'Collapse') : tr('펼치기', 'Expand')}
         </button>
       </header>
       {open && (
@@ -57,16 +58,19 @@ export function Inspector(): ReactElement | null {
           aria-pressed={labOpen}
           title={
             hops === 0
-              ? '이 단계에서는 이동하는 패킷이 없습니다'
-              : '모든 계층을 실제 바이트와 비트 단위 필드로 보기 (P)'
+              ? tr('이 단계에서는 이동하는 패킷이 없습니다', 'No packets move in this step')
+              : tr(
+                  '모든 계층을 실제 바이트와 비트 단위 필드로 보기 (P)',
+                  'See every layer as real bytes and bit-level fields (P)',
+                )
           }
           onClick={() => {
             const wanted = selection?.kind === 'packet' ? selection.hopIndex : 0;
             openPacketLab(labOpen ? null : Math.min(wanted, hops - 1));
           }}
         >
-          <span>패킷 해부</span>
-          <span className="inspector__lab-hint">{labOpen ? '닫기' : 'P ▸'}</span>
+          <span>{tr('패킷 해부', 'Packet anatomy')}</span>
+          <span className="inspector__lab-hint">{labOpen ? tr('닫기', 'Close') : 'P ▸'}</span>
         </button>
       </footer>
     </aside>

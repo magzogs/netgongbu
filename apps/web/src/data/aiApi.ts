@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { CatalogEntrySchema, ScenarioSchema, type Scenario } from '@netgongbu/schema';
+import { CatalogEntrySchema, ScenarioSchema, tr, type Scenario } from '@netgongbu/schema';
+import { localeHeaders } from '../i18n';
 
 // Client for apps/server. In development Vite proxies /api to it (see vite.config.ts).
 
@@ -12,7 +13,7 @@ const HealthSchema = z.object({ ok: z.boolean(), ai: z.boolean() });
 /** Whether the scenario server is reachable and has an AI connected. */
 export async function fetchAiStatus(): Promise<AiStatus> {
   try {
-    const res = await fetch(`${API}/health`);
+    const res = await fetch(`${API}/health`, { headers: localeHeaders });
     if (!res.ok) return 'offline';
     const health = HealthSchema.safeParse(await res.json());
     if (!health.success) return 'offline';
@@ -31,7 +32,7 @@ export type AiEntry = z.infer<typeof AiEntrySchema>;
 /** Scenarios generated earlier; empty when the server is not running. */
 export async function fetchAiCatalog(): Promise<AiEntry[]> {
   try {
-    const res = await fetch(`${API}/catalog`);
+    const res = await fetch(`${API}/catalog`, { headers: localeHeaders });
     if (!res.ok) return [];
     const parsed = z.object({ scenarios: z.array(AiEntrySchema) }).safeParse(await res.json());
     return parsed.success ? parsed.data.scenarios : [];
@@ -41,8 +42,16 @@ export async function fetchAiCatalog(): Promise<AiEntry[]> {
 }
 
 export async function fetchAiScenario(id: string): Promise<unknown> {
-  const res = await fetch(`${API}/scenarios/${encodeURIComponent(id)}`);
-  if (!res.ok) throw new Error(`AI 시나리오를 불러오지 못했습니다 (HTTP ${String(res.status)}).`);
+  const res = await fetch(`${API}/scenarios/${encodeURIComponent(id)}`, {
+    headers: localeHeaders,
+  });
+  if (!res.ok)
+    throw new Error(
+      tr(
+        `AI 시나리오를 불러오지 못했습니다 (HTTP ${String(res.status)}).`,
+        `Could not load the AI scenario (HTTP ${String(res.status)}).`,
+      ),
+    );
   return res.json();
 }
 
@@ -74,18 +83,23 @@ export async function askScenario(
   try {
     res = await fetch(`${API}/scenarios`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...localeHeaders },
       body: JSON.stringify({ topologyId, question }),
     });
   } catch {
-    throw new AskError('AI 서버에 연결하지 못했습니다.');
+    throw new AskError(tr('AI 서버에 연결하지 못했습니다.', 'Could not connect to the AI server.'));
   }
   const body: unknown = await res.json().catch(() => null);
   if (!res.ok) {
     const error = ErrorBodySchema.safeParse(body);
     throw error.success
       ? new AskError(error.data.error, error.data.issues)
-      : new AskError(`AI 서버 오류 (HTTP ${String(res.status)})`);
+      : new AskError(
+          tr(
+            `AI 서버 오류 (HTTP ${String(res.status)})`,
+            `AI server error (HTTP ${String(res.status)})`,
+          ),
+        );
   }
   return AskResponseSchema.parse(body);
 }

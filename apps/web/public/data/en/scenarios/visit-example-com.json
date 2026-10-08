@@ -1,0 +1,693 @@
+{
+  "id": "visit-example-com",
+  "topologyId": "home-to-web",
+  "title": "Opening https://example.com in a browser",
+  "question": "What happens on the network when you type example.com into the browser's address bar?",
+  "beats": [
+    {
+      "id": "arp-request",
+      "narration": "To reach the internet, the laptop must first send its frames to the router (the default gateway, 192.168.0.1). It doesn't know the router's MAC address yet, so it asks everyone on the local network with ARP.",
+      "hops": [
+        {
+          "path": ["laptop", "r-home"],
+          "packet": {
+            "protocol": "ARP",
+            "summary": "Who has 192.168.0.1?",
+            "layers": [
+              {
+                "name": "Ethernet",
+                "fields": {
+                  "src": "3c:22:fb:10:00:10",
+                  "dst": "ff:ff:ff:ff:ff:ff (broadcast)",
+                  "type": "ARP"
+                }
+              },
+              {
+                "name": "ARP",
+                "fields": {
+                  "op": "request",
+                  "sender": "192.168.0.10",
+                  "target": "192.168.0.1"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "arp-reply",
+      "narration": "The router replies with its MAC address. The laptop stores it in its ARP cache and uses it as the destination MAC for every frame that follows.",
+      "hops": [
+        {
+          "path": ["r-home", "laptop"],
+          "packet": {
+            "protocol": "ARP",
+            "summary": "192.168.0.1 is me",
+            "layers": [
+              {
+                "name": "Ethernet",
+                "fields": {
+                  "src": "58:86:94:00:00:01",
+                  "dst": "3c:22:fb:10:00:10",
+                  "type": "ARP"
+                }
+              },
+              {
+                "name": "ARP",
+                "fields": {
+                  "op": "reply",
+                  "sender": "192.168.0.1 = 58:86:94:00:00:01",
+                  "target": "192.168.0.10"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "laptop",
+          "text": "Saved to ARP cache: 192.168.0.1 → 58:86:94:00:00:01",
+          "kind": "lookup"
+        }
+      ]
+    },
+    {
+      "id": "dns-query-lan",
+      "narration": "Next, the laptop needs example.com's IP address, so it sends a query to the DNS server at 8.8.8.8. The destination IP is 8.8.8.8, but the destination MAC is the very next device: the router.",
+      "hops": [
+        {
+          "path": ["laptop", "r-home"],
+          "packet": {
+            "protocol": "DNS",
+            "summary": "A record for example.com?",
+            "layers": [
+              {
+                "name": "Ethernet",
+                "fields": {
+                  "src": "3c:22:fb:10:00:10",
+                  "dst": "58:86:94:00:00:01"
+                }
+              },
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "192.168.0.10",
+                  "dst": "8.8.8.8",
+                  "ttl": "64"
+                }
+              },
+              {
+                "name": "UDP",
+                "fields": {
+                  "srcPort": "52011",
+                  "dstPort": "53"
+                }
+              },
+              {
+                "name": "DNS",
+                "fields": {
+                  "id": "0x1a2b",
+                  "question": "example.com A"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dns-query-wan",
+      "narration": "The router can't send a private IP out to the internet, so it uses NAT to replace the source with its own public IP. At every router the MAC addresses are rewritten and the TTL drops by 1, but the destination IP stays the same.",
+      "hops": [
+        {
+          "path": ["r-home", "r-isp", "internet", "dns"],
+          "packet": {
+            "protocol": "DNS",
+            "summary": "A record for example.com?",
+            "layers": [
+              {
+                "name": "Ethernet",
+                "fields": {
+                  "src": "58:86:94:00:00:02",
+                  "dst": "00:1b:54:aa:00:01",
+                  "note": "Rewritten at every router"
+                }
+              },
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "211.234.10.5",
+                  "dst": "8.8.8.8",
+                  "ttl": "63"
+                }
+              },
+              {
+                "name": "UDP",
+                "fields": {
+                  "srcPort": "40001",
+                  "dstPort": "53"
+                }
+              },
+              {
+                "name": "DNS",
+                "fields": {
+                  "id": "0x1a2b",
+                  "question": "example.com A"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "r-home",
+          "text": "NAT: 192.168.0.10:52011 → 211.234.10.5:40001",
+          "kind": "rewrite"
+        },
+        {
+          "node": "r-isp",
+          "text": "Routing table lookup: 8.8.8.0/24 → core network",
+          "kind": "lookup"
+        }
+      ]
+    },
+    {
+      "id": "dns-response-wan",
+      "narration": "The DNS resolver answers that example.com is at 93.184.216.34. The response comes back to the router's public IP on NAT port 40001.",
+      "hops": [
+        {
+          "path": ["dns", "internet", "r-isp", "r-home"],
+          "packet": {
+            "protocol": "DNS",
+            "summary": "example.com = 93.184.216.34",
+            "layers": [
+              {
+                "name": "Ethernet",
+                "fields": {
+                  "src": "00:1b:54:aa:00:01",
+                  "dst": "58:86:94:00:00:02"
+                }
+              },
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "8.8.8.8",
+                  "dst": "211.234.10.5",
+                  "ttl": "117"
+                }
+              },
+              {
+                "name": "UDP",
+                "fields": {
+                  "srcPort": "53",
+                  "dstPort": "40001"
+                }
+              },
+              {
+                "name": "DNS",
+                "fields": {
+                  "id": "0x1a2b",
+                  "answer": "example.com A 93.184.216.34",
+                  "ttl": "3600"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "dns",
+          "text": "Looked up example.com in cache",
+          "kind": "lookup"
+        }
+      ]
+    },
+    {
+      "id": "dns-response-lan",
+      "narration": "The router checks its NAT table, sees that this response belongs to port 52011 on the laptop, and rewrites the address back.",
+      "hops": [
+        {
+          "path": ["r-home", "laptop"],
+          "packet": {
+            "protocol": "DNS",
+            "summary": "example.com = 93.184.216.34",
+            "layers": [
+              {
+                "name": "Ethernet",
+                "fields": {
+                  "src": "58:86:94:00:00:01",
+                  "dst": "3c:22:fb:10:00:10"
+                }
+              },
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "8.8.8.8",
+                  "dst": "192.168.0.10",
+                  "ttl": "116"
+                }
+              },
+              {
+                "name": "UDP",
+                "fields": {
+                  "srcPort": "53",
+                  "dstPort": "52011"
+                }
+              },
+              {
+                "name": "DNS",
+                "fields": {
+                  "id": "0x1a2b",
+                  "answer": "example.com A 93.184.216.34"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "r-home",
+          "text": "Reverse NAT: 211.234.10.5:40001 → 192.168.0.10:52011",
+          "kind": "rewrite"
+        }
+      ]
+    },
+    {
+      "id": "tcp-syn",
+      "narration": "HTTPS runs on top of TCP. The laptop sends a SYN to port 443 on 93.184.216.34 to open a connection (step 1 of the three-way handshake).",
+      "hops": [
+        {
+          "path": ["laptop", "r-home", "r-isp", "internet", "lb"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN",
+            "layers": [
+              {
+                "name": "Ethernet",
+                "fields": {
+                  "src": "3c:22:fb:10:00:10",
+                  "dst": "58:86:94:00:00:01",
+                  "note": "As seen on the first hop"
+                }
+              },
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "192.168.0.10 (211.234.10.5 after the router)",
+                  "dst": "93.184.216.34"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "52012",
+                  "dstPort": "443",
+                  "flags": "SYN",
+                  "seq": "1000"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "r-home",
+          "text": "NAT: 192.168.0.10:52012 → 211.234.10.5:40002",
+          "kind": "rewrite"
+        }
+      ]
+    },
+    {
+      "id": "tcp-syn-ack",
+      "narration": "The load balancer accepts the connection and replies with a SYN-ACK (step 2). The ack number is the other side's seq plus 1.",
+      "hops": [
+        {
+          "path": ["lb", "internet", "r-isp", "r-home", "laptop"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "SYN-ACK",
+            "layers": [
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "93.184.216.34",
+                  "dst": "211.234.10.5 (192.168.0.10 after the router)"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "443",
+                  "dstPort": "40002 → 52012",
+                  "flags": "SYN, ACK",
+                  "seq": "5000",
+                  "ack": "1001"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "tcp-ack",
+      "narration": "When the laptop sends an ACK, the three-way handshake is complete and the connection is open (ESTABLISHED) on both sides.",
+      "hops": [
+        {
+          "path": ["laptop", "r-home", "r-isp", "internet", "lb"],
+          "packet": {
+            "protocol": "TCP",
+            "summary": "ACK",
+            "layers": [
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "192.168.0.10",
+                  "dst": "93.184.216.34"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "52012",
+                  "dstPort": "443",
+                  "flags": "ACK",
+                  "seq": "1001",
+                  "ack": "5001"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "lb",
+          "text": "Connection state: ESTABLISHED",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "tls-client-hello",
+      "narration": "Now an encrypted channel is set up. The laptop sends a ClientHello listing the TLS versions and cipher suites it supports, plus the domain it wants to reach (SNI).",
+      "hops": [
+        {
+          "path": ["laptop", "r-home", "r-isp", "internet", "lb"],
+          "packet": {
+            "protocol": "TLS",
+            "summary": "ClientHello",
+            "layers": [
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "192.168.0.10",
+                  "dst": "93.184.216.34"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "52012",
+                  "dstPort": "443"
+                }
+              },
+              {
+                "name": "TLS",
+                "fields": {
+                  "type": "ClientHello",
+                  "version": "TLS 1.3",
+                  "sni": "example.com",
+                  "keyShare": "X25519 public key"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "tls-server-hello",
+      "narration": "The load balancer sends a ServerHello and its certificate. The browser checks that a trusted authority issued the certificate for example.com, and both sides use the exchanged keys to compute the same session key.",
+      "hops": [
+        {
+          "path": ["lb", "internet", "r-isp", "r-home", "laptop"],
+          "packet": {
+            "protocol": "TLS",
+            "summary": "ServerHello + certificate",
+            "layers": [
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "93.184.216.34",
+                  "dst": "192.168.0.10"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "443",
+                  "dstPort": "52012"
+                }
+              },
+              {
+                "name": "TLS",
+                "fields": {
+                  "type": "ServerHello, Certificate, Finished",
+                  "cipher": "TLS_AES_128_GCM_SHA256",
+                  "certificate": "CN=example.com"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "laptop",
+          "text": "Certificate verified → session key computed",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "http-get",
+      "narration": "The HTTP request travels inside the encrypted channel. The home router and ISP router in between can see only the IP and TCP headers, not which page was requested.",
+      "hops": [
+        {
+          "path": ["laptop", "r-home", "r-isp", "internet", "lb"],
+          "packet": {
+            "protocol": "HTTP",
+            "summary": "GET /",
+            "layers": [
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "192.168.0.10",
+                  "dst": "93.184.216.34"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "52012",
+                  "dstPort": "443"
+                }
+              },
+              {
+                "name": "TLS",
+                "fields": {
+                  "type": "Application Data",
+                  "note": "Everything below is encrypted"
+                }
+              },
+              {
+                "name": "HTTP",
+                "fields": {
+                  "method": "GET",
+                  "path": "/",
+                  "host": "example.com"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "lb",
+          "text": "TLS decrypted → web server 1 chosen by round robin",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "lb-forward",
+      "narration": "The load balancer forwards the request to web server 1. Meanwhile, it sends a health check to web server 2 to make sure it's still up. Inside the data center, private IPs are used.",
+      "hops": [
+        {
+          "path": ["lb", "web-1"],
+          "packet": {
+            "protocol": "HTTP",
+            "summary": "GET /",
+            "layers": [
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "10.0.1.1",
+                  "dst": "10.0.1.11"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "33100",
+                  "dstPort": "8080"
+                }
+              },
+              {
+                "name": "HTTP",
+                "fields": {
+                  "method": "GET",
+                  "path": "/",
+                  "host": "example.com",
+                  "x-forwarded-for": "211.234.10.5"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "path": ["lb", "web-2"],
+          "packet": {
+            "protocol": "HTTP",
+            "summary": "GET /healthz",
+            "layers": [
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "10.0.1.1",
+                  "dst": "10.0.1.12"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "33101",
+                  "dstPort": "8080"
+                }
+              },
+              {
+                "name": "HTTP",
+                "fields": {
+                  "method": "GET",
+                  "path": "/healthz"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "web-response",
+      "narration": "Web server 1 builds the HTML page and sends it back to the load balancer.",
+      "hops": [
+        {
+          "path": ["web-1", "lb"],
+          "packet": {
+            "protocol": "HTTP",
+            "summary": "200 OK (HTML)",
+            "layers": [
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "10.0.1.11",
+                  "dst": "10.0.1.1"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "8080",
+                  "dstPort": "33100"
+                }
+              },
+              {
+                "name": "HTTP",
+                "fields": {
+                  "status": "200 OK",
+                  "content-type": "text/html",
+                  "content-length": "1256"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "web-1",
+          "text": "Generated index.html",
+          "kind": "process"
+        }
+      ]
+    },
+    {
+      "id": "response-to-browser",
+      "narration": "The load balancer re-encrypts the response and sends it to the laptop. The packets retrace their path in reverse, and the browser parses the HTML and renders the page.",
+      "hops": [
+        {
+          "path": ["lb", "internet", "r-isp", "r-home", "laptop"],
+          "packet": {
+            "protocol": "HTTP",
+            "summary": "200 OK",
+            "layers": [
+              {
+                "name": "IP",
+                "fields": {
+                  "src": "93.184.216.34",
+                  "dst": "192.168.0.10"
+                }
+              },
+              {
+                "name": "TCP",
+                "fields": {
+                  "srcPort": "443",
+                  "dstPort": "52012"
+                }
+              },
+              {
+                "name": "TLS",
+                "fields": {
+                  "type": "Application Data",
+                  "note": "Everything below is encrypted"
+                }
+              },
+              {
+                "name": "HTTP",
+                "fields": {
+                  "status": "200 OK",
+                  "content-type": "text/html"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "nodeActions": [
+        {
+          "node": "laptop",
+          "text": "Browser renders the page",
+          "kind": "process"
+        }
+      ]
+    }
+  ]
+}

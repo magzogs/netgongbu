@@ -6,6 +6,7 @@ import {
   TopologyLibrary,
 } from '@netgongbu/ai';
 import type { AiHub } from '@netgongbu/llm/node';
+import { tr } from '@netgongbu/schema';
 import { dataDir, userPath } from './paths';
 
 export interface DesktopAi {
@@ -32,7 +33,11 @@ export async function createDesktopAi(
     maxAttempts: 3,
     maxQuestionLength: 500,
     noCredentialsMessage: () =>
-      hub.status().notReady ?? 'AI에게 질문 → 연결 설정에서 ChatGPT나 Claude를 연결하세요.',
+      hub.status().notReady ??
+      tr(
+        'AI에게 질문 → 연결 설정에서 ChatGPT나 Claude를 연결하세요.',
+        'Connect ChatGPT or Claude under Ask the AI → Connection settings.',
+      ),
     log,
   });
   return { service, topologies, fake };

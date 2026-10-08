@@ -1,5 +1,5 @@
 import { useMemo, type ReactElement } from 'react';
-import type { Layer } from '@netgongbu/schema';
+import { tr, type Layer } from '@netgongbu/schema';
 import { changedFields, fieldKey, previousLeg, type FieldChanges } from '../engine/packetDiff';
 import { PROTOCOL_COLORS } from '../scene/theme';
 import { useViewer } from '../store/viewer';
@@ -34,7 +34,9 @@ function Layers({ layers, depth, changes }: LayersProps): ReactElement | null {
                       {SOURCE_NAMES[source]}
                     </span>
                   )}
-                  {was !== undefined && <span className="field__was">이전 {was}</span>}
+                  {was !== undefined && (
+                    <span className="field__was">{tr(`이전 ${was}`, `was ${was}`)}</span>
+                  )}
                 </dd>
               </div>
             );
@@ -70,7 +72,12 @@ export function PacketDetails(): ReactElement {
     [previous, hop],
   );
 
-  if (!hop) return <p className="muted">이 단계에서는 이동하는 패킷이 없습니다.</p>;
+  if (!hop)
+    return (
+      <p className="muted">
+        {tr('이 단계에서는 이동하는 패킷이 없습니다.', 'No packet is moving at this step.')}
+      </p>
+    );
 
   const labelOf = (id: string): string => world?.index.nodes.get(id)?.label ?? id;
   const changedAt = previous?.path.at(-1);
@@ -103,18 +110,25 @@ export function PacketDetails(): ReactElement {
         <button
           type="button"
           className="text-button packet-details__lab"
-          title="모든 계층을 실제 바이트와 비트 단위 필드로 보기 (P)"
+          title={tr(
+            '모든 계층을 실제 바이트와 비트 단위 필드로 보기 (P)',
+            'See every layer as real bytes and bit-level fields (P)',
+          )}
           onClick={() => {
             openPacketLab(hopIndex);
           }}
         >
-          패킷 해부 ▸
+          {tr('패킷 해부 ▸', 'Packet anatomy ▸')}
         </button>
       </div>
       <p className="packet-details__path">{hop.path.map(labelOf).join(' → ')}</p>
       {changes.size > 0 && changedAt && (
         <p className="packet-details__hint">
-          <span className="swatch" /> {labelOf(changedAt)} 통과 후 바뀐 값
+          <span className="swatch" />{' '}
+          {tr(
+            `${labelOf(changedAt)} 통과 후 바뀐 값`,
+            `Values changed after passing ${labelOf(changedAt)}`,
+          )}
         </p>
       )}
       <Layers layers={hop.packet.layers} depth={0} changes={changes} />

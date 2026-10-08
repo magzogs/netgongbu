@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { tr } from '@netgongbu/schema';
 import type { ModelOption } from '../types';
 import { AiError, request, sseJson, type Fetch } from './http';
 import type { Answer, Ask, Provider, Turn } from './provider';
@@ -37,7 +38,7 @@ function content(turn: Turn): Content {
 
 export function localServer(baseUrl: string, apiKey?: string, fetchImpl: Fetch = fetch): Provider {
   const base = baseUrl.replace(/\/+$/, '');
-  const what = `LLM 서버(${baseUrl})`;
+  const what = tr(`LLM 서버(${baseUrl})`, `the LLM server (${baseUrl})`);
   const headers = {
     'content-type': 'application/json',
     ...(apiKey && { authorization: `Bearer ${apiKey}` }),
@@ -52,14 +53,19 @@ export function localServer(baseUrl: string, apiKey?: string, fetchImpl: Fetch =
         fetchImpl,
       );
       const parsed = ModelsSchema.safeParse(await res.json().catch(() => null));
-      if (!parsed.success) throw new AiError('모델 목록의 형식을 알 수 없습니다.', 'format');
+      if (!parsed.success)
+        throw new AiError(
+          tr('모델 목록의 형식을 알 수 없습니다.', 'The model list is in an unknown format.'),
+          'format',
+        );
       return parsed.data.data
         .map((m): ModelOption => ({ id: m.id, label: m.id, efforts: [] }))
         .sort((a, b) => a.id.localeCompare(b.id));
     },
 
     async ask(ask: Ask): Promise<Answer> {
-      if (!ask.model) throw new AiError('사용할 모델을 고르세요.', 'format');
+      if (!ask.model)
+        throw new AiError(tr('사용할 모델을 고르세요.', 'Choose a model to use.'), 'format');
       const res = await request(
         `${base}/chat/completions`,
         {
@@ -92,7 +98,10 @@ export function localServer(baseUrl: string, apiKey?: string, fetchImpl: Fetch =
         const chunk = ChunkSchema.safeParse(json);
         if (!chunk.success) return;
         const { error } = chunk.data;
-        if (error) throw new AiError(typeof error === 'string' ? error : (error.message ?? '오류'));
+        if (error)
+          throw new AiError(
+            typeof error === 'string' ? error : (error.message ?? tr('오류', 'Error')),
+          );
         model = chunk.data.model ?? model;
         const choice = chunk.data.choices?.[0];
         if (choice?.finish_reason === 'length') stop = 'max_tokens';

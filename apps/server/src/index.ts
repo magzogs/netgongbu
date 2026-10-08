@@ -1,5 +1,6 @@
 import { serve } from '@hono/node-server';
 import { connectedModel, ScenarioService, ScenarioStore, TopologyLibrary } from '@netgongbu/ai';
+import { tr } from '@netgongbu/schema';
 import { createApp } from './app';
 import { loadConfig } from './config';
 import { createHub } from './hub';
@@ -16,7 +17,8 @@ const scenarios = new ScenarioService({
   model: () => connectedModel(hub),
   maxAttempts: config.maxAttempts,
   maxQuestionLength: config.maxQuestionLength,
-  noCredentialsMessage: () => hub.status().notReady ?? 'AI 연결 설정을 확인하세요.',
+  noCredentialsMessage: () =>
+    hub.status().notReady ?? tr('AI 연결 설정을 확인하세요.', 'Check the AI connection settings.'),
   log,
 });
 const app = createApp({ scenarios, hub });

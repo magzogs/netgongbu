@@ -33,6 +33,7 @@ const api: LabApi = {
   },
   settings: {
     get: () => invoke(Channels.settingsGet),
+    setLocale: (locale) => invoke(Channels.settingsLocale, locale),
   },
   trace: {
     start: (request) => invoke(Channels.traceStart, request),

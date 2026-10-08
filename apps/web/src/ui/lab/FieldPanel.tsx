@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import type { ByteSource, DissectedLayer, Field } from '@netgongbu/protocols';
+import { tr } from '@netgongbu/schema';
 import { decimalOf, formatBits, type Radix } from './grid';
 import { SOURCE_HINTS, SOURCE_LABELS } from './theme';
 
@@ -22,7 +23,12 @@ function Raw({ field, bytes, radix }: { field: Field; bytes: Uint8Array; radix: 
     <dd className="fdetail__raw">
       {text}
       {shown < field.bitLength && (
-        <span className="muted"> … (전체 {Math.ceil(field.bitLength / 8)}바이트)</span>
+        <span className="muted">
+          {tr(
+            ` … (전체 ${String(Math.ceil(field.bitLength / 8))}바이트)`,
+            ` … (${String(Math.ceil(field.bitLength / 8))} bytes in total)`,
+          )}
+        </span>
       )}
     </dd>
   );
@@ -34,14 +40,17 @@ export function fieldPosition(field: Field, layer: DissectedLayer): string {
   const base = (inTrailer && layer.trailer ? layer.trailer.start : layer.start) * 8;
   const rel = field.bitOffset - base;
   const end = rel + field.bitLength - 1;
-  const where = inTrailer ? '트레일러' : '헤더';
+  const where = inTrailer ? tr('트레일러', 'trailer') : tr('헤더', 'header');
   const byte = Math.floor(rel / 8);
   const bit = rel % 8;
   const bits =
     field.bitLength % 8 === 0
-      ? `${String(field.bitLength / 8)}바이트`
-      : `${String(field.bitLength)}비트`;
-  return `${where}의 비트 ${String(rel)}–${String(end)} (바이트 ${String(byte)}${bit ? `의 ${String(bit)}번째 비트부터` : ''}) · ${bits}`;
+      ? tr(`${String(field.bitLength / 8)}바이트`, `${String(field.bitLength / 8)} bytes`)
+      : tr(`${String(field.bitLength)}비트`, `${String(field.bitLength)} bits`);
+  return tr(
+    `${where}의 비트 ${String(rel)}–${String(end)} (바이트 ${String(byte)}${bit ? `의 ${String(bit)}번째 비트부터` : ''}) · ${bits}`,
+    `Bits ${String(rel)}–${String(end)} of the ${where} (byte ${String(byte)}${bit ? `, from bit ${String(bit)}` : ''}) · ${bits}`,
+  );
 }
 
 interface DetailProps {
@@ -63,8 +72,10 @@ export function FieldDetail({ field, layer, bytes, pinned, onAsk }: DetailProps)
     return (
       <div className="fdetail fdetail--empty">
         <p>
-          구조도의 칸이나 아래 목록에 마우스를 올리면 그 필드가 몇 번째 비트부터 몇 비트인지, 실제
-          값과 뜻이 여기에 나옵니다. 누르면 고정되고, 고정한 필드는 AI에게 물어볼 수 있습니다.
+          {tr(
+            '구조도의 칸이나 아래 목록에 마우스를 올리면 그 필드가 몇 번째 비트부터 몇 비트인지, 실제 값과 뜻이 여기에 나옵니다. 누르면 고정되고, 고정한 필드는 AI에게 물어볼 수 있습니다.',
+            'Hover over a cell in the diagram or the list below to see where that field starts, how many bits it takes, its actual value, and what it means. Click to pin it; you can ask the AI about a pinned field.',
+          )}
         </p>
       </div>
     );
@@ -75,32 +86,32 @@ export function FieldDetail({ field, layer, bytes, pinned, onAsk }: DetailProps)
       <div className="fdetail__head">
         <strong>{field.name}</strong>
         <SourceBadge source={field.source} />
-        {pinned && <span className="fdetail__pin">📌 고정됨</span>}
+        {pinned && <span className="fdetail__pin">{tr('📌 고정됨', '📌 Pinned')}</span>}
         {pinned && onAsk && (
           <button
             type="button"
             className="text-button fdetail__ask"
-            title="AI에게 이 필드에 대해 묻습니다"
+            title={tr('AI에게 이 필드에 대해 묻습니다', 'Ask the AI about this field')}
             onClick={() => {
               onAsk(field);
             }}
           >
-            AI에게 묻기
+            {tr('AI에게 묻기', 'Ask AI')}
           </button>
         )}
       </div>
       <dl>
-        <dt>위치</dt>
+        <dt>{tr('위치', 'Position')}</dt>
         <dd>{fieldPosition(field, layer)}</dd>
-        <dt>값</dt>
+        <dt>{tr('값', 'Value')}</dt>
         <dd>{field.value || '—'}</dd>
-        <dt>16진수</dt>
+        <dt>{tr('16진수', 'Hex')}</dt>
         <Raw field={field} bytes={bytes} radix="hex" />
-        <dt>2진수</dt>
+        <dt>{tr('2진수', 'Binary')}</dt>
         <Raw field={field} bytes={bytes} radix="bin" />
         {decimal !== null && field.bitLength > 1 && (
           <>
-            <dt>10진수</dt>
+            <dt>{tr('10진수', 'Decimal')}</dt>
             <dd className="fdetail__raw">{decimal}</dd>
           </>
         )}

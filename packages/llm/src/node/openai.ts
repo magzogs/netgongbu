@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { tr } from '@netgongbu/schema';
 import type { ModelOption } from '../types';
 import { AiError, request, sseJson, type Fetch } from './http';
 import type { Answer, Ask, Provider, Turn } from './provider';
@@ -72,7 +73,11 @@ export function openaiApi(apiKey: string, fetchImpl: Fetch = fetch): Provider {
         fetchImpl,
       );
       const parsed = ModelsSchema.safeParse(await res.json().catch(() => null));
-      if (!parsed.success) throw new AiError('모델 목록의 형식을 알 수 없습니다.', 'format');
+      if (!parsed.success)
+        throw new AiError(
+          tr('모델 목록의 형식을 알 수 없습니다.', 'The model list is in an unknown format.'),
+          'format',
+        );
       return parsed.data.data
         .filter((m) => CHAT.test(m.id) && !NOT_CHAT.test(m.id) && !SNAPSHOT.test(m.id))
         .sort((a, b) => (b.created ?? 0) - (a.created ?? 0) || a.id.localeCompare(b.id))
@@ -85,7 +90,8 @@ export function openaiApi(apiKey: string, fetchImpl: Fetch = fetch): Provider {
     },
 
     async ask(ask: Ask): Promise<Answer> {
-      if (!ask.model) throw new AiError('사용할 모델을 고르세요.', 'format');
+      if (!ask.model)
+        throw new AiError(tr('사용할 모델을 고르세요.', 'Choose a model to use.'), 'format');
       const res = await request(
         `${API}/responses`,
         {
@@ -109,7 +115,11 @@ export function openaiApi(apiKey: string, fetchImpl: Fetch = fetch): Provider {
         WHAT,
         fetchImpl,
       );
-      if (!res.body) throw new AiError('OpenAI API가 빈 응답을 보냈습니다.', 'format');
+      if (!res.body)
+        throw new AiError(
+          tr('OpenAI API가 빈 응답을 보냈습니다.', 'The OpenAI API sent an empty response.'),
+          'format',
+        );
       let text = '';
       let stop: Answer['stop'] = 'end';
       let model: string | null = null;
@@ -129,9 +139,12 @@ export function openaiApi(apiKey: string, fetchImpl: Fetch = fetch): Provider {
           stop =
             response?.incomplete_details?.reason === 'content_filter' ? 'refusal' : 'max_tokens';
         } else if (type === 'response.failed') {
-          throw new AiError(response?.error?.message ?? 'OpenAI API가 답하지 못했습니다.');
+          throw new AiError(
+            response?.error?.message ??
+              tr('OpenAI API가 답하지 못했습니다.', 'The OpenAI API could not answer.'),
+          );
         } else if (type === 'error') {
-          throw new AiError(event.data.message ?? 'OpenAI API 오류');
+          throw new AiError(event.data.message ?? tr('OpenAI API 오류', 'OpenAI API error'));
         }
       }
       return { text, stop, model };

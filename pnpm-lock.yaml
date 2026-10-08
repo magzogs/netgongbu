@@ -220,6 +220,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: 0.131.0
         version: 0.131.0(zod@4.6.5)
+      '@netgongbu/schema':
+        specifier: workspace:*
+        version: link:../schema
       zod:
         specifier: 4.6.5
         version: 4.6.5

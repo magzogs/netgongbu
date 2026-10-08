@@ -11,7 +11,7 @@ export interface Field {
   name: string;
   /** Value as shown to the learner, e.g. "64" or "SYN, ACK". */
   value: string;
-  /** What the field is for, in Korean. */
+  /** What the field is for, in the viewer's language. */
   meaning: string;
   source: ByteSource;
   /** Absolute bit offset in the bytes the field belongs to (frame or encrypted content). */

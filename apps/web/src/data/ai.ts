@@ -1,4 +1,5 @@
 import type { LabApi } from '@netgongbu/bridge';
+import { tr } from '@netgongbu/schema';
 import type {
   AiStatus,
   ChatEvent,
@@ -8,6 +9,7 @@ import type {
   PrefsChange,
   ProviderId,
 } from '@netgongbu/llm';
+import { localeHeaders } from '../i18n';
 import { lab } from './backend';
 
 /**
@@ -78,17 +80,17 @@ function viaMain(api: LabApi): AiClient {
 }
 
 const API = `${import.meta.env.BASE_URL}api/ai`;
-const OFFLINE = 'AI 서버에 연결하지 못했습니다. 저장소 루트에서 pnpm dev로 함께 실행하세요.';
+const OFFLINE = tr(
+  'AI 서버에 연결하지 못했습니다. 저장소 루트에서 pnpm dev로 함께 실행하세요.',
+  'Could not connect to the AI server. Start them together with pnpm dev from the repository root.',
+);
 
 async function call<T>(path: string, init?: { body: unknown }): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${API}${path}`, {
-      ...(init && {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(init.body),
-      }),
+      headers: { ...localeHeaders, ...(init && { 'content-type': 'application/json' }) },
+      ...(init && { method: 'POST', body: JSON.stringify(init.body) }),
     });
   } catch {
     throw new Error(OFFLINE);
@@ -132,7 +134,7 @@ const viaServer: AiClient = {
     try {
       res = await fetch(`${API}/chat`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...localeHeaders },
         body: JSON.stringify({ id: newId(), messages }),
         signal,
       });

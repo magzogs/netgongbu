@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { mkdirSync } from 'node:fs';
+import { tr } from '@netgongbu/schema';
 import {
   CLI_PROVIDERS,
   EMPTY_PREFS,
@@ -136,26 +137,35 @@ export class AiHub {
 
   private whyNotReady(): string | null {
     const provider = this.prefs.provider;
-    if (!provider) return '연결된 AI가 없습니다. 연결 설정에서 ChatGPT나 Claude를 연결하세요.';
+    if (!provider)
+      return tr(
+        '연결된 AI가 없습니다. 연결 설정에서 ChatGPT나 Claude를 연결하세요.',
+        'No AI is connected. Connect ChatGPT or Claude in the connection settings.',
+      );
     const info = PROVIDERS[provider];
     const prefs = prefsFor(this.prefs, provider);
     if (prefs.method === 'api') {
-      if (provider === 'local') return prefs.baseUrl ? null : '로컬 서버 주소를 입력하세요.';
+      if (provider === 'local')
+        return prefs.baseUrl
+          ? null
+          : tr('로컬 서버 주소를 입력하세요.', 'Enter the local server address.');
       // The model is picked from the list once the key works.
-      return this.options.secrets.get(provider) ? null : `${info.label} API 키를 입력하세요.`;
+      return this.options.secrets.get(provider)
+        ? null
+        : tr(`${info.label} API 키를 입력하세요.`, `Enter your ${info.label} API key.`);
     }
     const cliName = info.cli?.name ?? 'CLI';
     const cli = this.cli[provider as CliProvider];
     if (!cli.path) {
       return this.detecting.has(provider as CliProvider)
-        ? `${cliName}를 찾는 중입니다…`
-        : `${cliName}가 설치되어 있지 않습니다.`;
+        ? tr(`${cliName}를 찾는 중입니다…`, `Looking for ${cliName}…`)
+        : tr(`${cliName}가 설치되어 있지 않습니다.`, `${cliName} is not installed.`);
     }
     const account = this.accounts[provider as CliProvider];
     if (account.state === 'signed-out') {
       return prefs.method === 'oauth'
-        ? `${info.label} 계정으로 로그인하세요.`
-        : `${cliName}에 로그인되어 있지 않습니다.`;
+        ? tr(`${info.label} 계정으로 로그인하세요.`, `Sign in with your ${info.label} account.`)
+        : tr(`${cliName}에 로그인되어 있지 않습니다.`, `${cliName} is not signed in.`);
     }
     return null;
   }
@@ -208,7 +218,11 @@ export class AiHub {
 
   private codexCli(): CodexAppServer {
     const path = this.cli.openai.path;
-    if (!path) throw new AiError('Codex CLI가 설치되어 있지 않습니다.', 'connect');
+    if (!path)
+      throw new AiError(
+        tr('Codex CLI가 설치되어 있지 않습니다.', 'Codex CLI is not installed.'),
+        'connect',
+      );
     if (this.codex?.path !== path) {
       this.codex?.stop();
       this.codex = new CodexAppServer(path, { cwd: this.options.workDir, log: this.options.log });
@@ -218,7 +232,11 @@ export class AiHub {
 
   private claudeCli(): ClaudeCli {
     const path = this.cli.anthropic.path;
-    if (!path) throw new AiError('Claude Code가 설치되어 있지 않습니다.', 'connect');
+    if (!path)
+      throw new AiError(
+        tr('Claude Code가 설치되어 있지 않습니다.', 'Claude Code is not installed.'),
+        'connect',
+      );
     if (this.claude?.path !== path) {
       this.claude = new ClaudeCli(path, { cwd: this.options.workDir, log: this.options.log });
     }
@@ -235,14 +253,25 @@ export class AiHub {
 
   private key(provider: ProviderId): string {
     const key = this.options.secrets.get(provider)?.key;
-    if (!key) throw new AiError(`${PROVIDERS[provider].label} API 키를 입력하세요.`, 'auth');
+    if (!key)
+      throw new AiError(
+        tr(
+          `${PROVIDERS[provider].label} API 키를 입력하세요.`,
+          `Enter your ${PROVIDERS[provider].label} API key.`,
+        ),
+        'auth',
+      );
     return key;
   }
 
   private async providerFor(provider: ProviderId): Promise<Provider> {
     const prefs = prefsFor(this.prefs, provider);
     if (provider === 'local') {
-      if (!prefs.baseUrl) throw new AiError('로컬 서버 주소를 입력하세요.', 'format');
+      if (!prefs.baseUrl)
+        throw new AiError(
+          tr('로컬 서버 주소를 입력하세요.', 'Enter the local server address.'),
+          'format',
+        );
       return localServer(
         prefs.baseUrl,
         this.options.secrets.get('local')?.key,
@@ -287,7 +316,10 @@ export class AiHub {
         ok: false,
         error:
           err instanceof Error && err.name === 'TimeoutError'
-            ? '모델 목록을 가져오는 데 시간이 너무 오래 걸립니다.'
+            ? tr(
+                '모델 목록을 가져오는 데 시간이 너무 오래 걸립니다.',
+                'Fetching the model list is taking too long.',
+              )
             : message(err),
       };
     }
@@ -331,7 +363,10 @@ export class AiHub {
         next.cliPath = change.cliPath;
       } else {
         throw new AiError(
-          `${PROVIDERS[provider].cli?.command ?? ''} 실행 파일의 전체 경로를 입력하세요.`,
+          tr(
+            `${PROVIDERS[provider].cli?.command ?? ''} 실행 파일의 전체 경로를 입력하세요.`,
+            `Enter the full path to the ${PROVIDERS[provider].cli?.command ?? ''} executable.`,
+          ),
           'format',
         );
       }
@@ -369,7 +404,7 @@ export class AiHub {
         this.login = { provider, running: true, url, error: null };
         this.cancelLogin = () => {
           void codex.cancelLogin(loginId);
-          done('로그인을 취소했습니다.');
+          done(tr('로그인을 취소했습니다.', 'Sign-in canceled.'));
         };
         this.options.openExternal(url);
       } else {
@@ -443,7 +478,8 @@ export class AiHub {
   private active(): { provider: ProviderId; prefs: ProviderPrefs } {
     const provider = this.prefs.provider;
     const why = this.whyNotReady();
-    if (!provider || why) throw new AiError(why ?? '연결된 AI가 없습니다.', 'auth');
+    if (!provider || why)
+      throw new AiError(why ?? tr('연결된 AI가 없습니다.', 'No AI is connected.'), 'auth');
     return { provider, prefs: prefsFor(this.prefs, provider) };
   }
 
@@ -465,7 +501,10 @@ export class AiHub {
       onText,
     });
     if (answer.stop === 'refusal' && !answer.text)
-      throw new AiError('AI가 이 질문에 대한 답을 거절했습니다.', 'refused');
+      throw new AiError(
+        tr('AI가 이 질문에 대한 답을 거절했습니다.', 'The AI declined to answer this question.'),
+        'refused',
+      );
     return { model: answer.model };
   }
 

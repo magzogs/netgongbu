@@ -5,7 +5,7 @@ import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { createGunzip } from 'node:zlib';
 import maxmind, { type CityResponse, type Reader } from 'maxmind';
-import type { Geo } from '@netgongbu/schema';
+import { tr, type Geo } from '@netgongbu/schema';
 
 export const GEO_ATTRIBUTION = 'IP Geolocation by DB-IP (db-ip.com), CC BY 4.0';
 const FILE = 'dbip-city-lite.mmdb';
@@ -107,6 +107,11 @@ export class GeoIpDb {
       await this.open();
       return month;
     }
-    throw new Error(`위치 데이터베이스를 내려받지 못했습니다 (${lastError}).`);
+    throw new Error(
+      tr(
+        `위치 데이터베이스를 내려받지 못했습니다 (${lastError}).`,
+        `Could not download the location database (${lastError}).`,
+      ),
+    );
   }
 }

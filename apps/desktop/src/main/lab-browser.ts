@@ -1,5 +1,6 @@
 import { app, session, WebContentsView, type BrowserWindow, type Session } from 'electron';
 import type { Rect } from '@netgongbu/bridge';
+import { tr } from '@netgongbu/schema';
 import { collectRequests, type CdpEvent } from '@netgongbu/trace';
 import type { PageCapture } from './trace/run';
 
@@ -15,7 +16,9 @@ export function normalizeInput(input: string): URL {
   const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text}`;
   const url = new URL(withScheme);
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new Error('http 또는 https 주소만 열 수 있습니다.');
+    throw new Error(
+      tr('http 또는 https 주소만 열 수 있습니다.', 'Only http or https addresses can be opened.'),
+    );
   }
   return url;
 }

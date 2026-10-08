@@ -1,6 +1,7 @@
 import {
   geoToPosition,
   surfacePatch,
+  tr,
   type Geo,
   type Globe,
   type NetLink,
@@ -115,7 +116,10 @@ function internetPath(
     const last = entries.at(-1);
     if (hop.ip === null && last?.hop === null) {
       last.silentCount += 1;
-      last.label = `응답 없음 #${String(Number(last.id.split('-').pop()))}–${String(hop.ttl)}`;
+      last.label = tr(
+        `응답 없음 #${String(Number(last.id.split('-').pop()))}–${String(hop.ttl)}`,
+        `No reply #${String(Number(last.id.split('-').pop()))}–${String(hop.ttl)}`,
+      );
       continue;
     }
     // "MERCURYNZ-AS-AP - Mercury NZ Limited" → "MERCURYNZ", "IP-Max - IP-Max SA" → "IP-Max".
@@ -125,8 +129,8 @@ function internetPath(
       hop: hop.ip === null ? null : hop,
       label:
         hop.ip === null
-          ? `응답 없음 #${String(hop.ttl)}`
-          : `${asnName ?? '라우터'} #${String(hop.ttl)}`,
+          ? tr(`응답 없음 #${String(hop.ttl)}`, `No reply #${String(hop.ttl)}`)
+          : `${asnName ?? tr('라우터', 'Router')} #${String(hop.ttl)}`,
       silentCount: hop.ip === null ? 1 : 0,
     });
   }
@@ -136,12 +140,25 @@ function internetPath(
 function hopDescription(entry: PathEntry): string {
   if (!entry.hop) {
     return entry.silentCount > 1
-      ? `라우터 ${String(entry.silentCount)}개가 traceroute에 응답하지 않았습니다(ICMP 응답을 막거나 줄이는 설정). 패킷 자체는 정상적으로 지나갑니다.`
-      : '이 라우터는 traceroute에 응답하지 않았습니다(ICMP 응답을 막거나 줄이는 설정). 패킷 자체는 정상적으로 지나갑니다.';
+      ? tr(
+          `라우터 ${String(entry.silentCount)}개가 traceroute에 응답하지 않았습니다(ICMP 응답을 막거나 줄이는 설정). 패킷 자체는 정상적으로 지나갑니다.`,
+          `${String(entry.silentCount)} routers did not answer traceroute (they block or rate-limit ICMP replies). Packets still pass through them normally.`,
+        )
+      : tr(
+          '이 라우터는 traceroute에 응답하지 않았습니다(ICMP 응답을 막거나 줄이는 설정). 패킷 자체는 정상적으로 지나갑니다.',
+          'This router did not answer traceroute (it blocks or rate-limits ICMP replies). Packets still pass through it normally.',
+        );
   }
-  const parts = [`traceroute ${String(entry.hop.ttl)}번째 홉`];
+  const parts = [
+    tr(`traceroute ${String(entry.hop.ttl)}번째 홉`, `Traceroute hop ${String(entry.hop.ttl)}`),
+  ];
   if (entry.hop.ip && isNonPublic(entry.hop.ip)) {
-    parts.push('통신사 내부 주소(공인 IP가 아님)라 위치와 소유자를 알 수 없습니다');
+    parts.push(
+      tr(
+        '통신사 내부 주소(공인 IP가 아님)라 위치와 소유자를 알 수 없습니다',
+        'An internal ISP address (not a public IP), so its location and owner are unknown',
+      ),
+    );
   }
   return `${parts.join('. ')}.`;
 }
@@ -337,45 +354,62 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
 
   // Inside the computer (positions relative to the cluster; placed below).
   const device: [string, NetNode['type'], string, [number, number], string][] = [
-    ['d-browser', 'browser', '브라우저', [-7, 0], report.userAgent],
+    ['d-browser', 'browser', tr('브라우저', 'Browser'), [-7, 0], report.userAgent],
     [
       'd-resolver',
       'os',
-      'OS DNS 리졸버',
+      tr('OS DNS 리졸버', 'OS DNS resolver'),
       [-4, -3.5],
-      `운영체제가 이름을 주소로 바꾸는 부분. 설정된 DNS 서버: ${local.dnsServers.join(', ') || '알 수 없음'}`,
+      tr(
+        `운영체제가 이름을 주소로 바꾸는 부분. 설정된 DNS 서버: ${local.dnsServers.join(', ') || '알 수 없음'}`,
+        `The part of the OS that turns names into addresses. Configured DNS servers: ${local.dnsServers.join(', ') || 'unknown'}`,
+      ),
     ],
     [
       'd-stack',
       'os',
-      'TCP/IP 스택',
+      tr('TCP/IP 스택', 'TCP/IP stack'),
       [-1.5, 0],
-      '커널 안의 네트워크 구현: 소켓, 포트 할당, TCP 세그먼트와 IP 패킷 조립',
+      tr(
+        '커널 안의 네트워크 구현: 소켓, 포트 할당, TCP 세그먼트와 IP 패킷 조립',
+        'The networking code inside the kernel: sockets, port assignment, building TCP segments and IP packets',
+      ),
     ],
     [
       'd-route',
       'os',
-      '라우팅 테이블',
+      tr('라우팅 테이블', 'Routing table'),
       [1.5, -3.5],
-      local.defaultRoute ?? '기본 경로를 읽지 못했습니다',
+      local.defaultRoute ?? tr('기본 경로를 읽지 못했습니다', 'Could not read the default route'),
     ],
     [
       'd-arp',
       'os',
-      'ARP 캐시',
+      tr('ARP 캐시', 'ARP cache'),
       [1.5, 3.5],
       local.gateway?.mac
         ? `${local.gateway.ip} → ${local.gateway.mac}`
-        : '게이트웨이의 MAC 주소를 읽지 못했습니다',
+        : tr('게이트웨이의 MAC 주소를 읽지 못했습니다', "Could not read the gateway's MAC address"),
     ],
     [
       'd-nic',
       'nic',
-      wifi ? `Wi-Fi (${local.interface?.name ?? '?'})` : `이더넷 (${local.interface?.name ?? '?'})`,
+      wifi
+        ? `Wi-Fi (${local.interface?.name ?? '?'})`
+        : tr(
+            `이더넷 (${local.interface?.name ?? '?'})`,
+            `Ethernet (${local.interface?.name ?? '?'})`,
+          ),
       [4.5, 0],
       wifi
-        ? '무선 랜카드: 프레임을 802.11 형식으로 전파에 실어 보냅니다'
-        : '유선 랜카드: 이더넷 프레임을 케이블로 보냅니다',
+        ? tr(
+            '무선 랜카드: 프레임을 802.11 형식으로 전파에 실어 보냅니다',
+            'Wireless network card: sends frames over the air in 802.11 format',
+          )
+        : tr(
+            '유선 랜카드: 이더넷 프레임을 케이블로 보냅니다',
+            'Wired network card: sends Ethernet frames over the cable',
+          ),
     ],
   ];
   // On a globe the home and the computer are small maps laid onto the surface at the learner's
@@ -425,10 +459,13 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
     {
       id: 'h-router',
       type: 'router',
-      label: '공유기',
+      label: tr('공유기', 'Home router'),
       pos: homeAt(-1),
       zone: 'z-home',
-      description: '기본 게이트웨이. 집 안의 사설 IP를 공인 IP로 바꾸는 NAT도 합니다.',
+      description: tr(
+        '기본 게이트웨이. 집 안의 사설 IP를 공인 IP로 바꾸는 NAT도 합니다.',
+        'The default gateway. It also does NAT, turning the private IPs at home into a public IP.',
+      ),
       ...(local.gateway && {
         interfaces: [
           {
@@ -442,12 +479,14 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
     {
       id: 'h-modem',
       type: 'modem',
-      label: '모뎀 / ONT',
+      label: tr('모뎀 / ONT', 'Modem / ONT'),
       pos: homeAt(1),
       zone: 'z-home',
       source: 'typical',
-      description:
+      description: tr(
         '통신사 회선(광케이블·동축)의 신호를 이더넷으로 바꾸는 장비. IP 라우터가 아니라서 traceroute에 나타나지 않습니다. 공유기와 한 기기인 경우도 많습니다.',
+        "Converts the signal on the ISP's line (fibre or coax) to Ethernet. It is not an IP router, so it does not show up in traceroute. Often it is the same box as the home router.",
+      ),
     },
   );
   link('d-nic', 'h-router', wifi ? 'wifi' : 'ethernet');
@@ -478,10 +517,23 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
     label: cdn ? `${host} (${cdn})` : host,
     pos: [0, 0, 0],
     description: [
-      `페이지를 보낸 서버${target ? ` ${target}` : ''}.`,
-      main?.protocol ? `프로토콜 ${main.protocol}.` : '',
-      cdn ? `응답 헤더로 보아 ${cdn} CDN의 서버입니다.` : '',
-      report.path.complete ? '' : 'traceroute가 이 서버까지 닿지 못해 마지막 구간은 추정입니다.',
+      tr(
+        `페이지를 보낸 서버${target ? ` ${target}` : ''}.`,
+        `The server that sent the page${target ? ` (${target})` : ''}.`,
+      ),
+      main?.protocol ? tr(`프로토콜 ${main.protocol}.`, `Protocol ${main.protocol}.`) : '',
+      cdn
+        ? tr(
+            `응답 헤더로 보아 ${cdn} CDN의 서버입니다.`,
+            `Judging by the response headers, it is a ${cdn} CDN server.`,
+          )
+        : '',
+      report.path.complete
+        ? ''
+        : tr(
+            'traceroute가 이 서버까지 닿지 못해 마지막 구간은 추정입니다.',
+            'Traceroute did not reach this server, so the last stretch is a guess.',
+          ),
       geoNotes.get('n-server') ?? '',
     ]
       .filter(Boolean)
@@ -507,11 +559,20 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
     nodes.push({
       id: 'n-dns',
       type: 'dns',
-      label: dnsIsLocalStub || !dnsServer ? 'DNS 서버 (추정)' : `DNS ${dnsServer}`,
+      label:
+        dnsIsLocalStub || !dnsServer
+          ? tr('DNS 서버 (추정)', 'DNS server (assumed)')
+          : `DNS ${dnsServer}`,
       pos: [0, 0, 0],
       description: dnsIsLocalStub
-        ? `운영체제의 로컬 DNS 중계(${dnsServer})가 실제로 묻는 상위 DNS 서버. 주소는 측정하지 못했습니다.`
-        : `노트북에 설정된 DNS 서버${dnsServer ? ` ${dnsServer}` : ''}.`,
+        ? tr(
+            `운영체제의 로컬 DNS 중계(${dnsServer})가 실제로 묻는 상위 DNS 서버. 주소는 측정하지 못했습니다.`,
+            `The upstream DNS server that the OS's local DNS relay (${dnsServer}) actually asks. Its address was not measured.`,
+          )
+        : tr(
+            `노트북에 설정된 DNS 서버${dnsServer ? ` ${dnsServer}` : ''}.`,
+            `The DNS server configured on the laptop${dnsServer ? ` (${dnsServer})` : ''}.`,
+          ),
       ...(dnsServer && !dnsIsLocalStub && { interfaces: [{ name: 'ip', ip: dnsServer }] }),
       ...((dnsIsLocalStub || !dnsServer) && { source: 'typical' as const }),
     });
@@ -550,7 +611,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
     zones = [
       {
         id: 'z-device',
-        label: '노트북 내부',
+        label: tr('노트북 내부', 'Inside the laptop'),
         color: '#c2410c',
         bounds: deviceBounds,
         elevation: SURFACE_LIFT,
@@ -558,7 +619,7 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
       },
       {
         id: 'z-home',
-        label: '집',
+        label: tr('집', 'Home'),
         color: '#2f6f4f',
         bounds: HOME_BOUNDS_GLOBE,
         elevation: SURFACE_LIFT,
@@ -578,11 +639,16 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
     const rows = Math.ceil(chainOrder.length / ROW);
     const width = (Math.min(chainOrder.length, ROW) - 1) * COL_GAP;
     zones = [
-      { id: 'z-device', label: '노트북 내부', color: '#c2410c', bounds: [-42, -7, -21.5, 7] },
-      { id: 'z-home', label: '집', color: '#2f6f4f', bounds: [-17.5, -2.5, -6.5, 2.5] },
+      {
+        id: 'z-device',
+        label: tr('노트북 내부', 'Inside the laptop'),
+        color: '#c2410c',
+        bounds: [-42, -7, -21.5, 7],
+      },
+      { id: 'z-home', label: tr('집', 'Home'), color: '#2f6f4f', bounds: [-17.5, -2.5, -6.5, 2.5] },
       {
         id: 'z-internet',
-        label: '인터넷 (위치 정보 없음)',
+        label: tr('인터넷 (위치 정보 없음)', 'Internet (no location data)'),
         color: '#5c5470',
         bounds: [-3, hasDns ? -ROW_GAP - 3 : -3.5, width + 3, (rows - 1) * ROW_GAP + 3.5],
       },
@@ -596,8 +662,11 @@ export function buildTopology(report: TraceReport, id: string): BuiltTopology {
 
   const topology: Topology = {
     id,
-    title: `${host} 가는 길 (실측)`,
-    description: `${report.input}을(를) 열 때 이 컴퓨터에서 측정한 경로`,
+    title: tr(`${host} 가는 길 (실측)`, `The way to ${host} (measured)`),
+    description: tr(
+      `${report.input}을(를) 열 때 이 컴퓨터에서 측정한 경로`,
+      `The path measured from this computer while opening ${report.input}`,
+    ),
     ...(globe && { globe }),
     zones,
     nodes,

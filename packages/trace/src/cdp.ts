@@ -1,3 +1,4 @@
+import { tr } from '@netgongbu/schema';
 import type { Protocol } from 'devtools-protocol';
 import type { CapturedRequest, Security, Timing } from './report';
 
@@ -26,7 +27,7 @@ function cleanHeaders(headers: Protocol.Network.Headers | undefined): Record<str
   const out: Record<string, string> = {};
   for (const [name, value] of Object.entries(headers ?? {})) {
     out[name] = SECRET_HEADERS.has(name.toLowerCase())
-      ? `(가려짐, ${String(value.length)}자)`
+      ? tr(`(가려짐, ${String(value.length)}자)`, `(hidden, ${String(value.length)} characters)`)
       : value;
   }
   return out;

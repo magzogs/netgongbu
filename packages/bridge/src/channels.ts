@@ -5,6 +5,7 @@ export const Channels = {
   aiScenario: 'ai:scenario',
   aiAsk: 'ai:ask',
   settingsGet: 'settings:get',
+  settingsLocale: 'settings:locale',
   traceStart: 'trace:start',
   traceCancel: 'trace:cancel',
   traceList: 'trace:list',

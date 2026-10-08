@@ -17,7 +17,8 @@ const executablePath = createRequire(import.meta.url)('electron') as unknown as 
 
 const app = await electron.launch({
   executablePath,
-  args: [appDir],
+  // Korean, whatever the system's language: the checks find controls by their Korean labels.
+  args: ['--lang=ko', appDir],
   env: {
     ...process.env,
     NETGONGBU_FAKE_AI: '1',

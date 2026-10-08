@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { tr } from '@netgongbu/schema';
 import { useViewer } from '../store/viewer';
 import { closeZone, focusNode, openZone } from '../commands';
 import { MEDIUM_NAMES, NODE_TYPE_NAMES } from './names';
@@ -31,29 +32,33 @@ function ZoneBox({ id }: { id: string }): ReactElement | null {
   return (
     <div className="zone-box">
       <span>
-        <strong>{label}</strong> <span className="muted">장비 {count}개</span>
+        <strong>{label}</strong>{' '}
+        <span className="muted">{tr(`장비 ${String(count)}개`, `${String(count)} devices`)}</span>
       </span>
       {fold ? (
         <button
           type="button"
           className="text-button"
-          title="안에 있는 장비를 하나씩 펼쳐 봅니다 (마커를 두 번 눌러도 됩니다)"
+          title={tr(
+            '안에 있는 장비를 하나씩 펼쳐 봅니다 (마커를 두 번 눌러도 됩니다)',
+            'Expand the devices inside one by one (or double-click the marker)',
+          )}
           onClick={() => {
             openZone(fold.key);
           }}
         >
-          자세히 보기
+          {tr('자세히 보기', 'Show details')}
         </button>
       ) : (
         <button
           type="button"
           className="text-button"
-          title="안의 장비를 다시 하나로 접습니다"
+          title={tr('안의 장비를 다시 하나로 접습니다', 'Fold the devices inside back into one')}
           onClick={() => {
             closeZone(zone.zoneId);
           }}
         >
-          하나로 접기
+          {tr('하나로 접기', 'Fold into one')}
         </button>
       )}
     </div>
@@ -69,7 +74,9 @@ export function NodeDetails({ id }: { id: string }): ReactElement | null {
   const node = world?.index.nodes.get(id);
   if (!world || !node) return null;
   const neighbors = world.index.neighbors(id);
-  const name = `${number === undefined ? '' : `${String(number)}번 `}${node.label}`;
+  const numberPrefix =
+    number === undefined ? '' : tr(`${String(number)}번 `, `#${String(number)} `);
+  const name = `${numberPrefix}${node.label}`;
 
   return (
     <div className="node-details">
@@ -88,21 +95,29 @@ export function NodeDetails({ id }: { id: string }): ReactElement | null {
           focusNode(node.id);
         }}
       >
-        이 장비로 이동
+        {tr('이 장비로 이동', 'Go to this device')}
       </button>
       <button
         type="button"
         className="text-button node-details__focus"
-        title="AI에게 이 장비에 대해 묻습니다"
+        title={tr('AI에게 이 장비에 대해 묻습니다', 'Ask the AI about this device')}
         onClick={() => {
-          void ask(`${name}은(는) 어떤 장비이고, 이 과정에서 무슨 일을 하나요?`);
+          void ask(
+            tr(
+              `${name}은(는) 어떤 장비이고, 이 과정에서 무슨 일을 하나요?`,
+              `What kind of device is ${name}, and what does it do in this process?`,
+            ),
+          );
         }}
       >
-        AI에게 묻기
+        {tr('AI에게 묻기', 'Ask the AI')}
       </button>
       {node.source === 'typical' && (
         <p className="node-details__typical">
-          측정으로 보이지 않아 일반적인 구성을 가정해 그린 장비입니다.
+          {tr(
+            '측정으로 보이지 않아 일반적인 구성을 가정해 그린 장비입니다.',
+            'This device was not visible to measurement, so it is drawn assuming a typical setup.',
+          )}
         </p>
       )}
       {node.description && <p className="node-details__desc">{node.description}</p>}
@@ -110,13 +125,13 @@ export function NodeDetails({ id }: { id: string }): ReactElement | null {
         <dl className="facts">
           {node.hostname && (
             <div>
-              <dt>이름</dt>
+              <dt>{tr('이름', 'Name')}</dt>
               <dd>{node.hostname}</dd>
             </div>
           )}
           {node.asn && (
             <div>
-              <dt>네트워크</dt>
+              <dt>{tr('네트워크', 'Network')}</dt>
               <dd>
                 AS{node.asn.number} {node.asn.name}
               </dd>
@@ -124,16 +139,20 @@ export function NodeDetails({ id }: { id: string }): ReactElement | null {
           )}
           {node.geo && (
             <div>
-              <dt>위치(추정)</dt>
+              <dt>{tr('위치(추정)', 'Location (estimated)')}</dt>
               <dd>
                 {node.geo.place ?? `${node.geo.lat.toFixed(2)}, ${node.geo.lon.toFixed(2)}`}
-                {node.geo.accuracyKm !== undefined && ` · 반경 ${String(node.geo.accuracyKm)} km`}
+                {node.geo.accuracyKm !== undefined &&
+                  tr(
+                    ` · 반경 ${String(node.geo.accuracyKm)} km`,
+                    ` · within ${String(node.geo.accuracyKm)} km`,
+                  )}
               </dd>
             </div>
           )}
           {node.rttMs !== undefined && (
             <div>
-              <dt>왕복 시간</dt>
+              <dt>{tr('왕복 시간', 'Round-trip time')}</dt>
               <dd>{node.rttMs.toFixed(1)} ms</dd>
             </div>
           )}
@@ -143,7 +162,7 @@ export function NodeDetails({ id }: { id: string }): ReactElement | null {
         <table className="kv-table">
           <thead>
             <tr>
-              <th>인터페이스</th>
+              <th>{tr('인터페이스', 'Interface')}</th>
               <th>IP</th>
               <th>MAC</th>
             </tr>
@@ -161,7 +180,7 @@ export function NodeDetails({ id }: { id: string }): ReactElement | null {
       )}
       {neighbors.length > 0 && (
         <>
-          <h3 className="section-title">연결된 장비</h3>
+          <h3 className="section-title">{tr('연결된 장비', 'Connected devices')}</h3>
           <ul className="neighbors">
             {neighbors.map(({ node: other, link }) => (
               <li key={link.id}>

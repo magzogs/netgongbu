@@ -1,4 +1,4 @@
-import type { FieldSource, Layer } from '@netgongbu/schema';
+import { tr, type FieldSource, type Layer } from '@netgongbu/schema';
 
 // Helpers for header layers whose every field says where its value comes from.
 
@@ -24,12 +24,12 @@ export function layer(name: string, fields: Record<string, SourcedValue>): Layer
 }
 
 export function ms(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '알 수 없음';
+  if (value === null || value === undefined) return tr('알 수 없음', 'unknown');
   return value >= 100 ? `${String(Math.round(value))} ms` : `${value.toFixed(1)} ms`;
 }
 
 export function bytes(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '알 수 없음';
+  if (value === null || value === undefined) return tr('알 수 없음', 'unknown');
   if (value < 1024) return `${String(value)} B`;
   return `${(value / 1024).toFixed(1)} KB`;
 }

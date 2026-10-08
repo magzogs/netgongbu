@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { AiError } from '@netgongbu/llm/node';
 import { z } from 'zod';
-import type { Scenario, ValidationIssue } from '@netgongbu/schema';
+import { tr, type Scenario, type ValidationIssue } from '@netgongbu/schema';
 import { generateScenario, GenerationError, type ScenarioModel } from './generate';
 import { newScenarioId, type ScenarioStore, type StoredEntry } from './store';
 import type { TopologyLibrary } from './topologies';
@@ -48,13 +48,22 @@ function modelFailure(err: unknown): AskResult | undefined {
     err instanceof Anthropic.AuthenticationError ||
     err instanceof Anthropic.PermissionDeniedError
   ) {
-    return fail('no-credentials', 'API 키가 올바르지 않습니다.');
+    return fail('no-credentials', tr('API 키가 올바르지 않습니다.', 'The API key is not valid.'));
   }
   if (err instanceof Anthropic.RateLimitError) {
-    return fail('rate-limited', '요청이 많습니다. 잠시 후 다시 시도해 주세요.');
+    return fail(
+      'rate-limited',
+      tr(
+        '요청이 많습니다. 잠시 후 다시 시도해 주세요.',
+        'Rate limit reached. Please try again in a moment.',
+      ),
+    );
   }
   if (err instanceof Anthropic.APIError) {
-    return fail('api-error', `Claude API 오류 (${String(err.status)})`);
+    return fail(
+      'api-error',
+      tr(`Claude API 오류 (${String(err.status)})`, `Claude API error (${String(err.status)})`),
+    );
   }
   if (err instanceof Error) return fail('api-error', err.message);
   return undefined;
@@ -95,7 +104,10 @@ export class ScenarioService {
     if (!body.success) {
       return fail(
         'bad-request',
-        `질문은 3자 이상 ${String(this.deps.maxQuestionLength)}자 이하로 입력해 주세요.`,
+        tr(
+          `질문은 3자 이상 ${String(this.deps.maxQuestionLength)}자 이하로 입력해 주세요.`,
+          `Questions must be 3 to ${String(this.deps.maxQuestionLength)} characters long.`,
+        ),
       );
     }
     const model = this.deps.model();
@@ -104,7 +116,8 @@ export class ScenarioService {
       return fail('no-credentials', typeof why === 'string' ? why : why());
     }
     const topology = await this.deps.topologies.get(body.data.topologyId);
-    if (!topology) return fail('not-found', '토폴로지를 찾을 수 없습니다.');
+    if (!topology)
+      return fail('not-found', tr('토폴로지를 찾을 수 없습니다.', 'Topology not found.'));
 
     const started = Date.now();
     try {
