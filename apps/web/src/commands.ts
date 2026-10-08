@@ -6,12 +6,17 @@ import { NARROW_QUERY, useViewer } from './store/viewer';
 
 // User commands shared by buttons, double-clicks and keyboard shortcuts.
 
-/** Select a node and fly to it; leaves follow mode so the camera stays there. */
+/**
+ * Select a node and fly to it, opening the zone it is folded into; leaves follow mode so the
+ * camera stays there.
+ */
 export function focusNode(id: string): void {
   const viewer = useViewer.getState();
   const world = viewer.world;
   const node = world?.index.nodes.get(id);
   if (!world || !node) return;
+  const zone = world.clusters.find((c) => c.members.includes(id));
+  if (zone) viewer.setZonesOpen([zone.zoneId], true);
   viewer.setCameraMode('orbit');
   viewer.select({ kind: 'node', id });
   focusOn(world, node);
@@ -71,15 +76,34 @@ export function selectNode(id: string): void {
   if (isDesktop && (type === 'client' || type === 'browser')) viewer.setBrowserOpen(true);
 }
 
-/**
- * Opens folded zones (engine/clusters.ts, by fold key): the camera comes close enough to show
- * the nodes of each of them.
- */
-export function openZone(key: string): void {
+function foldOf(key: string) {
   const viewer = useViewer.getState();
   const world = viewer.world;
   const fold = world && foldedClusters(world.clusters, viewer.folds).find((f) => f.key === key);
-  if (!world || !fold) return;
+  return world && fold ? { world, fold } : null;
+}
+
+/** Selects a folded zone (engine/clusters.ts, by fold key): the node its marker stands for. */
+export function selectZone(key: string): void {
+  const found = foldOf(key);
+  if (found) useViewer.getState().select({ kind: 'node', id: found.fold.standIn });
+}
+
+/**
+ * Opens folded zones (by fold key) into their nodes, and flies in close enough to tell them
+ * apart.
+ */
+export function openZone(key: string): void {
+  const found = foldOf(key);
+  if (!found) return;
+  const { world, fold } = found;
+  const viewer = useViewer.getState();
+  viewer.setZonesOpen(fold.zoneIds, true);
   viewer.setCameraMode('orbit');
   zoomToZone(world, fold.center, fold.openRadius, OPEN_PIXELS * 1.3);
+}
+
+/** Folds an opened zone (by zone id) into one node again. */
+export function closeZone(zoneId: string): void {
+  useViewer.getState().setZonesOpen([zoneId], false);
 }

@@ -6,8 +6,8 @@ import {
   foldedClusters,
   foldedNodes,
   groupFolds,
-  shouldCollapse,
   shouldJoin,
+  zoneState,
   CLOSE_PIXELS,
   OPEN_PIXELS,
 } from '../src/engine/clusters';
@@ -21,20 +21,21 @@ const plan: Topology = TopologySchema.parse(read('topologies/home-to-web.json'))
 describe('zone clusters', () => {
   it('folds the computer and the home on the globe and the map, not on a floor plan', () => {
     const globe = makeWorld(demo, 'globe');
-    expect(globe.clusters.map((c) => [c.zoneId, c.members.length, c.type])).toEqual([
-      ['z-device', 6, 'client'],
-      ['z-home', 2, 'router'],
+    expect(globe.clusters.map((c) => [c.zoneId, c.members.length, c.type, c.standIn])).toEqual([
+      ['z-device', 6, 'client', 'd-browser'],
+      ['z-home', 2, 'router', 'h-router'],
     ]);
     expect(makeWorld(demo, 'flat').clusters).toHaveLength(2);
     expect(makeWorld(plan, 'globe').clusters).toEqual([]);
   });
 
-  it('opens and closes at different sizes, so it does not flicker at the edge', () => {
+  it('stays folded until opened, and folds again only once small after growing', () => {
+    expect(zoneState(OPEN_PIXELS * 10, false, false)).toBe('folded');
+    // Just opened from far away: the flight in must not fold it again.
+    expect(zoneState(10, true, false)).toBe('open');
     const between = (OPEN_PIXELS + CLOSE_PIXELS) / 2;
-    expect(shouldCollapse(between, true)).toBe(true);
-    expect(shouldCollapse(between, false)).toBe(false);
-    expect(shouldCollapse(OPEN_PIXELS + 1, true)).toBe(false);
-    expect(shouldCollapse(CLOSE_PIXELS - 1, false)).toBe(true);
+    expect(zoneState(between, true, true)).toBe('open');
+    expect(zoneState(CLOSE_PIXELS - 1, true, true)).toBe('refold');
     expect(shouldJoin(100, true)).toBe(true);
     expect(shouldJoin(100, false)).toBe(false);
   });
@@ -52,6 +53,7 @@ describe('zone clusters', () => {
     ]);
     expect(joined?.label).toBe('노트북 내부 · 집');
     expect(joined?.members).toHaveLength(8);
+    expect(joined?.standIn).toBe('d-browser');
     expect(joined?.openRadius).toBe(Math.min(...clusters.map((c) => c.radius)));
     expect(foldedNodes(joined ? [joined] : []).get('h-router')?.key).toBe('z-device+z-home');
   });

@@ -10,7 +10,7 @@ import { PROTOCOL_COLORS } from '../scene/theme';
 import { useLabelAnchor } from '../scene/labels';
 import { markerMax, nodeTopSource } from '../scene/markers';
 import { useViewer } from '../store/viewer';
-import { focusNode, openZone, selectNode } from '../commands';
+import { focusNode, openZone, selectNode, selectZone } from '../commands';
 import { ACTION_NAMES } from './names';
 
 /** A press that moves farther than this (CSS pixels) is a drag of the view, not a click. */
@@ -104,7 +104,7 @@ function NodeLabel({ node, selected }: { node: NetNode; selected: boolean }): Re
   );
 }
 
-/** A folded zone: its name and how many nodes it holds; a click opens it. */
+/** A folded zone: its name and how many nodes it holds. Click selects it, double-click opens it. */
 function ClusterLabel({
   cluster,
   selected,
@@ -121,9 +121,14 @@ function ClusterLabel({
   const ref = useLabelAnchor(`cluster:${cluster.key}`, point, selected ? 0 : first);
   const handlers = useMemo(
     () =>
-      overlayHandlers(() => {
-        openZone(cluster.key);
-      }),
+      overlayHandlers(
+        () => {
+          selectZone(cluster.key);
+        },
+        () => {
+          openZone(cluster.key);
+        },
+      ),
     [cluster.key],
   );
   const count = cluster.members.length;
@@ -131,7 +136,7 @@ function ClusterLabel({
     <div ref={ref} className="anchor anchor--above">
       <div
         className={`node-label cluster-label${selected ? ' is-selected' : ''}`}
-        title={`눌러서 ${cluster.label}의 장비 ${count}개 펼치기`}
+        title={`두 번 눌러서 ${cluster.label}의 장비 ${count}개 자세히 보기`}
         {...handlers}
       >
         <span className="node-label__name">

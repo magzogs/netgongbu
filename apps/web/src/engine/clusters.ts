@@ -4,10 +4,11 @@ import { zonePlacer } from './zones';
 
 /**
  * On the globe and the world map the parts of the computer and the home sit a few tens of
- * kilometres apart, far too close to tell apart from high above. Like markers on a web map, such
- * a zone is drawn as one node with the number of nodes it holds while it is small on screen, and
- * opens into its nodes as the camera comes closer. Folded zones that come close on screen (the
- * computer and the home, from farther away) are drawn as one.
+ * kilometres apart, far too close to tell apart from high above. As on a floor plan, where the
+ * laptop and the home are one node each, such a zone is drawn as one node with the number of
+ * nodes it holds, until the learner opens it (a double-click, or "자세히 보기"). An open zone
+ * folds again when the camera goes far enough out that its nodes would pile up. Folded zones
+ * that come close on screen (the computer and the home, from farther away) are drawn as one.
  */
 export interface ZoneCluster {
   zoneId: string;
@@ -20,6 +21,8 @@ export interface ZoneCluster {
   radius: number;
   /** The shape that stands for the whole zone. */
   type: NodeType;
+  /** The node that shape stands in for: picking the folded zone selects it. */
+  standIn: string;
 }
 
 /** Which shape stands for a zone: the computer itself, else the home's router, else the first. */
@@ -38,6 +41,7 @@ export function zoneClusters(topology: Topology, globe: Globe | undefined): Zone
     const radius = at(minX, minZ).distanceTo(at(maxX, maxZ)) / 2;
     const types = new Set(nodes.map((n) => n.type));
     const type = STAND_IN.find((t) => types.has(t)) ?? first.type;
+    const standIn = nodes.find((n) => n.type === type) ?? first;
     clusters.push({
       zoneId: zone.id,
       label: zone.label,
@@ -45,6 +49,7 @@ export function zoneClusters(topology: Topology, globe: Globe | undefined): Zone
       center,
       radius,
       type: type === 'browser' ? 'client' : type,
+      standIn: standIn.id,
     });
   }
   return clusters;
@@ -63,14 +68,17 @@ export interface FoldedCluster extends Fold {
   members: readonly string[];
   center: Vector3;
   type: NodeType;
+  /** The node picked when the fold is: the first zone's stand-in. */
+  standIn: string;
   /** The smallest zone's radius: flying in until it is wide enough opens them all. */
   openRadius: number;
 }
 
 /**
- * A zone opens when it is this many CSS pixels across on screen, and closes again below the
- * second number (apart, so it does not flicker at the edge). At the first size its nodes, drawn
- * at most INSET_MARKER_MAX large, are about one marker apart.
+ * An opened zone is drawn at least this many CSS pixels across once the camera has come close
+ * (opening one flies in until it is a little wider); going out until it is less than the second
+ * number folds it again. At the first size its nodes, drawn at most INSET_MARKER_MAX large, are
+ * about one marker apart.
  */
 export const OPEN_PIXELS = 170;
 export const CLOSE_PIXELS = 135;
@@ -78,9 +86,18 @@ export const CLOSE_PIXELS = 135;
 export const JOIN_PIXELS = 90;
 export const PART_PIXELS = 120;
 
-/** Whether a zone should be folded, given its size on screen and whether it is now. */
-export function shouldCollapse(pixels: number, collapsed: boolean): boolean {
-  return collapsed ? pixels < OPEN_PIXELS : pixels < CLOSE_PIXELS;
+/**
+ * What a zone is now, given its size on screen: folded (not opened by the learner), open, or
+ * open but now so small that it folds again. `grown` says whether it has been drawn at least
+ * OPEN_PIXELS wide since it was opened, so the flight in after opening does not fold it at once.
+ */
+export function zoneState(
+  pixels: number,
+  opened: boolean,
+  grown: boolean,
+): 'folded' | 'open' | 'refold' {
+  if (!opened) return 'folded';
+  return grown && pixels < CLOSE_PIXELS ? 'refold' : 'open';
 }
 
 /** Whether two folded zones should be drawn as one, given how far apart they are on screen. */
@@ -139,6 +156,7 @@ export function foldedClusters(
         members: parts.flatMap((p) => p.members),
         center,
         type: first.type,
+        standIn: first.standIn,
         openRadius: Math.min(...parts.map((p) => p.radius)),
       },
     ];

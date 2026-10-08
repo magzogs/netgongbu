@@ -5,14 +5,15 @@ import { Quaternion, Vector3, type Camera, type Group } from 'three';
 import type { Globe } from '@netgongbu/schema';
 import {
   foldedClusters,
+  OPEN_PIXELS,
   groupFolds,
   sameFolds,
-  shouldCollapse,
   shouldJoin,
+  zoneState,
   type FoldedCluster,
 } from '../engine/clusters';
 import { upAt } from '../engine/curves';
-import { openZone } from '../commands';
+import { openZone, selectZone } from '../commands';
 import { useViewer, type World } from '../store/viewer';
 import { MARKER_MAX, nodeScale, worldPerPixel } from './markers';
 import { NODE_HEIGHT, NodeShape } from './NodeShape';
@@ -30,21 +31,31 @@ export function useFoldedClusters(): FoldedCluster[] {
 }
 
 /**
- * Measures each zone on screen every frame, folds or opens it, and joins folded zones that come
- * close on screen (engine/clusters.ts). The store changes only when the folds do, so React
- * renders nothing while the camera simply moves.
+ * Measures each zone on screen every frame: keeps the zones the learner has not opened folded,
+ * folds an open one again once it gets small, and joins folded zones that come close on screen
+ * (engine/clusters.ts). The store changes only when the folds do, so React renders nothing while
+ * the camera simply moves.
  */
 export function ClusterTracker({ world }: { world: World }): null {
   const scratch = useMemo(() => new Vector3(), []);
+  /** Open zones that have been drawn wide enough since they were opened. */
+  const grown = useMemo(() => new Set<string>(), []);
   useFrame(({ camera, size }) => {
     if (world.clusters.length === 0) return;
-    const { folds, setFolds } = useViewer.getState();
+    const { folds, setFolds, openZones, setZonesOpen } = useViewer.getState();
     const foldOf = new Map<string, string>();
     for (const f of folds) for (const id of f.zoneIds) foldOf.set(id, f.key);
+    const refold: string[] = [];
     const shut = world.clusters.filter((c) => {
+      const opened = openZones.has(c.zoneId);
+      if (!opened) grown.delete(c.zoneId);
       const pixels = (2 * c.radius) / worldPerPixel(c.center, camera, size.height);
-      return shouldCollapse(pixels, foldOf.has(c.zoneId));
+      if (opened && pixels >= OPEN_PIXELS) grown.add(c.zoneId);
+      const state = zoneState(pixels, opened, grown.has(c.zoneId));
+      if (state === 'refold') refold.push(c.zoneId);
+      return state !== 'open';
     });
+    if (refold.length > 0) setZonesOpen(refold, false);
     const onScreen = shut.map((c) => {
       scratch.copy(c.center).project(camera);
       return { x: ((scratch.x + 1) / 2) * size.width, y: ((1 - scratch.y) / 2) * size.height };
@@ -88,7 +99,7 @@ interface Props {
   busy: boolean;
 }
 
-/** One marker for a folded zone; a click flies in until the zone opens. */
+/** One marker for a folded zone: a click selects it, a double-click opens it into its nodes. */
 export function ClusterMesh({ cluster, globe, selected, busy }: Props): ReactElement {
   const [hovered, setHovered] = useState(false);
   useCursor(hovered);
@@ -106,6 +117,10 @@ export function ClusterMesh({ cluster, globe, selected, busy }: Props): ReactEle
       CLUSTER_SCALE * nodeScale(cluster.center, camera, size.height, MARKER_MAX),
     );
   });
+  const pick = (e: ThreeEvent<MouseEvent>): void => {
+    e.stopPropagation();
+    selectZone(cluster.key);
+  };
   const open = (e: ThreeEvent<MouseEvent>): void => {
     e.stopPropagation();
     openZone(cluster.key);
@@ -114,7 +129,7 @@ export function ClusterMesh({ cluster, globe, selected, busy }: Props): ReactEle
     <group ref={group} position={cluster.center} quaternion={tilt}>
       <group
         scale={hovered ? 1.06 : 1}
-        onClick={open}
+        onClick={pick}
         onDoubleClick={open}
         onPointerOver={(e) => {
           e.stopPropagation();

@@ -43,7 +43,7 @@ export interface World {
   lift: number;
   index: TopologyIndex;
   curves: ReadonlyMap<string, LinkCurve>;
-  /** Zones that fold into one node when small on screen (only with markers). */
+  /** Zones drawn as one node until opened (only with markers). */
   clusters: readonly ZoneCluster[];
 }
 
@@ -91,6 +91,8 @@ export interface ViewerState extends PlaybackSlice, AssistantSlice, DesktopSlice
   selection: Selection | null;
   /** Zones now folded into one node (see engine/clusters.ts), set from the camera each frame. */
   folds: readonly Fold[];
+  /** Zones the learner opened into their nodes, by zone id. */
+  openZones: ReadonlySet<string>;
   cameraMode: CameraMode;
   inspectorOpen: boolean;
   /** The packet shown in the anatomy view (beat and hop of the current scenario). */
@@ -101,6 +103,8 @@ export interface ViewerState extends PlaybackSlice, AssistantSlice, DesktopSlice
   /** Redraws the current topology on the globe or the flat map, keeping playback where it is. */
   setMapView: (view: MapView) => void;
   setFolds: (folds: readonly Fold[]) => void;
+  /** Opens zones into their nodes, or folds them into one again. */
+  setZonesOpen: (zoneIds: readonly string[], open: boolean) => void;
   setCameraMode: (mode: CameraMode) => void;
   setInspectorOpen: (open: boolean) => void;
   /** Opens the anatomy view on a packet of the current beat (pausing playback), or closes it. */
@@ -153,6 +157,7 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
   mapView: savedMapView(),
   selection: null,
   folds: [],
+  openZones: new Set<string>(),
   cameraMode: 'orbit',
   inspectorOpen: !isNarrow(),
   packetLab: null,
@@ -193,6 +198,7 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
         current?.source.id === topology.id ? current : makeWorld(topology, get().mapView);
       set({
         world,
+        ...(world !== current && { openZones: new Set<string>() }),
         scenario,
         nodeNumbers: nodeNumbers(world.topology, scenario),
         selection: null,
@@ -230,6 +236,15 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
 
   setFolds(folds) {
     set({ folds });
+  },
+
+  setZonesOpen(zoneIds, open) {
+    const openZones = new Set(get().openZones);
+    for (const id of zoneIds) {
+      if (open) openZones.add(id);
+      else openZones.delete(id);
+    }
+    if (openZones.size !== get().openZones.size) set({ openZones });
   },
 
   setCameraMode(cameraMode) {

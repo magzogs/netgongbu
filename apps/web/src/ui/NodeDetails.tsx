@@ -1,8 +1,64 @@
 import type { ReactElement } from 'react';
 import { useViewer } from '../store/viewer';
-import { focusNode } from '../commands';
+import { closeZone, focusNode, openZone } from '../commands';
 import { MEDIUM_NAMES, NODE_TYPE_NAMES } from './names';
 import { NodeNumber } from './SceneLabels';
+
+/**
+ * The zone a node belongs to on the globe or the map (the computer, the home): while it is
+ * folded into one node, a button opens it into its nodes; once open, one folds it again.
+ */
+function ZoneBox({ id }: { id: string }): ReactElement | null {
+  const zone = useViewer((s) => s.world?.clusters.find((c) => c.members.includes(id)));
+  const fold = useViewer((s) =>
+    zone ? s.folds.find((f) => f.zoneIds.includes(zone.zoneId)) : undefined,
+  );
+  const label = useViewer((s) =>
+    fold
+      ? fold.zoneIds
+          .map((z) => s.world?.clusters.find((c) => c.zoneId === z)?.label ?? z)
+          .join(' · ')
+      : zone?.label,
+  );
+  const count = useViewer((s) =>
+    fold
+      ? (s.world?.clusters ?? [])
+          .filter((c) => fold.zoneIds.includes(c.zoneId))
+          .reduce((n, c) => n + c.members.length, 0)
+      : (zone?.members.length ?? 0),
+  );
+  if (!zone) return null;
+  return (
+    <div className="zone-box">
+      <span>
+        <strong>{label}</strong> <span className="muted">장비 {count}개</span>
+      </span>
+      {fold ? (
+        <button
+          type="button"
+          className="text-button"
+          title="안에 있는 장비를 하나씩 펼쳐 봅니다 (마커를 두 번 눌러도 됩니다)"
+          onClick={() => {
+            openZone(fold.key);
+          }}
+        >
+          자세히 보기
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="text-button"
+          title="안의 장비를 다시 하나로 접습니다"
+          onClick={() => {
+            closeZone(zone.zoneId);
+          }}
+        >
+          하나로 접기
+        </button>
+      )}
+    </div>
+  );
+}
 
 /** What a node is, its interfaces and what it connects to. */
 export function NodeDetails({ id }: { id: string }): ReactElement | null {
@@ -17,6 +73,7 @@ export function NodeDetails({ id }: { id: string }): ReactElement | null {
 
   return (
     <div className="node-details">
+      <ZoneBox id={id} />
       <div className="node-details__title">
         <NodeNumber id={node.id} />
         <strong>{node.label}</strong>
