@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type ReactElement } from 'react';
 import { CameraControls, type CameraControlsImpl } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { Vector3 } from 'three';
 import { showAll } from '../commands';
 import { useViewer } from '../store/viewer';
@@ -14,6 +14,7 @@ import {
   registerControls,
   trackPoint,
   tuneGlobeControls,
+  zoomGlobe,
 } from './camera';
 
 /**
@@ -25,6 +26,8 @@ export function CameraRig(): ReactElement {
   const world = useViewer((s) => s.world);
   const cameraMode = useViewer((s) => s.cameraMode);
   const scratch = useMemo(() => new Vector3(), []);
+  const canvas = useThree((s) => s.gl.domElement);
+  const eventSource = useThree((s) => s.events.connected as HTMLElement | undefined);
 
   // Before framing: the globe turns the camera's up to the Earth's axis.
   useEffect(() => {
@@ -45,6 +48,21 @@ export function CameraRig(): ReactElement {
       cancelAnimationFrame(frameId);
     };
   }, [timeline]);
+
+  // Over the globe the wheel zooms towards the cursor (camera-controls' wheel is off there).
+  useEffect(() => {
+    const element = eventSource ?? canvas;
+    const onWheel = (event: WheelEvent) => {
+      const state = useViewer.getState();
+      if (state.world?.view !== 'globe') return;
+      event.preventDefault();
+      zoomGlobe(event, state.world, state.cameraMode !== 'follow');
+    };
+    element.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      element.removeEventListener('wheel', onWheel);
+    };
+  }, [canvas, eventSource]);
 
   useFrame(() => {
     const state = useViewer.getState();

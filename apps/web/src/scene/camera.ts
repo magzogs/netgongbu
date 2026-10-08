@@ -1,5 +1,5 @@
 import { CameraControlsImpl } from '@react-three/drei';
-import { PerspectiveCamera, Spherical, Vector3 } from 'three';
+import { PerspectiveCamera, Raycaster, Sphere, Spherical, Vector2, Vector3 } from 'three';
 import { northAxis, type NetNode } from '@netgongbu/schema';
 import { anchorOf } from '../engine/curves';
 import {
@@ -20,7 +20,8 @@ import type { ViewerState, World } from '../store/viewer';
  * Each view has its own handling:
  * - floor: orbit around a point on the plan (drag), pan (right drag), zoom (wheel).
  * - globe: the camera orbits the globe's centre with north up, so dragging turns the Earth
- *   east–west and north–south the way a hand would; zoom moves closer to the surface.
+ *   east–west and north–south the way a hand would; the wheel moves closer to the surface and
+ *   keeps the place under the cursor there (see zoomGlobe).
  * - map: like a web map, dragging moves the map, right drag tilts and turns it.
  */
 
@@ -88,7 +89,9 @@ export function configureControls(world: World | null): void {
     ctl.mouseButtons.right = ACTION.ROTATE;
     ctl.touches.one = ACTION.TOUCH_ROTATE;
     ctl.touches.two = ACTION.TOUCH_DOLLY;
-    // Zooming towards the cursor would move the orbit off the centre.
+    // Zooming towards the cursor would move the orbit off the centre; CameraRig handles the
+    // wheel with zoomGlobe instead.
+    ctl.mouseButtons.wheel = ACTION.NONE;
     ctl.dollyToCursor = false;
     ctl.minDistance = globe.radius + GLOBE_MIN_ALTITUDE;
     ctl.maxDistance = globe.radius * 8;
@@ -96,6 +99,7 @@ export function configureControls(world: World | null): void {
     ctl.maxPolarAngle = Math.PI - POLE_MARGIN;
     return;
   }
+  ctl.mouseButtons.wheel = ACTION.DOLLY;
   ctl.dollyToCursor = true;
   ctl.minPolarAngle = 0;
   ctl.maxPolarAngle = FLAT_MAX_POLAR;
@@ -136,6 +140,62 @@ export function tuneGlobeControls(world: World): void {
   ctl.polarRotateSpeed = polar;
   ctl.azimuthRotateSpeed = Math.min(2, polar / Math.max(0.25, Math.sin(ctl.polarAngle)));
   ctl.dollySpeed = Math.min(1, Math.max(0.03, altitude / ctl.distance));
+}
+
+/** Wheel units as camera-controls counts them (see its onMouseWheel). */
+const WHEEL_UNIT = navigator.platform.includes('Mac') ? -1 : -3;
+const raycaster = new Raycaster();
+
+/**
+ * One wheel event over the globe. The height above the surface changes as camera-controls' own
+ * wheel would change it, and the globe turns so that the place under the cursor stays under the
+ * cursor: zooming in on a city keeps it in view instead of zooming into the middle of the screen.
+ * While following, only the height changes (the follow camera keeps that as the learner's zoom).
+ */
+export function zoomGlobe(event: WheelEvent, world: World, keepCursor: boolean): void {
+  const ctl = controls;
+  const globe = world.topology.globe;
+  if (!ctl || !globe || !(ctl.camera instanceof PerspectiveCamera)) return;
+  const units =
+    event.deltaMode === 1 && !event.ctrlKey
+      ? event.deltaY / WHEEL_UNIT
+      : event.deltaY / (WHEEL_UNIT * 10);
+  const center = new Vector3(...globe.center);
+  const from = ctl.getPosition(new Vector3(), true).sub(center);
+  const distance = from.length();
+  const next = clamp(
+    distance * Math.pow(0.95, units * ctl.dollySpeed),
+    ctl.minDistance,
+    ctl.maxDistance,
+  );
+  if (!keepCursor || Math.abs(next - distance) < 1e-6) {
+    void ctl.dollyTo(next, true);
+    return;
+  }
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  const pointer = new Vector2(
+    ((event.clientX - rect.left) / rect.width) * 2 - 1,
+    -((event.clientY - rect.top) / rect.height) * 2 + 1,
+  );
+  raycaster.setFromCamera(pointer, ctl.camera);
+  const hit = raycaster.ray.intersectSphere(new Sphere(center, globe.radius), new Vector3());
+  const up = from.normalize();
+  const toward = hit?.sub(center).normalize();
+  const angle = toward ? up.angleTo(toward) : 0;
+  if (!toward || angle < 1e-6) {
+    void ctl.dollyTo(next, true);
+    return;
+  }
+  // Seen from straight above, a place `angle` away from the point below the camera sits on
+  // screen about in proportion to angle / height: to keep it there, shrink the angle with the
+  // height. Zooming out never turns the place past the edge of the visible half.
+  const kept = Math.min(Math.PI / 2, (angle * (next - globe.radius)) / (distance - globe.radius));
+  const axis = up.clone().cross(toward).normalize();
+  const eye = up
+    .applyAxisAngle(axis, angle - kept)
+    .multiplyScalar(next)
+    .add(center);
+  void ctl.setLookAt(eye.x, eye.y, eye.z, center.x, center.y, center.z, true);
 }
 
 /**
