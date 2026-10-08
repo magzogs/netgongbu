@@ -27,6 +27,7 @@ function TopologyView({ world }: { world: World }): ReactElement {
   );
   const busyNodes = useMemo(() => new Set(beat?.beat.nodeActions?.map((a) => a.node)), [beat]);
   const clusters = useFoldedClusters();
+  const drawnCurves = useViewer((s) => s.drawnCurves);
   const folded = useMemo(() => foldedNodes(clusters), [clusters]);
   const selectedNode = selection?.kind === 'node' ? selection.id : null;
   const emphasisOf = (linkId: string): LinkEmphasis => {
@@ -35,7 +36,8 @@ function TopologyView({ world }: { world: World }): ReactElement {
   };
   return (
     <group>
-      {[...world.curves.values()]
+      {/* Links into a folded zone end at its marker (see foldLinkCurves). */}
+      {[...drawnCurves.values()]
         // A link inside a folded zone would be a dot under its marker.
         .filter((lc) => {
           const zone = folded.get(lc.link.a);
@@ -118,6 +120,12 @@ export function Scene(): ReactElement {
   const radius = world?.source.globe?.radius;
   const fogNear = radius ? radius * 6 : 120;
   const select = useViewer((s) => s.select);
+  const folds = useViewer((s) => s.folds);
+  // A folded zone is one marker: its area would only mark where its parts are hidden.
+  const zones = useMemo(() => {
+    const folded = new Set(folds.flatMap((f) => f.zoneIds));
+    return (world?.topology.zones ?? []).filter((z) => !folded.has(z.id));
+  }, [world, folds]);
   return (
     <Canvas
       className="scene"
@@ -130,11 +138,7 @@ export function Scene(): ReactElement {
       <color attach="background" args={[SCENE_BACKGROUND]} />
       <fog attach="fog" args={[SCENE_BACKGROUND, fogNear, fogNear * 2.2]} />
       <Lights globe={world?.topology.globe} />
-      <Ground
-        zones={world?.topology.zones ?? []}
-        globe={world?.topology.globe}
-        flatMap={world?.flatMap ?? null}
-      />
+      <Ground zones={zones} globe={world?.topology.globe} flatMap={world?.flatMap ?? null} />
       {world?.topology.globe && <GlobeView globe={world.topology.globe} />}
       {world && <TopologyView world={world} />}
       <CameraRig />

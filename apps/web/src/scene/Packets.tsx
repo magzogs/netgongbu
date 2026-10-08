@@ -26,7 +26,8 @@ interface PacketProps {
 
 /** Where a packet on `route` is right now, from the live playback progress. */
 export function currentPoint(route: Route, out: Vector3): Vector3 {
-  pointOnRoute(route, ease(useViewer.getState().progress), out);
+  const { progress, drawnCurves } = useViewer.getState();
+  pointOnRoute(route, ease(progress), out, drawnCurves);
   return out;
 }
 

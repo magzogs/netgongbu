@@ -89,16 +89,23 @@ export function ease(t: number): number {
 
 /**
  * Writes the point at fraction `t` (0..1, by distance) of a route into `out` and returns the
- * segment the packet is on.
+ * segment the packet is on. `drawn`: the links as now drawn (see foldLinkCurves), so a packet
+ * leaves from and arrives at a folded zone's marker; the timing stays that of the route.
  */
-export function pointOnRoute(route: Route, t: number, out: Vector3): RouteSegment | undefined {
+export function pointOnRoute(
+  route: Route,
+  t: number,
+  out: Vector3,
+  drawn?: ReadonlyMap<string, LinkCurve>,
+): RouteSegment | undefined {
   const distance = Math.min(1, Math.max(0, t)) * route.length;
   const segment =
     route.segments.find((s) => distance <= s.offset + s.length) ?? route.segments.at(-1);
   if (!segment) return undefined;
   const local = segment.length > 0 ? (distance - segment.offset) / segment.length : 0;
   const u = Math.min(1, Math.max(0, local));
-  segment.curve.getPointAt(segment.reversed ? 1 - u : u, out);
+  const curve = drawn?.get(segment.linkId)?.curve ?? segment.curve;
+  curve.getPointAt(segment.reversed ? 1 - u : u, out);
   return segment;
 }
 

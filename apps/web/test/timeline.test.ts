@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Vector3 } from 'three';
 import { indexTopology, type Scenario, type Topology } from '@netgongbu/schema';
-import { anchorOf, buildLinkCurves } from '../src/engine/curves';
+import { anchorOf, buildLinkCurves, foldLinkCurves } from '../src/engine/curves';
 import {
   beatAt,
   buildTimeline,
@@ -132,5 +132,34 @@ describe('beatAt', () => {
     expect(beatAt(timeline, 0.5)).toEqual({ beatIndex: 1, progress: 0.5 });
     expect(beatAt(timeline, 1)).toEqual({ beatIndex: 2, progress: 1 });
     expect(beatAt(timeline, 7)).toEqual({ beatIndex: 2, progress: 1 });
+  });
+});
+
+describe('foldLinkCurves', () => {
+  // a and b folded into one marker at m: l1 shrinks under it, l2 runs from c to the marker.
+  const m = new Vector3(5, 0, 0);
+  const folded = (id: string): Vector3 | undefined => (id === 'a' || id === 'b' ? m : undefined);
+  const drawn = foldLinkCurves(world.curves, topology, 0.5, folded);
+
+  it('moves ends in a folded zone to its marker', () => {
+    const l2 = drawn.get('l2');
+    expect(l2?.curve.getPointAt(0).distanceTo(anchorOf([10, 0, 10]))).toBeLessThan(1e-9);
+    expect(l2?.curve.getPointAt(1).distanceTo(new Vector3(5, 0.5, 0))).toBeLessThan(1e-9);
+  });
+
+  it('shrinks a link inside one marker to a point', () => {
+    expect(drawn.get('l1')?.length).toBe(0);
+  });
+
+  it('lets packets follow the drawn links, keeping the timing', () => {
+    const route = routeOf(world, ['c', 'b']);
+    const out = new Vector3();
+    pointOnRoute(route, 1, out, drawn);
+    expect(out.distanceTo(new Vector3(5, 0.5, 0))).toBeLessThan(1e-9);
+  });
+
+  it('keeps links with no folded end', () => {
+    const none = foldLinkCurves(world.curves, topology, 0.5, () => undefined);
+    expect(none.get('l1')).toBe(world.curves.get('l1'));
   });
 });

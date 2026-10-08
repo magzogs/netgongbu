@@ -44,7 +44,7 @@ const FOLLOW_SPAN = 2.6;
 const FOLLOW_MIN = 2.2;
 const FOLLOW_MAX = 45;
 /** Never closer to the globe's surface than this. */
-const GLOBE_MIN_ALTITUDE = 0.6;
+const GLOBE_MIN_ALTITUDE = 0.2;
 /** Keeps the camera off the poles, where east and west stop meaning anything. */
 const POLE_MARGIN = 0.03;
 /** On a plan or map, the camera stays above the horizon. */
@@ -335,7 +335,7 @@ export function followPoint(state: ViewerState, out: Vector3): Vector3 | null {
   const wanted = state.selection?.kind === 'packet' ? state.selection.hopIndex : 0;
   const route = entry.routes[wanted] ?? entry.routes[0];
   if (route) {
-    pointOnRoute(route, ease(state.progress), out);
+    pointOnRoute(route, ease(state.progress), out, state.drawnCurves);
     return out;
   }
   const actor = entry.beat.nodeActions?.[0]?.node;

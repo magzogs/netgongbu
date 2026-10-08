@@ -9,10 +9,17 @@ import {
 import {
   ANCHOR_HEIGHT,
   buildLinkCurves,
+  foldLinkCurves,
   MARKER_ANCHOR_HEIGHT,
   type LinkCurve,
 } from '../engine/curves';
-import { zoneClusters, type Fold, type ZoneCluster } from '../engine/clusters';
+import {
+  foldedClusters,
+  foldedNodes,
+  zoneClusters,
+  type Fold,
+  type ZoneCluster,
+} from '../engine/clusters';
 import { flattenTopology, type FlatMap } from '../engine/flatMap';
 import { nodeNumbers } from '../engine/order';
 import { buildTimeline } from '../engine/timeline';
@@ -66,6 +73,17 @@ export function makeWorld(source: Topology, mapView: MapView): World {
   };
 }
 
+/** The world's links as drawn with these zones folded: ends in a folded zone meet its marker. */
+function drawnCurvesOf(
+  world: World | null,
+  folds: readonly Fold[],
+): ReadonlyMap<string, LinkCurve> {
+  if (!world) return new Map();
+  if (folds.length === 0) return world.curves;
+  const folded = foldedNodes(foldedClusters(world.clusters, folds));
+  return foldLinkCurves(world.curves, world.topology, world.lift, (id) => folded.get(id)?.center);
+}
+
 export type Status =
   | { kind: 'loading' }
   | { kind: 'ready' }
@@ -91,6 +109,8 @@ export interface ViewerState extends PlaybackSlice, AssistantSlice, DesktopSlice
   selection: Selection | null;
   /** Zones now folded into one node (see engine/clusters.ts), set from the camera each frame. */
   folds: readonly Fold[];
+  /** world.curves as drawn with the folds: links into a folded zone end at its marker. */
+  drawnCurves: ReadonlyMap<string, LinkCurve>;
   /** Zones the learner opened into their nodes, by zone id. */
   openZones: ReadonlySet<string>;
   cameraMode: CameraMode;
@@ -157,6 +177,7 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
   mapView: savedMapView(),
   selection: null,
   folds: [],
+  drawnCurves: new Map(),
   openZones: new Set<string>(),
   cameraMode: 'orbit',
   inspectorOpen: !isNarrow(),
@@ -198,6 +219,7 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
         current?.source.id === topology.id ? current : makeWorld(topology, get().mapView);
       set({
         world,
+        drawnCurves: drawnCurvesOf(world, get().folds),
         ...(world !== current && { openZones: new Set<string>() }),
         scenario,
         nodeNumbers: nodeNumbers(world.topology, scenario),
@@ -231,11 +253,16 @@ export const useViewer = create<ViewerState>()((set, get, api) => ({
     }
     const next = makeWorld(world.source, mapView);
     // Same scenario and step, new routes: only where the curves are has changed.
-    set({ mapView, world: next, ...(scenario && { timeline: buildTimeline(next, scenario) }) });
+    set({
+      mapView,
+      world: next,
+      drawnCurves: drawnCurvesOf(next, get().folds),
+      ...(scenario && { timeline: buildTimeline(next, scenario) }),
+    });
   },
 
   setFolds(folds) {
-    set({ folds });
+    set({ folds, drawnCurves: drawnCurvesOf(get().world, folds) });
   },
 
   setZonesOpen(zoneIds, open) {
