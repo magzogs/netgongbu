@@ -1,4 +1,7 @@
 node_modules
+# media/: the one-off scripts that recorded and rendered the videos, and the raw takes (media/README.md)
+media/source
+media/raw
 dist
 coverage
 pnpm-lock.yaml

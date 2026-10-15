@@ -1,0 +1,4 @@
+# The takes: every 2x frame, packed into one video per language (about 30 MB each; README.md, 원본). Kept out of git.
+raw/
+# what cuts.sh writes for magzog.com (it lives in magHome's public/captures/edunet/)
+site/

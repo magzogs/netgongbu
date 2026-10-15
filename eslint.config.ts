@@ -15,6 +15,8 @@ export default defineConfig(
       '**/*.config.ts',
       // Stand-ins for the AI CLIs, run as separate programs by the tests.
       '**/test/fixtures/**',
+      // media/: videos for docs and promotion, and the one-off scripts that recorded and rendered them
+      'media/**',
     ],
   },
   js.configs.recommended,

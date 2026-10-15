@@ -1,0 +1,22 @@
+/* Shared by every project's motion page (<id>.html): the stage, the drifting blobs behind, the pointer,
+   its click ripple, speech bubbles, pills and labels. A page sets the colours: --bg (its book's cover),
+   --ink, --tone (the blobs), --black, --soft and --shade. */
+:root { --black: #1D1B19; --soft: rgba(0, 0, 0, .14); --shade: rgba(0, 0, 0, .18); }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); }
+#stage { position: relative; overflow: hidden; background: var(--bg); font-family: "Bricolage Grotesque", "IBM Plex Sans KR", sans-serif; color: var(--ink); }
+.a { position: absolute; left: 0; top: 0; }
+.blob { border-radius: 50%; background: var(--tone); }
+.blob.sq { border-radius: 28%; }
+/* speech bubble */
+.bub { background: var(--black); color: #fff; border-radius: 18px; font-weight: 700; white-space: nowrap; display: grid; place-items: center; transform-origin: 50% 100%; letter-spacing: -.01em; }
+.bub::after { content: ""; position: absolute; left: 50%; bottom: -11px; margin-left: -11px; border: 11px solid transparent; border-bottom: 0; border-top-color: var(--black); }
+.ring { border-radius: 50%; border: 4px solid var(--black); }
+.dwell { border-radius: 50%; }
+.cursor { width: 34px; height: 46px; transform-origin: 0 0; filter: drop-shadow(0 4px 0 var(--shade)); }
+.dots i { position: absolute; top: 0; height: 14px; border-radius: 7px; background: var(--soft); }
+.dots i.on { background: var(--pink); }
+.label { font: 600 22px "JetBrains Mono", "IBM Plex Sans KR", monospace; color: var(--ink); white-space: nowrap; transform: translateX(-50%); }
+.pill { border-radius: 99px; background: #fff; color: var(--ink); font-weight: 700; white-space: nowrap; display: flex; align-items: center; gap: 8px; box-shadow: 0 0 0 2.5px var(--ink), 0 5px 0 var(--shade); transform-origin: 50% 50%; }
+.pill.dark { background: var(--ink); color: #fff; }
+.pill.pink { background: var(--pink); color: #fff; box-shadow: 0 0 0 2.5px var(--pink), 0 5px 0 var(--shade); }
