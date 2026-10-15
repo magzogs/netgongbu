@@ -1,0 +1,571 @@
+<!doctype html>
+<!-- Net Gongbu's motion-graphic clips (render.mjs <page> [lang]; the same page is magHome's scripts/motion/edunet.html): ?clip=features|how|stack&lang=ko|en.
+     Each clip is drawn for its page's room at 2×, on the book's aqua with its teal ink. Its parts are the app's own: white router
+     nodes ringed in ink, a mint packet with its protocol tag, the app's protocol and layer colours, and the icon's cube.
+     References from the board: orbit (a dot running between rings, rings pulsing on arrival), planets (nested squares
+     around a core: the layers of a packet), stopscroll (labels hanging on a thread). Shared parts: lib.css, lib.js. -->
+<html><head><meta charset="utf-8">
+<title>Net Gongbu motion</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@500;600;700&family=IBM+Plex+Sans:wght@500;600;700&display=block">
+<link rel="stylesheet" href="lib.css">
+<style>
+:root { --bg:#C4EEEE; --ink:#0F6464; --deep:#0A4A4A; --tone:#B2E4E4; --paper:#FFFFFF; --shade:rgba(15, 100, 100, .16);
+  --mint:#06D6A0; --local:#FFA5B0; --dns:#FFCD1B; --tcp:#52A1FE; --tls:#BD80FF; --http:#4CDD7E;
+  --eth:#A48CE0; --ip:#86EFAC; --seg:#FFB973; --hover:#FFD34D;
+  --y:#FFD166; --o:#FF9F1C; --r:#FF6B35; --tile:#1E1510; --brown:#5A2E1A; }
+#stage { font-family: "IBM Plex Sans", "IBM Plex Sans KR", sans-serif; }
+:lang(ko) #stage, #stage.ko { font-family: "IBM Plex Sans KR", "IBM Plex Sans", sans-serif; }
+svg.a { overflow: visible; }
+.mono { font-family: "IBM Plex Mono", monospace; }
+/* a protocol tag, like the app's: colour, ink outline, mono */
+.tag { border-radius: 99px; padding: 0 16px; height: 40px; display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  font: 700 20px "IBM Plex Mono", monospace; color: var(--deep); box-shadow: 0 0 0 3px var(--ink), 0 5px 0 var(--shade); transform-origin: 50% 100%; }
+.tag small { font-weight: 500; font-size: 17px; opacity: .8; }
+/* the header strip the features are named in: a number field and a value field, as in a header diagram */
+.ruler { height: 14px; }
+.ruler i { position: absolute; top: 0; width: 2px; height: 8px; background: var(--ink); opacity: .45; }
+.ruler i.b { height: 14px; opacity: .8; }
+.field { border-radius: 10px; background: var(--paper); box-shadow: 0 0 0 3px var(--ink), 0 6px 0 var(--shade); overflow: hidden; }
+.field .v { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; align-items: center; white-space: nowrap; }
+.field.no .v { justify-content: center; font: 700 34px "IBM Plex Mono", monospace; color: var(--deep); }
+.field.cap .v { padding: 0 26px; font-weight: 700; font-size: 33px; color: var(--deep); letter-spacing: -.01em; }
+.field .k { position: absolute; left: 12px; top: 6px; font: 600 13px "IBM Plex Mono", monospace; color: var(--ink); opacity: .55; letter-spacing: .04em; }
+.lbl { font: 700 22px "IBM Plex Mono", monospace; color: var(--deep); white-space: nowrap; }
+.lbl small { display: block; font: 600 17px "IBM Plex Sans", "IBM Plex Sans KR", sans-serif; color: var(--ink); margin-top: 2px; }
+.rowlbl { font-weight: 600; font-size: 21px; color: var(--ink); white-space: nowrap; text-align: right; width: 170px; }
+.blk { border-radius: 9px; box-shadow: 0 0 0 3px var(--ink); font: 700 19px "IBM Plex Mono", monospace; color: var(--deep); display: flex; align-items: center; padding-left: 12px; white-space: nowrap; overflow: hidden; }
+.blk.data { box-shadow: none; outline: 3px dashed var(--ink); outline-offset: -3px; background: transparent !important; color: var(--ink); opacity: .75; font-weight: 600; }
+.ask { border-radius: 99px; background: var(--ink); color: #fff; font-weight: 700; font-size: 25px; height: 58px; padding: 0 26px; display: flex; align-items: center; white-space: nowrap; transform-origin: 100% 100%; }
+.ans { border-radius: 20px; background: var(--paper); box-shadow: 0 0 0 3px var(--ink), 0 7px 0 var(--shade); color: var(--deep); font-weight: 600; font-size: 24px; line-height: 1.4; padding: 18px 24px 18px 84px; transform-origin: 0 0; }
+.ans b.ai { position: absolute; left: 20px; top: 16px; width: 46px; height: 46px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 3px var(--ink); display: grid; place-items: center; font: 700 17px "IBM Plex Mono", monospace; color: var(--deep); }
+.ttl { border-radius: 8px; background: var(--hover); box-shadow: 0 0 0 3px var(--ink), 0 5px 0 var(--shade); font: 700 19px "IBM Plex Mono", monospace; color: var(--deep); display: grid; place-items: center; white-space: nowrap; }
+/* how: a station's number hangs on a thread */
+.chip { border-radius: 16px; background: var(--paper); box-shadow: 0 0 0 3px var(--ink), 0 6px 0 var(--shade); text-align: center; padding: 10px 14px 12px; transform-origin: 50% 0; }
+.chip b { display: block; font: 700 30px "IBM Plex Mono", monospace; color: var(--deep); line-height: 1.1; }
+.chip span { display: block; font-weight: 700; font-size: 20px; line-height: 1.25; color: var(--ink); margin-top: 4px; }
+.chip.on { background: var(--ink); }
+.chip.on b, .chip.on span { color: #fff; }
+.bar { border-radius: 14px; background: var(--paper); box-shadow: 0 0 0 3px var(--ink), 0 6px 0 var(--shade); display: flex; align-items: center; gap: 10px; padding: 0 16px; font: 600 23px "IBM Plex Mono", monospace; color: var(--deep); white-space: nowrap; overflow: hidden; }
+.bar .caret { width: 3px; height: 28px; background: var(--deep); }
+.key { border-radius: 12px; background: var(--paper); box-shadow: 0 0 0 3px var(--ink), 0 6px 0 var(--ink); display: grid; place-items: center; font: 700 28px "IBM Plex Mono", monospace; color: var(--deep); }
+.stackchip { border-radius: 99px; background: var(--paper); box-shadow: 0 0 0 3px var(--ink), 0 6px 0 var(--shade); height: 60px; padding: 0 26px; display: flex; align-items: center; gap: 12px; font: 700 26px "IBM Plex Mono", monospace; color: var(--deep); white-space: nowrap; transform-origin: 50% 50%; }
+.stackchip i { width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 3px var(--ink); }
+</style></head>
+<body><div id="stage"></div>
+<script src="lib.js"></script>
+<script>
+if (LANG === 'ko') stage.classList.add('ko');
+const T = {
+  ko: { feats: ['단계별 3D 패킷 이동', '실측 경로로 만드는 시나리오', '패킷 해부와 AI 질문'], feature: 'FEATURE', value: 'VALUE',
+    cities: ['서울', '로스앤젤레스', '새너제이', 'example.org'], steps: '22단계 시나리오',
+    layers: ['응용', '보안', '전송', '네트워크', '데이터 링크'], q: 'TTL은 왜 64예요?', a: '라우터를 지날 때마다 1씩 줄고,<br>0이 되면 패킷이 버려져요.',
+    stations: ['주소 입력', 'DNS · TCP/IP', '공유기 ·<br>통신사 라우터', '서버'] },
+  en: { feats: ['Step-by-step 3D packets', 'Scenarios from measured routes', 'Packet anatomy and AI questions'], feature: 'FEATURE', value: 'VALUE',
+    cities: ['Seoul', 'Los Angeles', 'San Jose', 'example.org'], steps: 'A 22-step scenario',
+    layers: ['Application', 'Security', 'Transport', 'Network', 'Data link'], q: 'Why is the TTL 64?', a: 'Each router takes one off;<br>at zero the packet is dropped.',
+    stations: ['Type an address', 'DNS · TCP/IP', 'Home router ·<br>ISP routers', 'Server'] },
+}[LANG];
+
+// ---- svg helpers ----
+const NS = 'http://www.w3.org/2000/svg';
+function S(tag, attrs = {}, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+const setA = (e, attrs) => { for (const k in attrs) e.setAttribute(k, attrs[k]); };
+function layer(W, H) { const s = S('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}` }); s.classList.add('a'); stage.appendChild(s); return s; }
+const gAt = (g, x, y, s = 1, o = 1, r = 0) => { g.setAttribute('transform', `translate(${x} ${y}) rotate(${r}) scale(${Math.max(0.0001, s)})`); g.setAttribute('opacity', o); g.style.visibility = o <= 0.001 || s <= 0.001 ? 'hidden' : 'visible'; };
+const pts = (list) => list.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' ');
+const INK = '#0F6464', DEEP = '#0A4A4A';
+const FACES = ['#FFFFFF', '#E3F6F6', '#A6DADA'];
+
+// isometric: a runs right-down, b runs left-down, z up
+const C30 = Math.cos(Math.PI / 6);
+const iso = (a, b, z = 0) => [(a - b) * C30, (a + b) * 0.5 - z];
+/** a box standing on (0, 0), half-width hw, half-depth hd, height h: top, front-left and front-right faces */
+function box(g, hw, hd, h, fills = FACES, z0 = 0) {
+  const P = (a, b, z) => iso(a, b, z0 + z);
+  S('polygon', { points: pts([P(-hw, hd, 0), P(hw, hd, 0), P(hw, hd, h), P(-hw, hd, h)]), fill: fills[1] }, g);
+  S('polygon', { points: pts([P(hw, hd, 0), P(hw, -hd, 0), P(hw, -hd, h), P(hw, hd, h)]), fill: fills[2] }, g);
+  S('polygon', { points: pts([P(-hw, -hd, h), P(hw, -hd, h), P(hw, hd, h), P(-hw, hd, h)]), fill: fills[0] }, g);
+  return g;
+}
+function shadow(g, rx, ry) { return S('ellipse', { cx: 0, cy: 0, rx, ry, fill: INK, opacity: 0.12 }, g); }
+/** the things on a route: each a group drawn at its foot, `top` is where its link meets it */
+function thing(parent, kind) {
+  const g = S('g', { stroke: INK, 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, parent);
+  let top = 0;
+  if (kind === 'laptop') {
+    shadow(g, 112, 40);
+    box(g, 62, 40, 9);
+    const P = (a, b, z) => iso(a, b, z);
+    S('polygon', { points: pts([P(-58, -40, 9), P(58, -40, 9), P(58, -56, 86), P(-58, -56, 86)]), fill: INK }, g);
+    S('polygon', { points: pts([P(-50, -42, 18), P(50, -42, 18), P(50, -54.5, 78), P(-50, -54.5, 78)]), fill: '#DDF6F6', 'stroke-width': 2 }, g);
+    S('polyline', { points: pts([P(-40, -45, 64), P(30, -45, 64)]), 'stroke-width': 4, stroke: INK, opacity: 0.5 }, g);
+    S('polyline', { points: pts([P(-40, -47, 50), P(10, -47, 50)]), 'stroke-width': 4, stroke: INK, opacity: 0.3 }, g);
+    top = 62;
+  } else if (kind === 'router') {
+    shadow(g, 74, 28);
+    const P = (a, b, z) => iso(a, b, z);
+    S('polyline', { points: pts([P(-26, -20, 22), P(-26, -20, 74)]), 'stroke-width': 4 }, g);
+    S('polyline', { points: pts([P(26, -20, 22), P(26, -20, 74)]), 'stroke-width': 4 }, g);
+    S('circle', { cx: P(-26, -20, 78)[0], cy: P(-26, -20, 78)[1], r: 6, fill: '#fff' }, g);
+    S('circle', { cx: P(26, -20, 78)[0], cy: P(26, -20, 78)[1], r: 6, fill: '#fff' }, g);
+    box(g, 40, 26, 24);
+    g.leds = [-22, -6, 10].map((a) => { const p = P(a, 26, 11); return S('circle', { cx: p[0], cy: p[1], r: 4.5, fill: '#06D6A0', 'stroke-width': 2 }, g); });
+    top = 44;
+  } else if (kind === 'isp') {
+    shadow(g, 56, 24);
+    box(g, 26, 26, 64);
+    const P = (a, b, z) => iso(a, b, z);
+    for (const z of [18, 32, 46]) S('polyline', { points: pts([P(-20, 26, z), P(18, 26, z)]), 'stroke-width': 2.5, opacity: 0.55 }, g);
+    top = 82;
+  } else if (kind === 'server') {
+    shadow(g, 84, 32);
+    box(g, 40, 34, 136);
+    const P = (a, b, z) => iso(a, b, z);
+    for (const z of [26, 56, 86, 116]) S('polyline', { points: pts([P(-32, 34, z), P(22, 34, z)]), 'stroke-width': 3, opacity: 0.6 }, g);
+    g.leds = [28, 58, 88, 118].map((z) => { const p = P(40, 20, z); return S('circle', { cx: p[0], cy: p[1], r: 4.5, fill: '#06D6A0', 'stroke-width': 2 }, g); });
+    top = 156;
+  }
+  return { g, top };
+}
+/** a link drawn as a cased line: ink under, the link type's colour on top; draw(u) draws it on */
+function link(parent, d, color, dash = false) {
+  const g = S('g', { fill: 'none', 'stroke-linecap': 'round' }, parent);
+  const under = S('path', { d, stroke: INK, 'stroke-width': 11 }, g);
+  const over = S('path', { d, stroke: color, 'stroke-width': 5, ...(dash ? { 'stroke-dasharray': '2 12' } : {}) }, g);
+  const len = under.getTotalLength();
+  return { g, path: under, len, draw(u, o = 1) {
+    u = clamp(u); g.setAttribute('opacity', u <= 0 ? 0 : o);
+    under.setAttribute('stroke-dasharray', `${len * u} ${len}`);
+    if (!dash) over.setAttribute('stroke-dasharray', `${len * u} ${len}`); else over.setAttribute('opacity', u >= 0.999 ? 1 : 0);
+  } };
+}
+/** the packet: the icon's mint dot with a white ring, outlined in ink */
+function packet(parent) {
+  const g = S('g', {}, parent);
+  S('circle', { r: 20, fill: INK }, g); S('circle', { r: 16.5, fill: '#fff' }, g); S('circle', { r: 12, fill: '#06D6A0' }, g);
+  return g;
+}
+/** a router node like the icon's: white, ringed in ink */
+function node(parent, r = 17, fill = '#fff') {
+  const g = S('g', {}, parent);
+  S('circle', { r, fill, stroke: INK, 'stroke-width': r * 0.36 }, g);
+  return g;
+}
+/** rings that pulse out from a point at the given times (orbit) */
+function pulses(parent, times, x, y, r0 = 16, r1 = 70, dur = 0.65, w = 4) {
+  const rs = times.map(() => S('circle', { cx: x, cy: y, r: r0, fill: 'none', stroke: INK }, parent));
+  return (t) => rs.forEach((c, i) => { const u = (t - times[i]) / dur; if (u < 0 || u > 1) { c.setAttribute('opacity', 0); return; }
+    setA(c, { r: lerp(r0, r1, E.out(u)), opacity: (1 - u) * 0.9, 'stroke-width': lerp(w, 1.5, u) }); });
+}
+function tag(text, color, parent = stage) { const d = el('tag', parent, text); d.style.background = color; return d; }
+const sizeOf = (d) => [d.offsetWidth, d.offsetHeight];
+const pathAt = (path, len, u) => { const p = path.getPointAtLength(len * clamp(u)); return [p.x, p.y]; };
+const bez = (p0, c, p1, u) => [lerp(lerp(p0[0], c[0], u), lerp(c[0], p1[0], u), u), lerp(lerp(p0[1], c[1], u), lerp(c[1], p1[1], u), u)];
+/** text that types on: n of its characters shown, the rest kept for layout */
+function typed(d, html, u) {
+  if (d._html !== html) { d._html = html; d._chars = html.split(/(<br>)/).flatMap((s) => (s === '<br>' ? [s] : [...s])); }
+  const n = Math.round(d._chars.filter((c) => c !== '<br>').length * clamp(u));
+  let k = 0, out = '', rest = '';
+  for (const c of d._chars) { if (c === '<br>') { (k < n ? (out += c) : (rest += c)); continue; } if (k < n) out += c; else rest += c; k++; }
+  d.querySelector('.txt').innerHTML = out + `<span style="visibility:hidden">${rest}</span>`;
+}
+
+// =====================================================================================
+// FEATURES — the three features in turn, named in a header strip (log#XX.2)
+// =====================================================================================
+function features() {
+  const W = 968, H = 830, D = 12.6;
+  const PROTO = ['var(--tcp)', 'var(--dns)', 'var(--tls)'];
+  // the header strip: a ruler of bit ticks over a number field and a value field
+  const ruler = el('ruler');
+  for (let i = 0; i <= 32; i++) { const tk = document.createElement('i'); tk.style.left = (i * (W - 104) / 32) + 'px'; if (i % 8 === 0) tk.className = 'b'; ruler.appendChild(tk); }
+  const noF = el('field no'), capF = el('field cap');
+  noF.innerHTML = `<span class="k">NO</span>`; capF.innerHTML = `<span class="k">${T.feature}</span>`;
+  const nos = [0, 1, 2].map((i) => el('v', noF, `0${i + 1}`)), caps = T.feats.map((f) => el('v', capF, f));
+  const noTint = el('', noF); noTint.style.cssText = 'position:absolute;left:0;bottom:0;width:100%;height:10px;';
+
+  const sv = layer(W, H);
+  // ---- scene 1: a route of things, stepped hop by hop ----
+  const s1 = S('g', {}, sv);
+  const linkG = S('g', {}, s1);
+  const SP = [[170, 646], [374, 560], [552, 650], [684, 516], [842, 440]], TS = 1.16; // feet, and how big the things are
+  const kinds = ['laptop', 'router', 'isp', 'isp', 'server'];
+  const things = SP.map(([x, y], i) => ({ ...thing(S('g', {}, s1), kinds[i]), x, y }));
+  const hp = things.map((o) => [o.x, o.y - o.top * TS]); // where links meet them
+  const LINKC = ['#7DD3FC', '#FFB020', '#A98BFA', '#A98BFA'];
+  const links1 = hp.slice(0, -1).map((p, i) => { const q = hp[i + 1]; const c = [(p[0] + q[0]) / 2, Math.min(p[1], q[1]) - 46];
+    return link(linkG, `M${p[0]} ${p[1]} Q${c[0]} ${c[1]} ${q[0]} ${q[1]}`, LINKC[i], i === 0); });
+  const pktG = S('g', {}, sv);
+  const pkt = packet(pktG);
+  const HOP0 = 0.5, HOP = 0.86, MOVE = 0.48;
+  const arrive = [0, 1, 2, 3].map((k) => HOP0 + k * HOP + MOVE);
+  const ringAt = arrive.map((a, k) => pulses(s1, [a], hp[k + 1][0], hp[k + 1][1], 18, 74));
+  const ptag = tag('TCP <small>SYN</small>', 'var(--tcp)');
+
+  // the stepper: the scenario's beats in their protocol colours, a playhead, the next-step button and a count
+  const stepG = S('g', {}, sv);
+  const SEG = [[0, 20, 'var(--local)'], [25, 20, 'var(--local)'], [50, 34, 'var(--dns)'], [90, 34, 'var(--dns)'], [130, 54, 'var(--tcp)'], [189, 54, 'var(--tcp)'],
+    [248, 54, 'var(--tcp)'], [308, 70, 'var(--tls)'], [383, 70, 'var(--tls)'], [459, 54, 'var(--http)'], [518, 36, 'var(--http)']];
+  // (the page's pause button sits in the clip's bottom-left corner: the stepper keeps clear of it)
+  const SX = 236, SY = 770, SEND = SX + 554, BX = 166, GROUP = [[0, 1, 2, 3], [4, 5, 6], [7, 8], [9, 10]];
+  const segs = SEG.map(([x, w, c]) => S('rect', { x: SX + x, y: SY - 11, width: w, height: 22, rx: 11, fill: c, stroke: INK, 'stroke-width': 3 }, stepG));
+  const head = S('rect', { x: 0, y: SY - 22, width: 8, height: 44, rx: 4, fill: INK }, stepG);
+  const btn = S('g', {}, stepG);
+  S('circle', { r: 34, fill: INK }, btn);
+  S('path', { d: 'M-12 -13 L6 0 L-12 13 Z', fill: '#fff' }, btn); S('rect', { x: 8, y: -13, width: 6, height: 26, rx: 2, fill: '#fff' }, btn);
+  const press = pulses(stepG, arrive.map((a) => a - MOVE - 0.04), BX, SY, 30, 64, 0.5, 4);
+  const count = el('lbl mono');
+
+  // ---- scene 2: a measured route over the globe ----
+  const s2 = S('g', {}, sv);
+  const GC = [484, 1560], GR = 1100;
+  const globe = S('g', {}, s2);
+  S('circle', { cx: GC[0], cy: GC[1], r: GR, fill: '#AEE2E2', stroke: INK, 'stroke-width': 4 }, globe);
+  for (const k of [1, 2, 3, 4]) S('ellipse', { cx: GC[0], cy: GC[1], rx: GR * (1 - k * 0.2), ry: GR, fill: 'none', stroke: INK, 'stroke-width': 3, 'stroke-dasharray': '1 14', 'stroke-linecap': 'round', opacity: 0.45 }, globe);
+  for (const k of [1, 2, 3]) S('circle', { cx: GC[0], cy: GC[1], r: GR - k * 70, fill: 'none', stroke: INK, 'stroke-width': 3, 'stroke-dasharray': '1 14', 'stroke-linecap': 'round', opacity: 0.45 }, globe);
+  const onGlobe = (x) => [x, GC[1] - Math.sqrt(GR * GR - (x - GC[0]) ** 2)];
+  const A0 = onGlobe(164), A1 = onGlobe(842), AC = [480, 40];
+  const routeD = `M${A0[0]} ${A0[1]} Q${AC[0]} ${AC[1]} ${A1[0]} ${A1[1]}`;
+  const route = link(s2, routeD, '#A98BFA');
+  const HOPU = [0.16, 0.66, 0.86, 1];
+  const hopP = HOPU.map((u) => bez(A0, AC, A1, u));
+  const homeN = node(s2, 19, '#fff');
+  const PING = [4.95, 5.5, 6.05, 6.6];
+  const ping = pulses(s2, PING, A0[0], A0[1], 20, 260, 0.9, 5);
+  const hopN = hopP.map(() => node(s2, 15, '#fff'));
+  const hopDot = hopP.map((p) => S('circle', { r: 6, fill: 'var(--o)', stroke: 'none' }, s2));
+  const hopRing = hopP.map((p, i) => pulses(s2, [PING[i] + 0.42], p[0], p[1], 14, 52, 0.5, 3.5));
+  const RTT = ['3.7 ms', '132 ms', '139 ms', '140 ms'];
+  const hopL = RTT.map((r, i) => el('lbl', stage, `${r}<small>${T.cities[i]}</small>`));
+  const scen = el('lbl'); scen.style.font = '700 26px "IBM Plex Sans", "IBM Plex Sans KR", sans-serif';
+  scen.textContent = T.steps;
+  const fly = [['DNS', 'var(--dns)', 2], ['TCP', 'var(--tcp)', 4], ['TLS', 'var(--tls)', 7], ['HTTP', 'var(--http)', 9]].map(([n, c, seg]) => ({ d: tag(n, c), seg }));
+
+  sv.appendChild(stepG); sv.appendChild(pktG); // above the globe
+
+  // ---- scene 3: the packet's layers, nested, then unfolded; a question to the AI ----
+  const LAY = [['HTTP', 'var(--http)'], ['TLS', 'var(--tls)'], ['TCP', 'var(--seg)'], ['IPv4', 'var(--ip)'], ['Ethernet', 'var(--eth)']];
+  const NEST = LAY.map((_, i) => { const w = 150 + i * 92, h = 96 + i * 66; return [484 - w / 2, 468 - h / 2, w, h]; });
+  // unfolded: rows of header + the data of the layer above, stepping left as in the app's encapsulation view
+  const RX = 236, RY = 214, RH = 58, RG = 14, HW = 112;
+  const ROW = LAY.map((_, i) => [RX + 470 - i * (HW + 10) + (i === 4 ? 0 : 0), RY + i * (RH + RG), HW, RH]);
+  const blocks = LAY.slice().reverse().map(([n, c]) => { const b = el('blk', stage, n); b.style.background = c; return b; }).reverse();
+  const datas = LAY.map((_, i) => { if (!i) return null; const d = el('blk data', stage, LAY[i - 1][0] + ' …'); return d; });
+  const fcs = el('blk', stage, 'FCS'); fcs.style.background = 'var(--eth)';
+  const rowL = T.layers.map((n) => el('rowlbl', stage, n));
+  const ask = el('ask', stage, T.q);
+  const ans = el('ans', stage, `<b class="ai">AI</b><span class="txt"></span>`);
+  const core = S('g', {}, sv);
+
+  return { W, H, D, poster: 2.7, render(t) {
+    // ---- the header strip ----
+    const which = t < 4.1 ? 0 : t < 8.35 ? 1 : t < 12.15 ? 2 : 0;
+    const swapAt = [4.1, 8.35, 12.15];
+    place(ruler, 52, 32, { w: W - 104 });
+    place(noF, 52, 56, { w: 104, h: 90 });
+    place(capF, 176, 56, { w: W - 176 - 52, h: 90 });
+    const swapU = (k) => { // 0 → 1 across a swap: the old value slides up and out, the new one in from below
+      let v = 0; for (const s of swapAt) v = Math.max(v, t >= s - 0.2 && t < s + 0.25 ? prog(t, s - 0.2, s + 0.25, E.io) : 0); return v; };
+    const cur = which, u = swapU();
+    const inSwap = swapAt.some((s) => t >= s - 0.2 && t < s + 0.25);
+    const showing = (i) => {
+      if (!inSwap) return i === cur ? [0, 1] : null;
+      const s = swapAt.find((x) => t >= x - 0.2 && t < x + 0.25), from = swapAt.indexOf(s), to = (from + 1) % 3;
+      if (i === from) return [-u * 90, 1 - u];
+      if (i === to) return [(1 - u) * 90, u];
+      return null;
+    };
+    for (let i = 0; i < 3; i++) {
+      const s = showing(i);
+      for (const d of [nos[i], caps[i]]) { if (!s) { d.style.visibility = 'hidden'; continue; } d.style.visibility = 'visible'; d.style.transform = `translateY(${s[0]}px)`; d.style.opacity = s[1]; }
+    }
+    noTint.style.background = PROTO[inSwap ? (u < 0.5 ? (which + 2) % 3 : which) : which];
+
+    // ---- scene 1 ----
+    const s1in = t < 6 ? 1 - prog(t, 3.95, 4.55, E.in) : prog(t, 12.0, 12.55, E.out);
+    things.forEach((o, i) => { const st = i * 0.05; const k = t < 6 ? 1 - prog(t, 3.95 + st, 4.4 + st, E.in) : (t < 12.15 ? 0 : E.spring(clamp((t - 12.15 - i * 0.035) / 0.34)));
+      gAt(o.g, o.x, o.y + (1 - Math.min(1, k)) * 24, Math.max(0, k) * TS, clamp(k * 3)); });
+    links1.forEach((l, i) => l.draw(t < 6 ? (t < 3.95 ? 1 : 1 - prog(t, 3.95, 4.3)) : prog(t, 12.2 + i * 0.05, 12.45 + i * 0.05)));
+    // the packet: hop by hop, waiting at each thing
+    let ppos = hp[0], pS = 1, pO = 1;
+    if (t < 4) {
+      for (let k = 0; k < 4; k++) { const t0 = HOP0 + k * HOP; if (t >= t0) { const uu = prog(t, t0, t0 + MOVE, E.io); ppos = pathAt(links1[k].path, links1[k].len, uu); } }
+      if (t > 3.6) { const k = prog(t, 3.6, 3.95, E.in); pS = 1 - k; pO = 1 - k; }
+    } else if (t < 8.6) { pS = 0; pO = 0; }
+    ringAt.forEach((f) => f(t));
+    const led = (o, on) => o.g.leds?.forEach((l, i) => l.setAttribute('fill', on && Math.floor(t * 8 + i) % 2 ? '#FFD166' : '#06D6A0'));
+    things.forEach((o, i) => led(o, i > 0 && t > arrive[i - 1] && t < arrive[i - 1] + 0.5));
+    // the stepper (scene 1 and 2) slides down for scene 3 and back up for the loop
+    const stepOut = t < 9 ? prog(t, 8.3, 8.75, E.in) : 1 - prog(t, 12.05, 12.55, E.out);
+    stepG.setAttribute('transform', `translate(0 ${stepOut * 140})`); stepG.setAttribute('opacity', 1 - stepOut);
+    let nDone = 2; for (let k = 0; k < 4; k++) if (t >= HOP0 + k * HOP) nDone = 3 + k;
+    let headX = SX + SEG[Math.min(nDone, SEG.length - 1)][0] - 6;
+    // scene 2 fills the beats as the scenario is built: each flying tag fills its protocol's beats
+    const groupAt = (k) => 7.0 + k * 0.22 + 0.42;
+    segs.forEach((sg, i) => { let f;
+      if (t < 4.2) f = i < nDone ? 1 : 0.28;
+      else if (t < 12) { const k = GROUP.findIndex((g) => g.includes(i)); f = t >= 8.6 ? 1 : t >= groupAt(k) ? 1 : 0; }
+      else f = i < 2 ? 1 : 0.28;
+      sg.setAttribute('fill-opacity', f); });
+    if (t >= 3.95 && t < 4.6) headX = lerp(headX, SX - 6, prog(t, 3.95, 4.5));
+    if (t >= 4.5 && t < 12) headX = lerp(SX - 6, SEND + 4, prog(t, 7.0, 7.9));
+    if (t >= 12) headX = lerp(SEND + 4, SX + SEG[2][0] - 6, prog(t, 12.05, 12.5));
+    head.setAttribute('x', headX);
+    const bp = arrive.some((a) => t > a - MOVE - 0.1 && t < a - MOVE + 0.06) ? 0.88 : 1;
+    btn.setAttribute('transform', `translate(${BX} ${SY}) scale(${bp})`);
+    press(t);
+    const n = t < 4.2 ? nDone : t < 7.9 ? Math.round(lerp(0, 22, prog(t, 7.0, 7.9, E.lin))) : t < 12 ? 22 : 2;
+    count.innerHTML = t >= 4.2 && t < 12 ? `${String(n).padStart(2, '0')}` : `${String(n).padStart(2, '0')} / 22`;
+    const [cw0] = sizeOf(count);
+    place(count, W - 52 - cw0, SY - 15 + stepOut * 140, { o: (1 - stepOut) * (t >= 4.3 && t < 6.95 ? 0 : 1) });
+    // packet and its tag
+    if (t >= 8.6 && t < 12.6) { // scene 3: the packet is the core of the layers
+      const k = prog(t, 8.6, 9.0, E.back);
+      ppos = mix(A0, [484, 468], prog(t, 8.6, 9.0, E.io)); pS = lerp(0.3, 1.5, k); pO = clamp((t - 8.6) * 6);
+      if (t > 9.95) { const g = prog(t, 9.95, 10.3, E.in); pS = 1.5 * (1 - g); }
+      // the layers fold back into it, and it flies home to the laptop for the next loop
+      if (t >= 12.12) { ppos = mix([484, 468], hp[0], prog(t, 12.15, 12.5, E.io)); pS = lerp(1.5, 1, prog(t, 12.15, 12.5)) * E.spring(clamp((t - 12.12) / 0.3)); pO = 1; }
+    }
+    gAt(pkt, ppos[0], ppos[1], pS, pO);
+    const tagO = t < 3.6 ? 1 : t < 12 ? 0 : prog(t, 12.25, 12.55);
+    const [tw, th] = sizeOf(ptag);
+    place(ptag, ppos[0] - tw / 2, ppos[1] - 34 - th, { o: tagO, s: t < 3.6 ? 1 : (t >= 12 ? E.spring(clamp((t - 12.25) / 0.4)) : 0) });
+
+    // ---- scene 2 ----
+    const gl = t < 8 ? prog(t, 4.3, 5.0, E.out) : 1 - prog(t, 8.3, 8.9, E.in);
+    const s2o = t >= 4.25 && t < 9.0 ? 1 : 0;
+    s2.setAttribute('opacity', s2o);
+    globe.setAttribute('transform', `translate(0 ${(1 - gl) * 460})`);
+    const fade2 = t < 8 ? 1 : 1 - prog(t, 8.3, 8.7);
+    gAt(homeN, A0[0], A0[1] + (1 - gl) * 460, E.spring(clamp((t - 4.6) / 0.5)), fade2);
+    ping(t);
+    // each wave finds the next hop: the route draws on to it
+    let drawn = 0;
+    HOPU.forEach((uH, i) => { const at = PING[i] + 0.42; if (t >= PING[i] + 0.12) drawn = Math.max(drawn, lerp(i ? HOPU[i - 1] : 0, uH, prog(t, PING[i] + 0.12, at, E.io))); });
+    route.draw(drawn, fade2);
+    hopP.forEach((p, i) => { const at = PING[i] + 0.42; const [s] = pop(t, at, 1e9, 0.45);
+      gAt(hopN[i], p[0], p[1], s, fade2); gAt(hopDot[i], p[0], p[1], s, fade2); hopRing[i](t);
+      const L = hopL[i], [lw, lh] = sizeOf(L), dx = [-lw - 22, -lw / 2, 22, -lw / 2][i];
+      const dy = [-lh / 2 - 6, -lh - 26, -lh / 2 - 22, 28][i];
+      place(L, p[0] + dx, p[1] + dy, { o: Math.min(clamp((t - at - 0.05) * 5), fade2), s: 1 }); });
+    // the scenario: its beats fly from the route into the stepper
+    fly.forEach((f, k) => { const t0 = 7.0 + k * 0.22, from = bez(A0, AC, A1, [0.1, 0.4, 0.66, 0.92][k]);
+      const to = [SX + SEG[f.seg][0] + SEG[f.seg][1] / 2, SY];
+      const uu = prog(t, t0, t0 + 0.5, E.io), [fw, fh] = sizeOf(f.d), [ps] = pop(t, t0 - 0.25, t0 + 0.42, 0.3, 0.12);
+      const p = bez(from, [(from[0] + to[0]) / 2, from[1] - 120], to, uu);
+      place(f.d, p[0] - fw / 2, p[1] - fh / 2, { s: ps * lerp(1, 0.6, uu), o: ps }); });
+    const [scw] = sizeOf(scen);
+    place(scen, W - 52 - scw, SY - 72, { o: t > 7.85 && t < 8.35 ? 1 : t >= 8.35 ? 1 - prog(t, 8.35, 8.6) : prog(t, 7.6, 7.85), s: 1 });
+
+    // ---- scene 3 ----
+    const unfold = prog(t, 10.0, 10.65, E.io), collapse = prog(t, 11.95, 12.17, E.in), gone = prog(t, 11.95, 12.05);
+    LAY.forEach((_, i) => {
+      const t0 = 9.0 + i * 0.13, [s] = pop(t, t0, 1e9, 0.5);
+      const r = mix(mix(NEST[i], ROW[i], unfold), [480, 464, 8, 8], collapse);
+      const k = s;
+      const cx = r[0] + r[2] / 2, cy = r[1] + r[3] / 2;
+      const b = blocks[i];
+      b.style.zIndex = unfold > 0.5 ? 10 : 10 - i;
+      b.style.alignItems = unfold > 0.5 ? 'center' : 'flex-start'; b.style.paddingTop = unfold > 0.5 ? '0' : '10px';
+      b.style.borderRadius = lerp(26, 9, unfold) + 'px';
+      place(b, cx - r[2] / 2 * k, cy - r[3] / 2 * k, { w: r[2] * Math.max(k, 0.001), h: r[3] * Math.max(k, 0.001), o: t >= 8.95 && t < 12.17 ? clamp(k * 3) * (1 - prog(t, 12.1, 12.17)) : 0 });
+      if (datas[i]) { const dx = ROW[i][0] + HW + 10, dw = ROW[0][0] + HW - dx; const dk = prog(t, 10.45 + i * 0.05, 10.8 + i * 0.05, E.out) * (1 - gone);
+        place(datas[i], dx, ROW[i][1], { w: dw * Math.max(dk, 0.001), h: RH, o: dk > 0.01 ? 1 : 0 }); }
+      const lk = prog(t, 10.5 + i * 0.05, 10.85 + i * 0.05) * (1 - gone);
+      place(rowL[i], RX - 200 + (1 - lk) * -20, ROW[i][1] + 15, { o: lk });
+    });
+    { const fk = prog(t, 10.75, 11.0, E.out) * (1 - gone); place(fcs, ROW[0][0] + HW + 20, ROW[4][1], { w: 76 * Math.max(fk, 0.001), h: RH, o: fk > 0.01 ? 1 : 0 }); }
+    // the question: the TTL field of the IPv4 header lifts out, the learner asks, the AI answers
+    const asked = t >= 10.95 && t < 12.0;
+    blocks[3].textContent = asked ? 'TTL 64' : 'IPv4'; blocks[3].style.background = asked ? 'var(--hover)' : 'var(--ip)';
+    const bump = asked && t < 11.3 ? Math.sin(prog(t, 10.95, 11.3) * Math.PI) * 0.08 : 0;
+    if (bump) blocks[3].style.transform += ` scale(${1 + bump})`;
+    const [as] = pop(t, 11.05, 11.95, 0.45, 0.25), [aw] = sizeOf(ask);
+    place(ask, W - 52 - aw, 596, { s: as, o: clamp(as * 2) });
+    const [ns] = pop(t, 11.35, 11.95, 0.45, 0.25);
+    typed(ans, T.a, prog(t, 11.45, 11.9, E.lin));
+    place(ans, 236, 668, { w: W - 236 - 52, s: ns, o: clamp(ns * 2) });
+  } };
+}
+
+// =====================================================================================
+// HOW — the four steps, numbered as in the list above, each hanging on a thread (log#XX.3)
+// =====================================================================================
+function how() {
+  const W = 968, H = 672, D = 9.6;
+  const sv = layer(W, H);
+  const X = [120, 352, 584, 806], TY = 372; // stations along the track (the bottom-right corner is the page's pause button)
+  const track = S('g', {}, sv);
+  const trackD = `M${X[0]} ${TY} L${X[1]} ${TY} L${X[2]} ${TY} Q${(X[2] + X[3]) / 2} ${TY - 120} ${X[3]} ${TY}`;
+  const lane = link(track, trackD, '#A98BFA');
+  // the track's length at each station, measured along the path
+  const L = lane.len, at = [0, 0, 0, L];
+  { let best = [1e9, 1e9, 1e9]; for (let s = 0; s <= L; s += 1) { const p = lane.path.getPointAtLength(s); [1, 2].forEach((k) => { const d = Math.abs(p.x - X[k]) + Math.abs(p.y - TY); if (d < best[k]) { best[k] = d; at[k] = s; } }); } }
+  const ISPU = [0.25, 0.5, 0.75].map((u) => at[2] + (at[3] - at[2]) * u);
+  const ispN = ISPU.map(() => node(track, 12));
+  const stN = X.map(() => node(track, 18));
+  // the things under the stations
+  const things = S('g', {}, sv);
+  const router = thing(S('g', {}, things), 'router'), server = thing(S('g', {}, things), 'server');
+  const bar = el('bar', stage, `<svg width="22" height="26" viewBox="0 0 22 26"><rect x="2" y="11" width="18" height="13" rx="3" fill="${INK}"/><path d="M6 11 V8 a5 5 0 0 1 10 0 V11" fill="none" stroke="${INK}" stroke-width="3"/></svg><span class="url"></span><i class="caret"></i>`);
+  const url = bar.querySelector('.url'), caret = bar.querySelector('.caret');
+  const key = el('key', stage, '↵');
+  const dns = tag('DNS <small>example.org ?</small>', 'var(--dns)');
+  const syn = ['SYN', 'SYN-ACK', 'ACK'].map((n) => tag(n, 'var(--tcp)'));
+  // the numbers hang from the top on threads
+  const threads = X.map(() => S('line', { stroke: INK, 'stroke-width': 3 }, sv));
+  const chips = T.stations.map((s, i) => el('chip', stage, `<b>0${i + 1}</b><span>${s}</span>`));
+  const pg = S('g', {}, sv), pkt = packet(pg);
+  const ptag = tag('DNS', 'var(--dns)');
+  const arrRing = [[2.3, 1], [4.0, 2], [6.25, 3]].map(([a, k]) => pulses(sv, [a], X[k], TY, 18, 80));
+  const ispRing = ISPU.map((s, i) => { const p = lane.path.getPointAtLength(s); return pulses(sv, [4.95 + i * 0.33], p.x, p.y, 12, 50, 0.5, 3); });
+  const back = pulses(sv, [8.3], X[0], TY, 18, 90);
+  const keyRing = pulses(sv, [1.5], X[0] + 95, 568, 26, 84, 0.55, 4);
+  // when each station is the current one
+  const ACT = [[0.25, 1.75], [2.3, 3.75], [4.0, 6.1], [6.25, 7.4]];
+
+  return { W, H, D, poster: 3.3, render(t) {
+    lane.draw(1);
+    stN.forEach((g, i) => gAt(g, X[i], TY, 1));
+    ISPU.forEach((s, i) => { const p = lane.path.getPointAtLength(s); gAt(ispN[i], p.x, p.y, 1); });
+    // stations' chips: the current one fills with ink and swings on its thread
+    X.forEach((x, i) => {
+      const [a0, a1] = ACT[i], on = t >= a0 && t < a1 + (i === 0 ? 7 : 0) && !(t > 9.05);
+      const done = t >= a0 && t < 9.05;
+      const sw = t >= a0 && t < a0 + 1.4 ? Math.sin((t - a0) * 9) * Math.exp(-(t - a0) * 3.2) * 9 : 0;
+      const drop = t >= a0 && t < a0 + 0.6 ? E.spring(clamp((t - a0) / 0.6)) : 1;
+      const c = chips[i]; c.classList.toggle('on', t >= a0 && t < a1);
+      const [cw, ch] = sizeOf(c), len = 64 + (drop - 1) * -0 + (t >= a0 && t < a0 + 0.6 ? (1 - drop) * -26 : 0);
+      const ang = sw * Math.PI / 180;
+      const tx = x + Math.sin(ang) * len, ty = Math.cos(ang) * len;
+      setA(threads[i], { x1: x, y1: -4, x2: tx, y2: ty, opacity: t >= 9.05 ? lerp(1, 0.4, prog(t, 9.05, 9.45)) : done ? 1 : 0.4 });
+      const dim = t >= 9.05 ? lerp(1, 0.55, prog(t, 9.05, 9.45)) : done ? 1 : 0.55;
+      c.style.opacity = dim;
+      c.style.transform = `translate(${tx - cw / 2}px, ${ty}px) rotate(${-sw}deg)`;
+      c.style.visibility = 'visible';
+    });
+    // 01 · an address typed and entered
+    const typedU = prog(t, 0.3, 1.25, E.lin), clear = prog(t, 9.05, 9.4, E.lin);
+    const full = 'example.org';
+    url.textContent = full.slice(0, Math.round(full.length * typedU * (1 - clear)));
+    caret.style.opacity = Math.floor(t * 2.4) % 2 || (t > 0.3 && t < 1.3) ? 1 : 0;
+    place(bar, X[0] - 98, 452, { w: 232, h: 64 });
+    const kp = t > 1.45 && t < 1.65 ? 6 : 0;
+    place(key, X[0] + 62, 538 + kp, { w: 66, h: 60 });
+    key.style.boxShadow = `0 0 0 3px ${INK}, 0 ${6 - kp}px 0 ${INK}`;
+    keyRing(t);
+    // 02 · the name asked and answered, then the three-way handshake
+    const [ds] = pop(t, 2.45, 9.05, 0.45, 0.25);
+    dns.innerHTML = t < 3.0 ? 'DNS <small>example.org ?</small>' : 'DNS <small>192.0.2.10</small>';
+    const flip = t > 2.88 && t < 3.12 ? Math.abs(Math.cos((t - 2.88) / 0.24 * Math.PI)) : 1;
+    const [dw] = sizeOf(dns);
+    place(dns, X[1] - dw / 2, 446, { sx: ds, sy: ds * flip, o: clamp(ds * 2) });
+    syn.forEach((s, k) => { const [ss] = pop(t, 3.15 + k * 0.2, 9.05, 0.4, 0.2); const [sw2] = sizeOf(s);
+      place(s, X[1] - sw2 / 2 + (k === 1 ? 36 : -36), 504 + k * 50, { s: ss, o: clamp(ss * 2) }); });
+    // 03 · the home router, then the ISP's routers on the way
+    gAt(router.g, X[2], 552, 1);
+    router.g.leds.forEach((l, i) => l.setAttribute('fill', t > 4.0 && t < 6.1 && Math.floor(t * 8 + i) % 2 ? '#FFD166' : '#06D6A0'));
+    // 04 · the server answers
+    gAt(server.g, X[3], 600, 0.92);
+    server.g.leds.forEach((l, i) => l.setAttribute('fill', t > 6.25 && t < 7.5 && Math.floor(t * 8 + i) % 2 ? '#FFD166' : '#06D6A0'));
+    // the packet: out to each station in turn, then the answer runs home
+    let s = 0, tg = ['DNS', 'var(--dns)'], show = 1;
+    if (t < 1.65) { s = 0; show = t > 1.55 ? 1 : 0; }
+    else if (t < 2.3) { s = at[1] * prog(t, 1.65, 2.3, E.io); tg = ['DNS', 'var(--dns)']; }
+    else if (t < 3.4) { s = at[1]; tg = ['DNS', 'var(--dns)']; }
+    else if (t < 4.0) { s = lerp(at[1], at[2], prog(t, 3.4, 4.0, E.io)); tg = ['TCP', 'var(--tcp)']; }
+    else if (t < 4.8) { s = at[2]; tg = ['TLS', 'var(--tls)']; }
+    else if (t < 6.25) { s = lerp(at[2], at[3], prog(t, 4.8, 6.25, E.io)); tg = ['TLS', 'var(--tls)']; }
+    else if (t < 6.8) { s = at[3]; tg = ['HTTP <small>GET /</small>', 'var(--http)']; }
+    else if (t < 7.3) { s = at[3]; tg = ['200 <small>OK</small>', 'var(--http)']; }
+    else if (t < 8.3) { s = lerp(at[3], 0, prog(t, 7.3, 8.3, E.io)); tg = ['200 <small>OK</small>', 'var(--http)']; }
+    else { s = 0; tg = ['200 <small>OK</small>', 'var(--http)']; show = 1 - prog(t, 8.7, 9.0); }
+    const p = lane.path.getPointAtLength(s);
+    const ps = t < 1.65 ? E.spring(clamp((t - 1.5) / 0.45)) : show;
+    gAt(pkt, p.x, p.y, ps, ps > 0 ? 1 : 0);
+    if (ptag._t !== tg[0]) { ptag._t = tg[0]; ptag.innerHTML = tg[0]; } ptag.style.background = tg[1];
+    const [pw, ph] = sizeOf(ptag);
+    place(ptag, p.x - pw / 2, p.y - 32 - ph, { s: ps, o: ps > 0 ? 1 : 0 });
+    arrRing.forEach((f) => f(t)); ispRing.forEach((f) => f(t)); back(t);
+  } };
+}
+
+// =====================================================================================
+// STACK — the icon assembled from its routers and its packet, its stack around it (no words)
+// =====================================================================================
+function stack() {
+  const W = 968, H = 972, D = 7.6;
+  const sv = layer(W, H);
+  const SZ = 520, OX = (W - SZ) / 2, OY = 226, k = SZ / 128; // the icon's 128 units, placed
+  const U = ([x, y]) => [OX + x * k, OY + y * k];
+  const tile = S('rect', { x: -SZ / 2, y: -SZ / 2, width: SZ, height: SZ, rx: SZ * 0.225, fill: '#1E1510' }, sv);
+  const tileG = S('g', {}, sv); tileG.appendChild(tile);
+  const NODES = [[64, 12], [20, 38], [108, 38], [64, 64], [20, 90], [108, 90], [64, 116]];
+  // the icon's own 128-unit geometry, scaled down a little inside its tile as on the app icon
+  const IS = 0.74, IC = [64, 64];
+  const I = ([x, y]) => U([IC[0] + (x - IC[0]) * IS, IC[1] + (y - IC[1]) * IS]);
+  const FACE = [[[64, 12], [108, 38], [64, 64], [20, 38], '#FFD166'], [[20, 38], [64, 64], [64, 116], [20, 90], '#FF9F1C'], [[64, 64], [108, 38], [108, 90], [64, 116], '#FF6B35']];
+  const faces = FACE.map((f) => { const g = S('g', {}, sv); S('polygon', { points: pts(f.slice(0, 4).map(I)), fill: f[4] }, g); return { g, c: I(f.slice(0, 4).reduce((a, p) => [a[0] + p[0] / 4, a[1] + p[1] / 4], [0, 0])) }; });
+  const EDGE = 'M64 12 L108 38 L108 90 L64 116 L20 90 L20 38 Z M20 38 L64 64 L108 38 M64 64 L64 116';
+  const edgeD = EDGE.replace(/(\d+) (\d+)/g, (_, x, y) => I([+x, +y]).map((v) => v.toFixed(1)).join(' '));
+  const edges = S('path', { d: edgeD, fill: 'none', stroke: INK, 'stroke-width': 7, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, sv);
+  const eLen = edges.getTotalLength();
+  // the packet's run, as in the logo: up, across, down and round
+  const RUN = [[64, 12], [108, 38], [64, 64], [20, 90], [64, 116], [108, 90], [108, 38], [64, 12]];
+  const runD = 'M' + RUN.map((p) => I(p).map((v) => v.toFixed(1)).join(' ')).join(' L');
+  const runP = S('path', { d: runD, fill: 'none', stroke: 'none' }, sv);
+  const runLen = runP.getTotalLength();
+  const trail = S('path', { d: runD, fill: 'none', stroke: '#06D6A0', 'stroke-width': 12, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, sv);
+  const nodeG = NODES.map(() => { const g = S('g', {}, sv); const c = S('circle', { r: 8 * IS * k * 0.95, fill: '#fff', stroke: INK, 'stroke-width': 5 * IS * k * 0.95 }, g); g.c = c; return g; });
+  const nodeIn = NODES.map((_, i) => 0.25 + [0, 0.1, 0.1, 0.2, 0.3, 0.3, 0.4][i]);
+  const rings = NODES.map((p, i) => pulses(sv, [nodeIn[i] + 0.05], ...I(p), 22, 96, 0.6, 5));
+  const pg = S('g', {}, sv); const pkt = S('circle', { r: 7 * IS * k, fill: '#06D6A0', stroke: '#fff', 'stroke-width': 2.5 * IS * k }, pg);
+  // where the packet passes each node on its run, and the pulse it leaves there
+  const RUN0 = 3.0, RUNT = 3.0;
+  const segLen = []; { let acc = 0; for (let i = 0; i < RUN.length; i++) { segLen.push(acc); if (i < RUN.length - 1) acc += Math.hypot(I(RUN[i + 1])[0] - I(RUN[i])[0], I(RUN[i + 1])[1] - I(RUN[i])[1]); } }
+  const passT = segLen.map((s) => RUN0 + (s / runLen) * RUNT);
+  const passR = RUN.map((p, i) => pulses(sv, [passT[i]], ...I(p), 20, 70, 0.5, 4));
+  // the stack, each from the node it hangs off
+  const STK = [['Three.js', 0, [0, 136], 'var(--tcp)'], ['TypeScript', 2, [1, 136], 'var(--dns)'], ['Electron', 4, [0, 836], 'var(--tls)'], ['ChatGPT · Claude', 5, [1, 836], 'var(--http)']];
+  const chipL = STK.map(() => S('line', { stroke: INK, 'stroke-width': 4, 'stroke-linecap': 'round' }, sv));
+  sv.insertBefore(tileG, sv.firstChild); chipL.forEach((l) => sv.insertBefore(l, tileG)); // the lines come out from under the tile
+  const chips = STK.map(([n, , , c]) => { const d = el('stackchip', stage, `<i style="background:${c}"></i>${n}`); return d; });
+  const chipT = STK.map(([, ni]) => passT[RUN.findIndex((p) => p[0] === NODES[ni][0] && p[1] === NODES[ni][1])]);
+
+  return { W, H, D, poster: 4.9, render(t) {
+    const out = prog(t, 6.55, 7.25, E.in); // everything folds away for the loop
+    // the routers pop in with their rings (orbit), then the cube's edges draw between them
+    NODES.forEach((p, i) => { const s = E.spring(clamp((t - nodeIn[i]) / 0.5)) * (1 - prog(t, 6.9 + i * 0.04, 7.25 + i * 0.04, E.in)); const [x, y] = I(p);
+      gAt(nodeG[i], x, y, s, s > 0 ? 1 : 0);
+      const brown = prog(t, 2.1, 2.5); nodeG[i].c.setAttribute('stroke', brown > 0.5 && t < 6.9 ? '#5A2E1A' : INK); });
+    rings.forEach((f) => f(t));
+    const eu = prog(t, 0.75, 1.55, E.io), eo = 1 - prog(t, 2.1, 2.5);
+    setA(edges, { 'stroke-dasharray': `${eLen * eu} ${eLen}`, opacity: t > 6.5 ? 0 : eo });
+    // the faces fill in with a bounce, then the dark tile lands behind them
+    faces.forEach((f, i) => { const s = E.spring(clamp((t - 1.45 - i * 0.14) / 0.55)) * (1 - prog(t, 6.65 + i * 0.05, 7.0 + i * 0.05, E.in));
+      f.g.setAttribute('transform', `translate(${f.c[0]} ${f.c[1]}) scale(${Math.max(s, 0.0001)}) translate(${-f.c[0]} ${-f.c[1]})`); f.g.setAttribute('opacity', s > 0 ? 1 : 0); });
+    const ts = E.spring(clamp((t - 2.0) / 0.6)) * (1 - prog(t, 6.75, 7.2, E.in));
+    tileG.setAttribute('transform', `translate(${OX + SZ / 2} ${OY + SZ / 2}) scale(${Math.max(ts, 0.0001)})`); tileG.setAttribute('opacity', ts > 0 ? 1 : 0);
+    // the packet runs its loop with a trail, as on the icon
+    const ru = (t - RUN0) / RUNT;
+    const on = t >= RUN0 - 0.3 && t < 6.7;
+    const head = clamp(ru), tailU = clamp(ru - 0.22);
+    setA(trail, { 'stroke-dasharray': `0 ${runLen * tailU} ${runLen * (head - tailU)} ${runLen}`, opacity: on ? 1 : 0 });
+    let pp = I(RUN[0]); if (t >= RUN0) { const q = runP.getPointAtLength(runLen * clamp(ru)); pp = [q.x, q.y]; }
+    const pS = t < RUN0 ? E.spring(clamp((t - (RUN0 - 0.5)) / 0.45)) : 1 - prog(t, 6.3, 6.6, E.in);
+    gAt(pg, pp[0], pp[1], pS, pS > 0 ? 1 : 0); pg.appendChild(pkt);
+    passR.forEach((f) => f(t));
+    // the stack chips pop out from the nodes the packet passes
+    STK.forEach(([n, ni, pos], i) => { const [s] = pop(t, chipT[i], 6.35 + i * 0.04, 0.5, 0.22);
+      const [cw, ch] = sizeOf(chips[i]);
+      const from = I(NODES[ni]), to = [pos[0] ? W - 60 - cw / 2 : 60 + cw / 2, pos[1]];
+      const cx = lerp(from[0], to[0], E.out(clamp((t - chipT[i]) / 0.45))), cy = lerp(from[1], to[1], E.out(clamp((t - chipT[i]) / 0.45)));
+      place(chips[i], cx - cw / 2, cy - ch / 2, { s, o: s > 0 ? 1 : 0 });
+      setA(chipL[i], { x1: from[0], y1: from[1], x2: cx, y2: cy, opacity: s > 0.05 ? 1 : 0 }); });
+    // the nodes sit above the chips' lines
+    nodeG.forEach((g) => sv.appendChild(g)); sv.appendChild(pg);
+  } };
+}
+
+startClips({ features, how, stack }, [['700 33px "IBM Plex Sans KR"'], ['700 33px "IBM Plex Sans"'], ['700 20px "IBM Plex Mono"'], ['600 23px "IBM Plex Mono"']]);
+</script></body></html>
