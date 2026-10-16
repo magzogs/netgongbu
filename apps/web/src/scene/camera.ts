@@ -19,9 +19,10 @@ import type { ViewerState, World } from '../store/viewer';
  *
  * Each view has its own handling:
  * - floor: orbit around a point on the plan (drag), pan (right drag), zoom (wheel).
- * - globe: the camera orbits the globe's centre with north up, so dragging turns the Earth
- *   east–west and north–south the way a hand would; the wheel moves closer to the surface and
- *   keeps the place under the cursor there (see zoomGlobe).
+ * - globe: the camera orbits the globe's centre with north up, so a right drag turns the Earth
+ *   east–west and north–south the way a hand would; a left drag moves the globe across the
+ *   screen as on the map (see panGlobe); the wheel moves closer to the surface and keeps the
+ *   place under the cursor there (see zoomGlobe).
  * - map: like a web map, dragging moves the map, right drag tilts and turns it.
  */
 
@@ -85,7 +86,8 @@ export function configureControls(world: World | null): void {
   ctl.polarRotateSpeed = 1;
   ctl.dollySpeed = 1;
   if (view === 'globe' && globe) {
-    ctl.mouseButtons.left = ACTION.ROTATE;
+    // The left button moves the globe on screen (CameraRig calls panGlobe), the right turns it.
+    ctl.mouseButtons.left = ACTION.NONE;
     ctl.mouseButtons.right = ACTION.ROTATE;
     ctl.touches.one = ACTION.TOUCH_ROTATE;
     ctl.touches.two = ACTION.TOUCH_DOLLY;
@@ -122,6 +124,23 @@ export function configureControls(world: World | null): void {
 export function isPanning(): boolean {
   const action = controls?.currentAction ?? ACTION.NONE;
   return (action & (ACTION.SCREEN_PAN | ACTION.TOUCH_SCREEN_PAN)) !== 0;
+}
+
+/** How far off the middle of the screen the globe may be moved, in screen halves. */
+const MAX_SHIFT = 1.5;
+
+/**
+ * A left drag over the globe moves it across the screen by `dx`, `dy` pixels out of a `width` ×
+ * `height` canvas. The camera still orbits the globe's centre (so turning and zooming work as
+ * before); only the focal shift changes, so the surface under the cursor follows the cursor.
+ * Showing everything again recentres it (frameTopology).
+ */
+export function panGlobe(dx: number, dy: number, width: number, height: number): void {
+  if (width <= 0 || height <= 0) return;
+  shift = {
+    x: clamp(shift.x + (2 * dx) / width, -MAX_SHIFT, MAX_SHIFT),
+    y: clamp(shift.y - (2 * dy) / height, -MAX_SHIFT, MAX_SHIFT),
+  };
 }
 
 /**

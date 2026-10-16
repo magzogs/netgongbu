@@ -11,6 +11,7 @@ import {
   followPoint,
   isPanning,
   keepFocalShift,
+  panGlobe,
   registerControls,
   trackPoint,
   tuneGlobeControls,
@@ -64,6 +65,37 @@ export function CameraRig(): ReactElement {
     };
   }, [canvas, eventSource]);
 
+  // Over the globe the left button moves the globe across the screen, as on the map (its
+  // camera-controls action is off there). Following goes on: the shift only moves the view.
+  useEffect(() => {
+    const element = eventSource ?? canvas;
+    let last: { x: number; y: number; id: number } | null = null;
+    const onDown = (event: PointerEvent) => {
+      if (event.button !== 0 || event.pointerType !== 'mouse') return;
+      if (useViewer.getState().world?.view !== 'globe') return;
+      last = { x: event.clientX, y: event.clientY, id: event.pointerId };
+    };
+    const onMove = (event: PointerEvent) => {
+      if (!last || event.pointerId !== last.id) return;
+      const rect = canvas.getBoundingClientRect();
+      panGlobe(event.clientX - last.x, event.clientY - last.y, rect.width, rect.height);
+      last = { ...last, x: event.clientX, y: event.clientY };
+    };
+    const onUp = (event: PointerEvent) => {
+      if (last && event.pointerId === last.id) last = null;
+    };
+    element.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      element.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [canvas, eventSource]);
+
   useFrame(() => {
     const state = useViewer.getState();
     const current = state.world;
@@ -84,7 +116,7 @@ export function CameraRig(): ReactElement {
       makeDefault
       onControlStart={() => {
         // Over the globe the follow camera turns round the centre to stay above the packet, and
-        // would undo any drag: a drag there ends following (the wheel still zooms while following).
+        // would undo any turn: a right drag there ends following (the wheel still zooms while following).
         // Elsewhere the follow camera would undo a pan the same way, so a pan ends following too.
         const state = useViewer.getState();
         if (state.cameraMode === 'follow' && (state.world?.view === 'globe' || isPanning())) {
