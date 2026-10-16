@@ -55,6 +55,28 @@ pnpm --filter @netgongbu/desktop measure -- example.com info.cern.ch   # 빌드�
 - AI 서버 환경변수: `SCENARIO_MODEL`·`SCENARIO_EFFORT`(`ANTHROPIC_API_KEY`가 있고 아직 고른 AI가 없을 때의 Claude 기본값,
   `claude-opus-5-5`·`high`), `SCENARIO_MAX_ATTEMPTS`(기본 3), `SCENARIO_PORT`(기본 8787).
 
+## 릴리스
+
+소스는 이 비공개 저장소에 두고, 설치 파일은 공개 저장소 [magzogs/netgongbu](https://github.com/magzogs/netgongbu)의
+Releases로 배포합니다.
+
+```bash
+pnpm --filter @netgongbu/desktop dist   # 이 컴퓨터 OS용 설치 파일을 apps/desktop/release/에 만듦 (배포는 안 함)
+git tag -a v0.2.0 -m "바뀐 점…" && git push origin v0.2.0   # 배포
+```
+
+`v*` 태그를 올리면 `.github/workflows/release.yml`이 macOS(arm64·x64 dmg)·Windows(x64 설치 파일)·Linux(AppImage)를 만들어
+공개 저장소에 같은 이름의 릴리스로 올립니다. 버전은 태그에서 가져오고(`package.json`의 버전은 바꾸지 않아도 됨), 태그 메시지가
+릴리스 노트가 되며, `v0.2.0-beta.1`처럼 `-`가 붙으면 pre-release가 됩니다. 실패한 릴리스는 Actions의 Release를 태그 이름으로 다시
+실행하면 파일을 덮어씁니다.
+
+이 저장소의 Actions secrets:
+
+- `RELEASES_TOKEN` (필수): magzogs/netgongbu에만 **Contents: Read and write** 권한을 준 fine-grained 토큰.
+- `MAC_CERT_P12_BASE64`·`MAC_CERT_PASSWORD` (선택): Developer ID Application 인증서(.p12, base64)와 암호. 없으면 ad-hoc 서명이라
+  macOS가 처음 열 때 한 번 허락을 받습니다.
+- `APPLE_ID`·`APPLE_APP_SPECIFIC_PASSWORD`·`APPLE_TEAM_ID` (선택, 인증서와 함께): 공증(notarization).
+
 ## 웹 브라우저로 어려웠던 것과 데스크톱 앱의 해결
 
 | 웹에서 막힌 것                        | 데스크톱 앱(Electron)에서                                                                                                                                          |
