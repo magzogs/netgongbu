@@ -45,7 +45,7 @@ jobs:
         env:
           # macOS: with a Developer ID certificate (base64 .p12) the app is signed, and with the
           # Apple ID secrets also notarized. Without them it is ad-hoc signed, which Gatekeeper
-          # asks the learner to allow once (see README, 설치).
+          # asks the learner to allow once (see README, Install).
           CSC_LINK: ${{ runner.os == 'macOS' && secrets.MAC_CERT_P12_BASE64 || '' }}
           CSC_KEY_PASSWORD: ${{ runner.os == 'macOS' && secrets.MAC_CERT_PASSWORD || '' }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
