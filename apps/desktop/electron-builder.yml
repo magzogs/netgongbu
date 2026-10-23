@@ -1,5 +1,5 @@
 # Installers for the desktop app: `pnpm --filter @netgongbu/desktop dist` builds one for this OS,
-# and .github/workflows/release.yml builds all three and publishes them to magzogs/netgongbu.
+# and .github/workflows/release.yml builds all three and publishes them as a release of this repo.
 # Every dependency is bundled into out/ by electron-vite, so no node_modules ship with the app.
 appId: com.magzog.netgongbu
 productName: Net Gongbu

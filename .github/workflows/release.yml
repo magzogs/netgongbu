@@ -1,8 +1,7 @@
 name: Release
 
 # A version tag (v0.2.0, or v0.2.0-beta.1 for a pre-release) builds the desktop app for macOS,
-# Windows and Linux and publishes the installers as a release of the public repo below. The
-# source stays in this private repo; the public one only holds a README and the releases.
+# Windows and Linux and publishes the installers as a release of this repo.
 on:
   push:
     tags: ['v*']
@@ -16,7 +15,6 @@ permissions:
   contents: read
 
 env:
-  RELEASE_REPO: magzogs/netgongbu
   TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
@@ -47,7 +45,7 @@ jobs:
         env:
           # macOS: with a Developer ID certificate (base64 .p12) the app is signed, and with the
           # Apple ID secrets also notarized. Without them it is ad-hoc signed, which Gatekeeper
-          # asks the learner to allow once (see the public README).
+          # asks the learner to allow once (see README, 설치).
           CSC_LINK: ${{ runner.os == 'macOS' && secrets.MAC_CERT_P12_BASE64 || '' }}
           CSC_KEY_PASSWORD: ${{ runner.os == 'macOS' && secrets.MAC_CERT_PASSWORD || '' }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -71,6 +69,8 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -79,14 +79,11 @@ jobs:
         with:
           path: installers
           merge-multiple: true
-      - name: Publish to ${{ env.RELEASE_REPO }}
+      - name: Publish
         env:
-          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_REPO: ${{ github.repository }}
         run: |
-          if [ -z "$GH_TOKEN" ]; then
-            echo "::error::Add a RELEASES_TOKEN secret that can write to $RELEASE_REPO (see README, 릴리스)."
-            exit 1
-          fi
           # checkout leaves a lightweight tag; fetch the real one for its message.
           git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
           notes=$(git tag -l --format='%(contents)' "$TAG")
