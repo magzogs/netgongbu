@@ -1,6 +1,7 @@
 # Net Gongbu
 
 네트워크에서 메시지가 라우터와 서버를 거쳐 어떻게 전달되는지 3D 공간에서 단계별로 보여 주는 교육용 앱입니다.
+([English](#english))
 
 - **예제 재생:** 직접 작성한 시나리오를 재생합니다(웹·데스크톱).
 - **AI에게 질문:** 한 창에서 두 가지를 합니다. **묻기**는 지금 화면의 단계, 패킷, 장비, 헤더 필드에 대해 글로 답하고
@@ -17,6 +18,26 @@
   화면 글, 예제와 실측 시나리오, 패킷 해부의 설명, AI의 답까지 그 언어로 바뀝니다. 영어 예제는 `apps/web/public/data/en/`에 있습니다.
 - **지구본과 평면 지도:** 실측 경로는 육지와 바다가 구분된 지구본이나 평면 세계 지도 위에 장비의 실제 위치(도시)로 놓입니다.
   장비마다 시나리오에서 처음 거치는 순서대로 번호가 붙습니다.
+
+## 내려받기
+
+[최신 릴리스](https://github.com/magzogs/netgongbu/releases/latest)에서 운영체제에 맞는 파일을 받으세요.
+
+| OS                    | 파일                                     |
+| --------------------- | ---------------------------------------- |
+| macOS (Apple Silicon) | `NetGongbu-<버전>-mac-arm64.dmg`         |
+| macOS (Intel)         | `NetGongbu-<버전>-mac-x64.dmg`           |
+| Windows               | `NetGongbu-<버전>-win-x64.exe`           |
+| Linux                 | `NetGongbu-<버전>-linux-x86_64.AppImage` |
+
+## 설치
+
+- **macOS:** dmg를 열어 Net Gongbu를 응용 프로그램 폴더로 끌어 넣습니다. 처음 열 때 확인되지 않은 앱이라는 경고가 나오면
+  시스템 설정 → 개인정보 보호 및 보안에서 **그래도 열기**를 누릅니다.
+- **Windows:** 설치 파일을 실행합니다. "Windows의 PC 보호" 창이 나오면 **추가 정보** → **실행**을 누릅니다.
+- **Linux:** `chmod +x NetGongbu-*.AppImage` 후 실행합니다.
+
+버그나 제안은 [Issues](https://github.com/magzogs/netgongbu/issues)에 남겨 주세요.
 
 ## 실행
 
@@ -57,8 +78,7 @@ pnpm --filter @netgongbu/desktop measure -- example.com info.cern.ch   # 빌드�
 
 ## 릴리스
 
-소스는 이 비공개 저장소에 두고, 설치 파일은 공개 저장소 [magzogs/netgongbu](https://github.com/magzogs/netgongbu)의
-Releases로 배포합니다.
+설치 파일은 이 저장소의 [Releases](https://github.com/magzogs/netgongbu/releases)로 배포합니다.
 
 ```bash
 pnpm --filter @netgongbu/desktop dist   # 이 컴퓨터 OS용 설치 파일을 apps/desktop/release/에 만듦 (배포는 안 함)
@@ -66,13 +86,13 @@ git tag -a v0.2.0 -m "바뀐 점…" && git push origin v0.2.0   # 배포
 ```
 
 `v*` 태그를 올리면 `.github/workflows/release.yml`이 macOS(arm64·x64 dmg)·Windows(x64 설치 파일)·Linux(AppImage)를 만들어
-공개 저장소에 같은 이름의 릴리스로 올립니다. 버전은 태그에서 가져오고(`package.json`의 버전은 바꾸지 않아도 됨), 태그 메시지가
+이 저장소에 같은 이름의 릴리스로 올립니다. 버전은 태그에서 가져오고(`package.json`의 버전은 바꾸지 않아도 됨), 태그 메시지가
 릴리스 노트가 되며, `v0.2.0-beta.1`처럼 `-`가 붙으면 pre-release가 됩니다. 실패한 릴리스는 Actions의 Release를 태그 이름으로 다시
 실행하면 파일을 덮어씁니다.
 
-이 저장소의 Actions secrets:
+릴리스는 Actions의 기본 `GITHUB_TOKEN`으로 올리므로 따로 토큰이 필요 없습니다. macOS 서명과 공증은 이 저장소의
+Actions secrets로 켭니다:
 
-- `RELEASES_TOKEN` (필수): magzogs/netgongbu에만 **Contents: Read and write** 권한을 준 fine-grained 토큰.
 - `MAC_CERT_P12_BASE64`·`MAC_CERT_PASSWORD` (선택): Developer ID Application 인증서(.p12, base64)와 암호. 없으면 ad-hoc 서명이라
   macOS가 처음 열 때 한 번 허락을 받습니다.
 - `APPLE_ID`·`APPLE_APP_SPECIFIC_PASSWORD`·`APPLE_TEAM_ID` (선택, 인증서와 함께): 공증(notarization).
@@ -191,3 +211,20 @@ apps/desktop      Electron 앱: app:// 프로토콜, preload, 노트북 브라�
 - 국경선·육지: Natural Earth (퍼블릭 도메인), world-atlas 패키지
 - IP 위치: IP Geolocation by [DB-IP](https://db-ip.com) (CC BY 4.0), 사용자가 내려받을 때만
 - ASN: Team Cymru IP-to-ASN (DNS 질의)
+
+## English
+
+Net Gongbu is an educational desktop app that shows, step by step in 3D, how a message travels through routers and servers.
+Play the bundled scenarios, ask an AI (your own ChatGPT or Claude account, an API key, or a local LLM) about what is on screen,
+open a real page and watch the measured path it took, and take each packet apart down to its header bits. Korean and English.
+
+Download the file for your OS from the [latest release](https://github.com/magzogs/netgongbu/releases/latest).
+
+- **macOS:** open the dmg and drag Net Gongbu into Applications. If macOS warns that it cannot verify the app the first time,
+  go to System Settings → Privacy & Security and click **Open Anyway**.
+- **Windows:** run the installer. If SmartScreen appears, click **More info** → **Run anyway**.
+- **Linux:** `chmod +x NetGongbu-*.AppImage`, then run it.
+
+To run it from source: `pnpm install`, then `pnpm dev:desktop` (see 실행 above for the other commands).
+
+Report bugs and ideas in [Issues](https://github.com/magzogs/netgongbu/issues).
