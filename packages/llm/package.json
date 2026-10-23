@@ -2,7 +2,7 @@
   "name": "@netgongbu/llm",
   "version": "0.1.0",
   "private": true,
-  "description": "The AI the viewer asks: ChatGPT and Claude through account sign-in (official CLIs), API keys or the CLIs, plus local OpenAI-compatible servers. Types for the viewer; the calls (./node) for the desktop main process and the web server",
+  "description": "The AI the viewer asks: ChatGPT and Claude through account sign-in (official CLIs), API keys or the CLIs, plus local OpenAI-compatible servers. Types for the viewer; the calls (./node) for the desktop main process",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

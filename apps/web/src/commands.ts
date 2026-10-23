@@ -1,7 +1,6 @@
 import { focusOn, frameTopology, zoomToZone } from './scene/camera';
 import { foldedClusters, OPEN_PIXELS } from './engine/clusters';
 import type { Insets } from './engine/framing';
-import { isDesktop } from './data/backend';
 import { NARROW_QUERY, useViewer } from './store/viewer';
 
 // User commands shared by buttons, double-clicks and keyboard shortcuts.
@@ -73,7 +72,7 @@ export function selectNode(id: string): void {
   const viewer = useViewer.getState();
   viewer.select({ kind: 'node', id });
   const type = viewer.world?.index.nodes.get(id)?.type;
-  if (isDesktop && (type === 'client' || type === 'browser')) viewer.setBrowserOpen(true);
+  if (type === 'client' || type === 'browser') viewer.setBrowserOpen(true);
 }
 
 function foldOf(key: string) {

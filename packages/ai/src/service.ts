@@ -71,7 +71,7 @@ function modelFailure(err: unknown): AskResult | undefined {
 
 /**
  * Generated scenarios: ask the connected AI for one (validated and corrected), list and load them.
- * The HTTP server and the desktop app's IPC both call this.
+ * The desktop app's IPC calls this.
  */
 export class ScenarioService {
   private readonly newId: () => string;

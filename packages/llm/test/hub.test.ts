@@ -10,7 +10,7 @@ const bin = join(import.meta.dirname, 'fixtures', 'bin');
 function memorySecrets(): SecretStore {
   const keys = new Map<ProviderId, string>();
   return {
-    kind: 'memory',
+    kind: 'keychain',
     get: (p) => {
       const key = keys.get(p);
       return key ? { key, source: 'saved' } : null;

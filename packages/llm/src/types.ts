@@ -4,7 +4,7 @@ import { z } from 'zod';
 /*
  * The AI the viewer talks to: who answers (provider), how the app reaches it (method), and with
  * which model and effort. Shared by the viewer (types and labels only) and the Node side that
- * makes the calls (src/node: the desktop app's main process and the web server).
+ * makes the calls (src/node: the desktop app's main process).
  */
 
 export const PROVIDER_IDS = ['openai', 'anthropic', 'local'] as const;
@@ -217,8 +217,8 @@ export type KeySource = 'saved' | 'environment' | null;
 export interface AiStatus {
   prefs: AiPrefs;
   keys: Record<ProviderId, KeySource>;
-  /** Whether an API key can be stored safely here (desktop: OS keychain; server: memory only). */
-  keyStorage: 'keychain' | 'memory' | 'unavailable';
+  /** Whether an API key can be stored safely here (the OS keychain). */
+  keyStorage: 'keychain' | 'unavailable';
   cli: Record<CliProvider, CliInfo>;
   accounts: Record<CliProvider, AccountState>;
   login: LoginState | null;

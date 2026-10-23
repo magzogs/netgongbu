@@ -9,12 +9,8 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter @netgongbu/web --filter @netgongbu/server dev",
-    "dev:web": "pnpm --filter @netgongbu/web dev",
-    "dev:server": "pnpm --filter @netgongbu/server dev",
-    "dev:fake": "pnpm --parallel --filter @netgongbu/web --filter @netgongbu/server dev:fake",
-    "dev:desktop": "pnpm --filter @netgongbu/desktop dev",
-    "build": "pnpm --filter @netgongbu/web build",
+    "dev": "pnpm --filter @netgongbu/desktop dev",
+    "build": "pnpm --filter @netgongbu/desktop build",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

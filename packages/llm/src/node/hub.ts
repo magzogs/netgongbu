@@ -30,7 +30,7 @@ import { cliVersion, findCli, isCliPathFor } from './locate';
 import { openaiApi } from './openai';
 import { toTurns, type Answer, type Provider, type Turn } from './provider';
 
-/** Where API keys are kept: the desktop app's OS keychain, or the web server's memory. */
+/** Where API keys are kept: the desktop app's OS keychain. */
 export interface SecretStore {
   readonly kind: AiStatus['keyStorage'];
   get: (provider: ProviderId) => { key: string; source: 'saved' | 'environment' } | null;
@@ -75,9 +75,9 @@ function emptyCli(): CliInfo {
 }
 
 /**
- * The AI questions go to, for the desktop app's main process and the web server alike: the
- * learner's choice of provider, method, model and effort; API keys; the official CLIs (found,
- * signed in, signed out); model lists; and the calls themselves.
+ * The AI questions go to, for the desktop app's main process: the learner's choice of provider,
+ * method, model and effort; API keys; the official CLIs (found, signed in, signed out); model
+ * lists; and the calls themselves.
  */
 export class AiHub {
   private prefs: AiPrefs;

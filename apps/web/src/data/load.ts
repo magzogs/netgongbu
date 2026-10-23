@@ -78,7 +78,7 @@ export async function fetchScenario(entry: ViewerEntry): Promise<LoadedScenario>
 
 /** A measured page load, rebuilt into a topology and scenario from its saved report. */
 async function traceScenario(entry: ViewerEntry): Promise<LoadedScenario> {
-  const report = lab ? await lab.trace.get(entry.id) : null;
+  const report = await lab.trace.get(entry.id);
   if (!report)
     throw new ScenarioLoadError(
       tr('측정 기록을 찾을 수 없습니다.', 'Measurement record not found.'),

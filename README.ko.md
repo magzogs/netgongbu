@@ -4,18 +4,18 @@
 
 네트워크에서 메시지가 라우터와 서버를 거쳐 어떻게 전달되는지 3D 공간에서 단계별로 보여 주는 교육용 앱입니다.
 
-- **예제 재생:** 직접 작성한 시나리오를 재생합니다(웹·데스크톱).
+- **예제 재생:** 직접 작성한 시나리오를 재생합니다.
 - **AI에게 질문:** 한 창에서 두 가지를 합니다. **묻기**는 지금 화면의 단계, 패킷, 장비, 헤더 필드에 대해 글로 답하고
   (질문할 때의 화면 내용이 글로, 원하면 3D 화면 그림도 함께 전달됨), **시나리오로 보기**는 현재 지도의 장비만으로 답을
   시나리오로 만들어 재생합니다. AI는 ChatGPT나 Claude를 계정 로그인(OAuth)·API 키·CLI 중 하나로 연결하고(로컬 LLM도 가능),
   연결하면 쓸 수 있는 모델과 모델마다의 Effort 단계를 가져와 고르게 합니다.
-- **노트북 브라우저 (데스크톱 앱):** 주소를 입력하면 이 컴퓨터에서 실제로 페이지를 열고, 브라우저가 보낸 요청·이 컴퓨터의
+- **노트북 브라우저:** 주소를 입력하면 이 컴퓨터에서 실제로 페이지를 열고, 브라우저가 보낸 요청·이 컴퓨터의
   네트워크 설정·서버까지의 경로를 측정해 그 결과로 지도와 시나리오를 새로 만듭니다. Enter를 누른 순간부터 브라우저,
   OS DNS 리졸버, TCP/IP 스택, 라우팅 테이블, ARP 캐시, 랜카드, 공유기, 모뎀, 통신사 라우터, 서버까지 한 단계씩 보여 주고,
   모든 헤더 값에 **관측 / 계산 / 전형값** 출처를 표시합니다.
 - **패킷 해부:** 단계마다 움직이는 패킷을 Ethernet부터 HTTP까지 실제 바이트로 만들어, 계층별 캡슐화와 각 헤더의 비트 구조를
   규격 문서의 그림처럼 보여 줍니다. 값은 16진수 또는 2진수로 봅니다. 창은 옮기고 크기를 바꾸거나 별도의 창으로 띄울 수 있습니다.
-- **언어:** 설정(톱니바퀴)에서 한국어와 English 중에 고릅니다. 처음에는 브라우저(OS) 언어를 따르고, 바꾸면 화면을 다시 불러와
+- **언어:** 설정(톱니바퀴)에서 한국어와 English 중에 고릅니다. 처음에는 OS 언어를 따르고, 바꾸면 화면을 다시 불러와
   화면 글, 예제와 실측 시나리오, 패킷 해부의 설명, AI의 답까지 그 언어로 바뀝니다. 영어 예제는 `apps/web/public/data/en/`에 있습니다.
 - **지구본과 평면 지도:** 실측 경로는 육지와 바다가 구분된 지구본이나 평면 세계 지도 위에 장비의 실제 위치(도시)로 놓입니다.
   장비마다 시나리오에서 처음 거치는 순서대로 번호가 붙습니다.
@@ -44,9 +44,8 @@
 
 ```bash
 pnpm install
-pnpm dev:desktop   # 데스크톱 앱 (Electron): 뷰어 + 노트북 브라우저 + 측정 + AI
-pnpm dev           # 웹 뷰어 http://localhost:5180 + AI 서버 :8787 (/api는 Vite가 프록시)
-pnpm dev:fake      # 웹, AI 연결 없이: 가짜 AI가 고정된 시나리오(첫 답은 일부러 틀려서 수정 과정까지)를 돌려줌
+pnpm dev           # 데스크톱 앱 (Electron): 뷰어 + 노트북 브라우저 + 측정 + AI
+NETGONGBU_FAKE_AI=1 pnpm dev   # AI 연결 없이: 가짜 AI가 시나리오를 만듦(첫 답은 일부러 틀려서 수정 과정까지)
 pnpm check         # lint + format + typecheck + test
 pnpm --filter @netgongbu/desktop test:e2e   # 데스크톱 앱을 띄워 질문·실측·패킷 해부까지 자동 확인 (e2e/out에 스크린샷)
 pnpm --filter @netgongbu/desktop measure -- example.com info.cern.ch   # 빌드된 앱으로 실제 측정 후 스크린샷
@@ -61,21 +60,18 @@ pnpm --filter @netgongbu/desktop measure -- example.com info.cern.ch   # 빌드�
     CLI가 보관합니다. ChatGPT는 Codex CLI의 app server(`codex app-server`, ChatGPT 데스크톱 앱에 든 것도 찾음)가, Claude는
     Claude Code(`claude auth login`)가 맡습니다. Anthropic은 Claude 구독 계정의 OAuth 토큰을 Claude Code와 Claude.ai 밖에서 쓰지
     못하게 하므로, Claude는 질문도 Claude Code가 처리합니다(도구 없이, 설정·플러그인 없이, 빈 폴더에서).
-  - **API 키:** OpenAI(Responses API)·Anthropic(Messages API) 키. 데스크톱 앱은 OS 키체인으로 암호화해 저장하고, 웹은 로컬 서버의
-    메모리에만 둡니다. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` 환경변수도 씁니다.
+  - **API 키:** OpenAI(Responses API)·Anthropic(Messages API) 키. OS 키체인으로 암호화해 저장합니다. `OPENAI_API_KEY`,
+    `ANTHROPIC_API_KEY` 환경변수도 씁니다.
   - **CLI:** 이미 설치·로그인한 `codex`나 `claude`를 그대로 씁니다(경로는 자동으로 찾거나 직접 지정).
   - 모델 목록은 연결한 곳에서 가져옵니다: Codex `model/list`, Claude Code의 `initialize`, Anthropic Models API(`capabilities.effort`),
     OpenAI `/v1/models`(Effort 단계는 모델 계열로 판단), 로컬 서버 `/v1/models`. Effort는 그 모델이 받는 단계만 보이고, "기본값"은
-    모델의 기본을 따릅니다. 고른 AI·모델·Effort는 기억되고(데스크톱: 앱 설정, 웹: `apps/server/.data/ai.json`), 시나리오 만들기에도
-    같은 연결이 쓰입니다. `NETGONGBU_FAKE_AI=1`이면 데스크톱 앱의 시나리오는 가짜 AI가 만듭니다.
+    모델의 기본을 따릅니다. 고른 AI·모델·Effort는 앱 설정에 기억되고, 시나리오 만들기에도 같은 연결이 쓰입니다.
 - **위치 데이터베이스:** 경로를 지구본 위에 놓으려면 설정에서 DB-IP City Lite(약 60 MB)를 내려받습니다. 없으면 평면으로 그립니다.
 - **로컬 LLM:** OpenAI 호환 API를 여는 서버면 됩니다. 예: `ollama pull qwen2.5:7b` 후 Ollama 실행
   (`http://localhost:11434/v1`), LM Studio의 로컬 서버(`http://localhost:1234/v1`), `llama-server`(`http://localhost:8080/v1`).
   3D 화면 그림은 그림을 볼 수 있는 모델일 때만 켜세요.
-- **어디서 부르나:** 데스크톱 앱은 메인 프로세스가, 웹은 로컬 AI 서버(`apps/server`, `/api/ai`)가 키를 갖고 CLI를 실행하며 모든
-  요청을 보냅니다. AI 서버는 `127.0.0.1`에서만 열리고, 다른 사이트의 페이지가 보낸 요청은 거절합니다.
-- AI 서버 환경변수: `SCENARIO_MODEL`·`SCENARIO_EFFORT`(`ANTHROPIC_API_KEY`가 있고 아직 고른 AI가 없을 때의 Claude 기본값,
-  `claude-opus-5-5`·`high`), `SCENARIO_MAX_ATTEMPTS`(기본 3), `SCENARIO_PORT`(기본 8787).
+- **어디서 부르나:** 데스크톱 앱의 메인 프로세스가 키를 갖고 CLI를 실행하며 모든 요청을 보냅니다. 뷰어는 IPC로만 메인
+  프로세스에 닿습니다.
 
 ## 릴리스
 
@@ -108,7 +104,7 @@ Actions secrets로 켭니다:
 | API 키·별도 서버                      | 메인 프로세스가 AI를 직접 호출(API, 공식 CLI), 키는 OS 키체인으로 암호화 저장                                                                                      |
 | 실제 패킷 바이트                      | 캡처는 관리자 권한이 필요해 아직 미지원 → 측정값으로 규격대로 바이트를 만들고(패킷 해부) 값마다 관측/계산/전형값/규격으로 표시                                     |
 
-## 측정 한 번에 일어나는 일 (데스크톱)
+## 측정 한 번에 일어나는 일
 
 1. 노트북 브라우저(메모리 전용 세션, 권한·다운로드·팝업 차단)가 페이지를 엽니다. 처음 방문처럼 측정하도록 캐시·쿠키·DNS 캐시·열린 연결을 먼저 비울 수 있습니다.
 2. DevTools Network 이벤트를 요청 단위로 정리합니다. 리다이렉트(HSTS 포함)를 나누고, 쿠키·인증 헤더는 가립니다.
@@ -122,7 +118,7 @@ Actions secrets로 켭니다:
 
 ## AI 시나리오가 만들어지는 과정
 
-1. 뷰어가 질문을 보냅니다(웹: `POST /api/scenarios`, 데스크톱: IPC).
+1. 뷰어가 IPC로 메인 프로세스에 질문을 보냅니다.
 2. 고정 지침과 토폴로지, 예제 시나리오를 시스템 프롬프트로 묶고, 질문과 함께 연결된 AI에 보냅니다. 답은 `ScenarioDraft`의
    JSON 스키마를 따르는 구조화된 출력으로 받습니다(Claude API: `output_config.format`과 프롬프트 캐시, OpenAI API:
    `text.format`, Codex: `outputSchema`, Claude Code: `--json-schema`).
@@ -150,7 +146,7 @@ Actions secrets로 켭니다:
 누르면 고정됩니다. 고정한 필드는 "AI에게 묻기"로 물어볼 수 있습니다.
 
 해부 창은 제목 줄을 끌어 옮기고, 가장자리나 모서리를 끌어 크기를 바꾸고(위치와 크기는 기억됨), 제목 줄을 두 번 눌러 크게
-봅니다. "새 창으로"를 누르면 별도의 창(브라우저 팝업, 데스크톱 앱에서는 앱의 창)으로 떨어져 나와 다른 모니터로 옮길 수 있고,
+봅니다. "새 창으로"를 누르면 별도의 앱 창으로 떨어져 나와 다른 모니터로 옮길 수 있고,
 "앱 안으로"를 누르면 돌아옵니다. 그 창에서도 단축키(←, →, Space, Esc …)가 동작합니다.
 
 - **안쪽부터 인코딩:** 길이·체크섬(IPv4 헤더, TCP/UDP 의사 헤더 포함)과 이더넷·Wi-Fi의 FCS(CRC-32)가 안에 든 내용으로
@@ -175,7 +171,7 @@ Actions secrets로 켭니다:
 | 장비 정보 / 그 장비로 이동        | 클릭 / 더블클릭                                                 |       |
 | 패킷 해부                         | 인스펙터의 "패킷 해부 ▸", 패킷 더블클릭                         | P     |
 | AI에게 질문                       | "AI에게 질문", "이 단계 AI에게 묻기", 장비·필드의 "AI에게 묻기" |       |
-| 노트북 브라우저 (데스크톱)        | 노트북 클릭 또는 "노트북 브라우저"                              |       |
+| 노트북 브라우저                   | 노트북 클릭 또는 "노트북 브라우저"                              |       |
 | 패널 닫기                         |                                                                 | Esc   |
 
 지구본과 평면 지도에서 장비는 지도 핀처럼 화면에서 늘 비슷한 크기로 그려지고(가장 클 때도 약 100 km), 같은 도시의 장비는 수십 km
@@ -189,14 +185,13 @@ Actions secrets로 켭니다:
 ```
 packages/schema   토폴로지·시나리오 스키마와 검증, AI 초안 형식, 지구본 좌표 변환
 packages/trace    TraceReport(측정 결과), OS 도구·DevTools 이벤트 파서, 측정 결과 → 지도·시나리오 빌더
-packages/ai       연결된 AI로 시나리오 생성, 검증·수정 재시도, 저장 (ScenarioService: 서버와 데스크톱이 공유)
+packages/ai       연결된 AI로 시나리오 생성, 검증·수정 재시도, 저장 (ScenarioService, 데스크톱 앱이 호출)
 packages/bridge   데스크톱 메인 프로세스 ↔ 뷰어 IPC 계약 (window.lab)
 packages/protocols 시나리오 패킷 → 규격대로 인코딩한 바이트와 필드 해설 (Ethernet·802.11·IPv4·ARP·ICMP·UDP·TCP·DNS·TLS 1.3·HTTP/1.1·HTTP/2·QUIC)
 packages/llm      AI 연결: ChatGPT(Codex app server, OpenAI API)·Claude(Claude Code, Anthropic API)·로컬 LLM, 로그인·키·모델 목록·스트리밍 답
-                  (뷰어는 타입만, 호출은 ./node를 데스크톱 메인 프로세스와 서버가 사용)
-apps/web          Vite + React + React Three Fiber 뷰어 (데스크톱 앱의 화면이기도 함)
+                  (뷰어는 타입만, 호출은 ./node를 데스크톱 메인 프로세스가 사용)
+apps/web          Vite + React + React Three Fiber 뷰어: 데스크톱 앱의 화면(렌더러)
   public/data     catalog.json, topologies/*.json, scenarios/*.json (trace-demo는 빌더로 생성한 데모)
-apps/server       웹용 HTTP API (Hono)
 apps/desktop      Electron 앱: app:// 프로토콜, preload, 노트북 브라우저, 측정 에이전트(src/main/trace), 설정
 ```
 
