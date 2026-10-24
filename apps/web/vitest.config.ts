@@ -4,5 +4,6 @@ export default defineConfig({
   test: {
     name: 'web',
     include: ['test/**/*.test.ts'],
+    setupFiles: ['test/setup.ts'],
   },
 });

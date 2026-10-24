@@ -1,11 +1,10 @@
 import type { ReactElement } from 'react';
 import { LOCALE_NAMES, LOCALES, tr } from '@netgongbu/schema';
-import { lab } from '../data/backend';
 import { changeLocale, locale } from '../i18n';
 import { useViewer } from '../store/viewer';
 
 /**
- * Settings: the language, and in the desktop app the IP location database.
+ * Settings: the language and the IP location database.
  * (AI connection: in the AI panel.)
  */
 export function SettingsPanel(): ReactElement | null {
@@ -31,28 +30,24 @@ export function SettingsPanel(): ReactElement | null {
       </header>
 
       <LanguageSection />
-      {lab && (
-        <>
-          <h3 className="section-title">{tr('AI 연결', 'AI connection')}</h3>
-          <p className="muted settings__status">
-            {tr(
-              'ChatGPT·Claude 연결(계정 로그인, API 키, CLI)과 모델·Effort는 AI에게 질문 창에서 고릅니다.',
-              'The ChatGPT or Claude connection (account sign-in, API key, CLI), the model and the effort are chosen in the Ask AI panel.',
-            )}{' '}
-            <button
-              type="button"
-              className="text-button"
-              onClick={() => {
-                setOpen(false);
-                setAssistantOpen(true);
-              }}
-            >
-              {tr('열기', 'Open')}
-            </button>
-          </p>
-          <GeoSection />
-        </>
-      )}
+      <h3 className="section-title">{tr('AI 연결', 'AI connection')}</h3>
+      <p className="muted settings__status">
+        {tr(
+          'ChatGPT·Claude 연결(계정 로그인, API 키, CLI)과 모델·Effort는 AI에게 질문 창에서 고릅니다.',
+          'The ChatGPT or Claude connection (account sign-in, API key, CLI), the model and the effort are chosen in the Ask AI panel.',
+        )}{' '}
+        <button
+          type="button"
+          className="text-button"
+          onClick={() => {
+            setOpen(false);
+            setAssistantOpen(true);
+          }}
+        >
+          {tr('열기', 'Open')}
+        </button>
+      </p>
+      <GeoSection />
     </section>
   );
 }

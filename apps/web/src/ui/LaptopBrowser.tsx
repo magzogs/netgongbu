@@ -4,7 +4,7 @@ import { lab } from '../data/backend';
 import { useViewer } from '../store/viewer';
 
 /**
- * The laptop's web browser (desktop app only). The page area is a real Chromium view that the
+ * The laptop's web browser. The page area is a real Chromium view that the
  * main process places exactly over the `.browser__page` box; typing an address and pressing Enter
  * loads it while every request is recorded, then the path to the server is traced.
  */
@@ -23,11 +23,10 @@ export function LaptopBrowser(): ReactElement | null {
 
   useLayoutEffect(() => {
     const el = page.current;
-    if (!open || !lab || !el || !showPage) return;
-    const api = lab;
+    if (!open || !el || !showPage) return;
     const place = (): void => {
       const r = el.getBoundingClientRect();
-      api.browser.setBounds({ x: r.left, y: r.top, width: r.width, height: r.height });
+      lab.browser.setBounds({ x: r.left, y: r.top, width: r.width, height: r.height });
     };
     place();
     const observer = new ResizeObserver(place);
@@ -36,11 +35,11 @@ export function LaptopBrowser(): ReactElement | null {
     return () => {
       observer.disconnect();
       window.removeEventListener('resize', place);
-      api.browser.setBounds(null);
+      lab.browser.setBounds(null);
     };
   }, [open, showPage]);
 
-  if (!open || !lab) return null;
+  if (!open) return null;
 
   const go = (): void => {
     if (address.trim() && !running) void startTrace(address.trim());
@@ -168,11 +167,10 @@ export function LaptopBrowser(): ReactElement | null {
   );
 }
 
-/** Opens the laptop's browser (desktop app only). */
-export function BrowserButton(): ReactElement | null {
+/** Opens the laptop's browser. */
+export function BrowserButton(): ReactElement {
   const open = useViewer((s) => s.browserOpen);
   const setOpen = useViewer((s) => s.setBrowserOpen);
-  if (!lab) return null;
   return (
     <button
       type="button"

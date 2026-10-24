@@ -357,7 +357,7 @@ export function AssistantPanel(): ReactElement | null {
       : aiStatus === 'checking'
         ? tr('AI 상태를 확인하는 중입니다…', 'Checking the AI status…')
         : aiStatus === 'offline'
-          ? tr('AI 서버가 실행 중이 아닙니다.', 'The AI server is not running.')
+          ? tr('AI 상태를 확인하지 못했습니다.', 'Could not check the AI status.')
           : (connection?.notReady ?? tr('AI를 먼저 연결하세요.', 'Connect an AI first.'));
 
   const submit = (e?: SyntheticEvent): void => {

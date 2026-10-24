@@ -48,7 +48,7 @@ export default defineConfig(
             {
               group: ['node:*', 'react', 'react-dom', 'three', 'fs', 'path'],
               message:
-                'packages/schema is shared by the browser and the server: plain TypeScript and zod only.',
+                'packages/schema is shared by the viewer and the desktop main process: plain TypeScript and zod only.',
             },
           ],
         },
@@ -60,13 +60,8 @@ export default defineConfig(
     extends: [reactHooks.configs.flat.recommended],
   },
   {
-    // Server and desktop main process logs, scripts and e2e output go to stdout.
-    files: [
-      'apps/server/src/index.ts',
-      'apps/desktop/src/main/**/*.ts',
-      '**/scripts/**/*.ts',
-      '**/e2e/**/*.{ts,mts}',
-    ],
+    // Desktop main process logs, scripts and e2e output go to stdout.
+    files: ['apps/desktop/src/main/**/*.ts', '**/scripts/**/*.ts', '**/e2e/**/*.{ts,mts}'],
     rules: { 'no-console': 'off' },
   },
   {

@@ -10,8 +10,7 @@ import {
 } from '@netgongbu/llm';
 import { getLocale, tr, type ValidationIssue } from '@netgongbu/schema';
 import { ai, errorText } from '../data/ai';
-import { AskError, type AiStatus as ScenarioAvailability } from '../data/aiApi';
-import { backend } from '../data/backend';
+import { AskError, backend, type AiStatus as ScenarioAvailability } from '../data/backend';
 import { screenContext, type LabFocus } from '../engine/screenContext';
 import { captureScene } from '../scene/capture';
 import type { ViewerState } from './viewer';
@@ -109,45 +108,20 @@ const SYSTEM = (
 
 /** Earlier questions and answers sent with a new question; the screen goes only with the last. */
 const HISTORY_TURNS = 6;
-/** While a sign-in or an account check runs, the web viewer asks for the status this often. */
-const POLL_MS = 1500;
 
 let nextMessageId = 0;
 let running: AbortController | null = null;
-let poll: number | null = null;
-
-function inProgress(status: AiStatus | null): boolean {
-  return Boolean(
-    status &&
-    (status.login?.running === true ||
-      status.accounts.openai.state === 'checking' ||
-      status.accounts.anthropic.state === 'checking'),
-  );
-}
 
 export const createAssistantSlice: StateCreator<ViewerState, [], [], AssistantSlice> = (
   set,
   get,
 ) => {
-  /** A new status: keep it, and (web) keep asking while something is still running. */
+  /** A new status: keep it, and check again whether scenarios can be made when the AI changed. */
   const take = (connection: AiStatus): void => {
     const before = get().connection;
     set({ connection, connectionError: null });
     if (before?.ready !== connection.ready || before.prefs.provider !== connection.prefs.provider)
       void get().checkAi();
-    if (ai.onStatus || poll !== null || !inProgress(connection)) return;
-    poll = window.setInterval(() => {
-      void ai.status().then(
-        (next) => {
-          if (!inProgress(next) && poll !== null) {
-            window.clearInterval(poll);
-            poll = null;
-          }
-          take(next);
-        },
-        () => undefined,
-      );
-    }, POLL_MS);
   };
   const failed = (err: unknown): void => {
     set({ connectionError: errorText(err) });
@@ -170,7 +144,7 @@ export const createAssistantSlice: StateCreator<ViewerState, [], [], AssistantSl
       }
     },
     async connectAssistant() {
-      ai.onStatus?.(take);
+      ai.onStatus(take);
       await get().loadConnection();
     },
     async changeConnection(change) {

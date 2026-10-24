@@ -9,10 +9,8 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "start": "electron-vite preview",
     "dist": "electron-vite build && electron-builder --publish never",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
     "test:e2e": "electron-vite build && tsx e2e/smoke.mts",
     "measure": "tsx e2e/measure.mts"
   },

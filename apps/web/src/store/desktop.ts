@@ -23,7 +23,7 @@ export type GeoDownload =
   | { kind: 'done'; version: string }
   | { kind: 'error'; message: string };
 
-/** UI state for features that exist only in the desktop app. */
+/** UI state for the settings, the laptop's browser, page-load measurement and the location DB. */
 export interface DesktopSlice {
   settingsOpen: boolean;
   setSettingsOpen: (open: boolean) => void;
@@ -120,7 +120,7 @@ export const createDesktopSlice: StateCreator<ViewerState, [], [], DesktopSlice>
     },
     traceRun: { kind: 'idle' },
     async startTrace(input) {
-      if (!lab || get().traceRun.kind === 'running') return;
+      if (get().traceRun.kind === 'running') return;
       set({
         traceRun: {
           kind: 'running',
@@ -143,16 +143,16 @@ export const createDesktopSlice: StateCreator<ViewerState, [], [], DesktopSlice>
       }
     },
     cancelTrace() {
-      void lab?.trace.cancel();
+      void lab.trace.cancel();
     },
     geoDownload: { kind: 'idle' },
     downloadGeo() {
-      if (!lab || get().geoDownload.kind === 'running') return;
+      if (get().geoDownload.kind === 'running') return;
       set({ geoDownload: { kind: 'running', received: 0, total: null } });
       void lab.geo.download();
     },
     async connectDesktop() {
-      if (!lab || connected) return;
+      if (connected) return;
       connected = true;
       lab.trace.onEvent(onTrace);
       lab.geo.onEvent(onGeo);

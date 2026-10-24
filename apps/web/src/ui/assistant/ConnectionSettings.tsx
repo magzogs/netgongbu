@@ -281,15 +281,10 @@ function KeySettings({
         {source === 'saved' ? (
           <>
             <span className="conn__ok">✓</span>{' '}
-            {status.keyStorage === 'keychain'
-              ? tr(
-                  '저장된 키를 사용 중 (OS 키체인으로 암호화)',
-                  'Using the saved key (encrypted with the OS keychain)',
-                )
-              : tr(
-                  '입력한 키를 사용 중 (서버 메모리에만 있음)',
-                  'Using the entered key (kept only in server memory)',
-                )}
+            {tr(
+              '저장된 키를 사용 중 (OS 키체인으로 암호화)',
+              'Using the saved key (encrypted with the OS keychain)',
+            )}
           </>
         ) : source === 'environment' ? (
           <>
@@ -346,15 +341,10 @@ function KeySettings({
               `이 컴퓨터의 키체인을 쓸 수 없어 키를 저장하지 않습니다. 환경변수 ${env}로 실행해 주세요.`,
               `This computer's keychain is unavailable, so the key isn't saved. Run the app with the environment variable ${env}.`,
             )
-          : status.keyStorage === 'memory'
-            ? tr(
-                '웹에서는 키를 로컬 서버의 메모리에만 두고 디스크에 쓰지 않습니다(서버를 다시 켜면 다시 입력).',
-                "On the web, the key stays only in the local server's memory and is never written to disk (enter it again after restarting the server).",
-              )
-            : tr(
-                `키는 이 컴퓨터에만 암호화해 저장되고, 질문할 때 ${PROVIDERS[provider].vendor} API로만 전송됩니다.`,
-                `The key is stored encrypted on this computer only, and is sent only to the ${PROVIDERS[provider].vendor} API when you ask.`,
-              )}
+          : tr(
+              `키는 이 컴퓨터에만 암호화해 저장되고, 질문할 때 ${PROVIDERS[provider].vendor} API로만 전송됩니다.`,
+              `The key is stored encrypted on this computer only, and is sent only to the ${PROVIDERS[provider].vendor} API when you ask.`,
+            )}
       </p>
     </>
   );

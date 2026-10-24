@@ -1,6 +1,6 @@
 // The language of everything the app writes: the viewer, the scenarios it builds and the AI's
 // answers. One per process: the viewer sets it at startup (changing it reloads the page), and the
-// desktop main process and the web server take it from the viewer.
+// desktop main process takes it from the viewer.
 
 export const LOCALES = ['ko', 'en'] as const;
 export type Locale = (typeof LOCALES)[number];

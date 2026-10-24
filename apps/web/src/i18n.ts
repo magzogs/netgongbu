@@ -21,9 +21,6 @@ export const locale: Locale = startLocale();
 setLocale(locale);
 if (typeof document !== 'undefined') document.documentElement.lang = locale;
 
-/** Sent with every request to the AI server, which answers in this language. */
-export const localeHeaders = { 'x-netgongbu-locale': locale } as const;
-
 /** Remembers the language and reloads, so every label, scenario and example is rebuilt in it. */
 export function changeLocale(next: Locale): void {
   if (next === locale) return;
