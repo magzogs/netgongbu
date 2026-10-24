@@ -10,7 +10,6 @@
   },
   "scripts": {
     "dev": "pnpm --filter @netgongbu/desktop dev",
-    "build": "pnpm --filter @netgongbu/desktop build",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
