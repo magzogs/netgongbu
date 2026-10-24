@@ -16,7 +16,7 @@
 - **패킷 해부:** 단계마다 움직이는 패킷을 Ethernet부터 HTTP까지 실제 바이트로 만들어, 계층별 캡슐화와 각 헤더의 비트 구조를
   규격 문서의 그림처럼 보여 줍니다. 값은 16진수 또는 2진수로 봅니다. 창은 옮기고 크기를 바꾸거나 별도의 창으로 띄울 수 있습니다.
 - **언어:** 설정(톱니바퀴)에서 한국어와 English 중에 고릅니다. 처음에는 OS 언어를 따르고, 바꾸면 화면을 다시 불러와
-  화면 글, 예제와 실측 시나리오, 패킷 해부의 설명, AI의 답까지 그 언어로 바뀝니다. 영어 예제는 `apps/web/public/data/en/`에 있습니다.
+  화면 글, 예제와 실측 시나리오, 패킷 해부의 설명, AI의 답까지 그 언어로 바뀝니다.
 - **지구본과 평면 지도:** 실측 경로는 육지와 바다가 구분된 지구본이나 평면 세계 지도 위에 장비의 실제 위치(도시)로 놓입니다.
   장비마다 시나리오에서 처음 거치는 순서대로 번호가 붙습니다.
 
@@ -40,69 +40,28 @@
 
 버그나 제안은 [Issues](https://github.com/magzogs/netgongbu/issues)에 남겨 주세요.
 
-## 실행
+## AI 연결
 
-```bash
-pnpm install
-pnpm dev           # 데스크톱 앱 (Electron): 뷰어 + 노트북 브라우저 + 측정 + AI
-NETGONGBU_FAKE_AI=1 pnpm dev   # AI 연결 없이: 가짜 AI가 시나리오를 만듦(첫 답은 일부러 틀려서 수정 과정까지)
-pnpm check         # lint + format + typecheck + test
-pnpm --filter @netgongbu/desktop test:e2e   # 데스크톱 앱을 띄워 질문·실측·패킷 해부까지 자동 확인 (e2e/out에 스크린샷)
-pnpm --filter @netgongbu/desktop measure -- example.com info.cern.ch   # 빌드된 앱으로 실제 측정 후 스크린샷
-```
+"AI에게 질문" → 연결 상태(창 제목 옆)를 눌러 ChatGPT / Claude / 로컬 LLM과 연결 방식을 고릅니다.
 
-`measure`는 `test:e2e`가 만든 빌드를 씁니다. 옵션: `--download-geo`(위치 DB가 없으면 먼저 내려받기),
-`--open <측정 id>`(저장된 측정 다시 열기), `--tour`(따라가기 카메라로 재생하며 몇 초마다 스크린샷),
-`--user-data <폴더>`(기본은 앱 데이터 폴더라 측정 기록과 위치 DB가 유지됨).
-
-- **AI 연결:** "AI에게 질문" → 연결 상태(창 제목 옆)를 눌러 ChatGPT / Claude / 로컬 LLM과 연결 방식을 고릅니다.
-  - **계정 로그인(OAuth):** 구독 중인 ChatGPT·Claude 계정으로 로그인합니다. 로그인은 공식 CLI가 브라우저에서 진행하고 토큰도
-    CLI가 보관합니다. ChatGPT는 Codex CLI의 app server(`codex app-server`, ChatGPT 데스크톱 앱에 든 것도 찾음)가, Claude는
-    Claude Code(`claude auth login`)가 맡습니다. Anthropic은 Claude 구독 계정의 OAuth 토큰을 Claude Code와 Claude.ai 밖에서 쓰지
-    못하게 하므로, Claude는 질문도 Claude Code가 처리합니다(도구 없이, 설정·플러그인 없이, 빈 폴더에서).
-  - **API 키:** OpenAI(Responses API)·Anthropic(Messages API) 키. OS 키체인으로 암호화해 저장합니다. `OPENAI_API_KEY`,
-    `ANTHROPIC_API_KEY` 환경변수도 씁니다.
-  - **CLI:** 이미 설치·로그인한 `codex`나 `claude`를 그대로 씁니다(경로는 자동으로 찾거나 직접 지정).
-  - 모델 목록은 연결한 곳에서 가져옵니다: Codex `model/list`, Claude Code의 `initialize`, Anthropic Models API(`capabilities.effort`),
-    OpenAI `/v1/models`(Effort 단계는 모델 계열로 판단), 로컬 서버 `/v1/models`. Effort는 그 모델이 받는 단계만 보이고, "기본값"은
-    모델의 기본을 따릅니다. 고른 AI·모델·Effort는 앱 설정에 기억되고, 시나리오 만들기에도 같은 연결이 쓰입니다.
-- **위치 데이터베이스:** 경로를 지구본 위에 놓으려면 설정에서 DB-IP City Lite(약 60 MB)를 내려받습니다. 없으면 평면으로 그립니다.
+- **계정 로그인(OAuth):** 구독 중인 ChatGPT·Claude 계정으로 로그인합니다. 로그인은 공식 CLI가 브라우저에서 진행하고 토큰도
+  CLI가 보관합니다. ChatGPT는 Codex CLI의 app server(`codex app-server`, ChatGPT 데스크톱 앱에 든 것도 찾음)가, Claude는
+  Claude Code(`claude auth login`)가 맡습니다. Anthropic은 Claude 구독 계정의 OAuth 토큰을 Claude Code와 Claude.ai 밖에서 쓰지
+  못하게 하므로, Claude는 질문도 Claude Code가 처리합니다(도구 없이, 설정·플러그인 없이, 빈 폴더에서).
+- **API 키:** OpenAI(Responses API)·Anthropic(Messages API) 키. OS 키체인으로 암호화해 저장합니다. `OPENAI_API_KEY`,
+  `ANTHROPIC_API_KEY` 환경변수도 씁니다.
+- **CLI:** 이미 설치·로그인한 `codex`나 `claude`를 그대로 씁니다(경로는 자동으로 찾거나 직접 지정).
 - **로컬 LLM:** OpenAI 호환 API를 여는 서버면 됩니다. 예: `ollama pull qwen2.5:7b` 후 Ollama 실행
   (`http://localhost:11434/v1`), LM Studio의 로컬 서버(`http://localhost:1234/v1`), `llama-server`(`http://localhost:8080/v1`).
   3D 화면 그림은 그림을 볼 수 있는 모델일 때만 켜세요.
-- **어디서 부르나:** 데스크톱 앱의 메인 프로세스가 키를 갖고 CLI를 실행하며 모든 요청을 보냅니다. 뷰어는 IPC로만 메인
-  프로세스에 닿습니다.
 
-## 릴리스
+모델 목록은 연결한 곳에서 가져옵니다. Effort는 그 모델이 받는 단계만 보이고, "기본값"은 모델의 기본을 따릅니다. 고른 AI·모델·Effort는
+앱 설정에 기억되고, 시나리오 만들기에도 같은 연결이 쓰입니다. 데스크톱 앱의 메인 프로세스가 키를 갖고 CLI를 실행하며 모든 요청을
+보냅니다. 뷰어는 IPC로만 메인 프로세스에 닿습니다.
 
-설치 파일은 이 저장소의 [Releases](https://github.com/magzogs/netgongbu/releases)로 배포합니다.
+## 위치 데이터베이스
 
-```bash
-pnpm --filter @netgongbu/desktop dist   # 이 컴퓨터 OS용 설치 파일을 apps/desktop/release/에 만듦 (배포는 안 함)
-git tag -a v0.2.0 -m "바뀐 점…" && git push origin v0.2.0   # 배포
-```
-
-`v*` 태그를 올리면 `.github/workflows/release.yml`이 macOS(arm64·x64 dmg)·Windows(x64 설치 파일)·Linux(AppImage)를 만들어
-이 저장소에 같은 이름의 릴리스로 올립니다. 버전은 태그에서 가져오고(`package.json`의 버전은 바꾸지 않아도 됨), 태그 메시지가
-릴리스 노트가 되며, `v0.2.0-beta.1`처럼 `-`가 붙으면 pre-release가 됩니다. 실패한 릴리스는 Actions의 Release를 태그 이름으로 다시
-실행하면 파일을 덮어씁니다.
-
-릴리스는 Actions의 기본 `GITHUB_TOKEN`으로 올리므로 따로 토큰이 필요 없습니다. macOS 서명과 공증은 이 저장소의
-Actions secrets로 켭니다:
-
-- `MAC_CERT_P12_BASE64`·`MAC_CERT_PASSWORD` (선택): Developer ID Application 인증서(.p12, base64)와 암호. 없으면 ad-hoc 서명이라
-  macOS가 처음 열 때 한 번 허락을 받습니다.
-- `APPLE_ID`·`APPLE_APP_SPECIFIC_PASSWORD`·`APPLE_TEAM_ID` (선택, 인증서와 함께): 공증(notarization).
-
-## 웹 브라우저로 어려웠던 것과 데스크톱 앱의 해결
-
-| 웹에서 막힌 것                        | 데스크톱 앱(Electron)에서                                                                                                                                          |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 진짜 브라우저 메시지 관찰             | 앱에 들어 있는 Chromium 뷰가 노트북의 브라우저가 되고, DevTools 프로토콜로 요청·응답 헤더, HTTP 버전(h2/h3), TLS 정보, DNS·연결·TLS·대기 시간, 실제 서버 IP를 기록 |
-| traceroute·라우팅 테이블·ARP·DNS 설정 | 메인 프로세스가 OS 도구를 셸 없이 실행해 파싱 (macOS, Linux)                                                                                                       |
-| 다른 사이트를 iframe으로 열기, CORS   | iframe이 아닌 별도 웹 뷰라 해당 없음                                                                                                                               |
-| API 키·별도 서버                      | 메인 프로세스가 AI를 직접 호출(API, 공식 CLI), 키는 OS 키체인으로 암호화 저장                                                                                      |
-| 실제 패킷 바이트                      | 캡처는 관리자 권한이 필요해 아직 미지원 → 측정값으로 규격대로 바이트를 만들고(패킷 해부) 값마다 관측/계산/전형값/규격으로 표시                                     |
+경로를 지구본 위에 놓으려면 설정에서 DB-IP City Lite(약 60 MB)를 내려받습니다. 없으면 평면으로 그립니다.
 
 ## 측정 한 번에 일어나는 일
 
@@ -114,16 +73,9 @@ Actions secrets로 켭니다:
    위치 DB의 좌표는 왕복 시간으로 검사합니다. 빛은 광섬유에서 1 ms에 약 200 km를 가므로 왕복 r ms인 장비는 r × 100 km 안에
    있어야 합니다. 그보다 멀다고 나오면(애니캐스트 주소, DB 오류) 그 좌표는 배치에 쓰지 않고 장비 설명에 이유를 적습니다.
 
+3·4단계는 OS 도구를 실행하므로 macOS와 Linux에서 동작하고, Windows에서는 아직 지원하지 않습니다.
+
 라우터 주소는 외부 웹 서비스로 보내지 않습니다(위치는 내려받은 DB에서, 사업자는 DNS로 조회). 측정 기록은 이 컴퓨터의 앱 데이터 폴더에만 저장됩니다.
-
-## AI 시나리오가 만들어지는 과정
-
-1. 뷰어가 IPC로 메인 프로세스에 질문을 보냅니다.
-2. 고정 지침과 토폴로지, 예제 시나리오를 시스템 프롬프트로 묶고, 질문과 함께 연결된 AI에 보냅니다. 답은 `ScenarioDraft`의
-   JSON 스키마를 따르는 구조화된 출력으로 받습니다(Claude API: `output_config.format`과 프롬프트 캐시, OpenAI API:
-   `text.format`, Codex: `outputSchema`, Claude Code: `--json-schema`).
-3. 답을 `validateScenario`로 검사합니다. 재생할 수 없는 부분이 있으면 그 목록을 AI에게 돌려보내 고친 시나리오를 다시 받습니다(최대 3회).
-4. 통과한 시나리오는 저장되고 목록의 "AI가 만든 시나리오"에 추가되어 바로 재생됩니다(`?s=<id>`로 공유).
 
 ## 패킷 해부
 
@@ -180,27 +132,17 @@ Actions secrets로 켭니다:
 그 옆에 줄을 섭니다. 따라가기를 켜면 단계마다 경로 크기에 맞춰 높이를 바꿔, 노트북 안의 단계는 가까이서, 바다를 건너는 단계는
 높이서 봅니다(휠로 바꾼 높이는 유지됨). 평면도와 평면 지도에서 드래그로 화면을 옮기거나 지구본을 오른쪽 드래그로 돌리면 따라가기가 꺼집니다.
 
-## 구조
+## 소스에서 빌드
 
-```
-packages/schema   토폴로지·시나리오 스키마와 검증, AI 초안 형식, 지구본 좌표 변환
-packages/trace    TraceReport(측정 결과), OS 도구·DevTools 이벤트 파서, 측정 결과 → 지도·시나리오 빌더
-packages/ai       연결된 AI로 시나리오 생성, 검증·수정 재시도, 저장 (ScenarioService, 데스크톱 앱이 호출)
-packages/bridge   데스크톱 메인 프로세스 ↔ 뷰어 IPC 계약 (window.lab)
-packages/protocols 시나리오 패킷 → 규격대로 인코딩한 바이트와 필드 해설 (Ethernet·802.11·IPv4·ARP·ICMP·UDP·TCP·DNS·TLS 1.3·HTTP/1.1·HTTP/2·QUIC)
-packages/llm      AI 연결: ChatGPT(Codex app server, OpenAI API)·Claude(Claude Code, Anthropic API)·로컬 LLM, 로그인·키·모델 목록·스트리밍 답
-                  (뷰어는 타입만, 호출은 ./node를 데스크톱 메인 프로세스가 사용)
-apps/web          Vite + React + React Three Fiber 뷰어: 데스크톱 앱의 화면(렌더러)
-  public/data     catalog.json, topologies/*.json, scenarios/*.json (trace-demo는 빌더로 생성한 데모)
-apps/desktop      Electron 앱: app:// 프로토콜, preload, 노트북 브라우저, 측정 에이전트(src/main/trace), 설정
+Node 22.12 이상과 pnpm 9가 필요합니다.
+
+```bash
+pnpm install
+pnpm dev
 ```
 
-## 시나리오 작성 규칙
-
-- 시나리오는 beat(단계)의 배열이고, beat 하나에는 동시에 움직이는 hop(패킷)이 여러 개 들어갈 수 있습니다.
-- `path`의 인접한 노드 쌍은 반드시 토폴로지 링크로 이어져 있어야 합니다. 테스트가 `public/data`의 모든 파일을 검증합니다.
-- 헤더가 바뀌는 노드(NAT, MAC 재작성, 프록시)에서는 hop을 나눕니다. 직전 beat에서 같은 프로토콜·summary의 hop이 그 노드에서 끝나면, 인스펙터가 바뀐 필드를 이전 값과 함께 보여 줍니다.
-- 새 시나리오는 `scenarios/<id>.json`을 추가하고 `catalog.json`에 등록합니다. 실측 데모는 `pnpm --filter @netgongbu/trace build:example`로 다시 만듭니다.
+코드 구성, 다른 명령, 릴리스 절차, 코드를 바꿀 때의 규칙은 [AGENTS.md](AGENTS.md)에, 왜 이렇게 만들었고 누구를 위한 것이며
+앞으로 무엇이 필요한지는 [INTENT.md](INTENT.md)에 있습니다(둘 다 영어).
 
 ## 데이터 출처
 

@@ -20,7 +20,7 @@ An educational app that shows, step by step in 3D, how a message travels through
   shown in hexadecimal or binary. The window can be moved, resized, or popped out into a window of its own.
 - **Language:** choose 한국어 or English in Settings (the gear). At first the app follows the OS language; when
   you change it the app reloads, and the interface text, the examples and measured scenarios, the packet anatomy
-  explanations and the AI's answers all switch to that language. The English examples are in `apps/web/public/data/en/`.
+  explanations and the AI's answers all switch to that language.
 - **Globe and flat map:** a measured route is laid on a globe that shows land and sea, or on a flat world map, with each
   device at its real location (city). Devices are numbered in the order the scenario first passes through them.
 
@@ -44,76 +44,32 @@ Get the file for your OS from the [latest release](https://github.com/magzogs/ne
 
 Report bugs and ideas in [Issues](https://github.com/magzogs/netgongbu/issues).
 
-## Run from source
+## Connecting an AI
 
-```bash
-pnpm install
-pnpm dev           # the desktop app (Electron): viewer + laptop browser + measurement + AI
-NETGONGBU_FAKE_AI=1 pnpm dev   # with no AI connected: a fake AI makes the scenarios (its first answer is wrong on purpose, to show the fix-up too)
-pnpm check         # lint + format + typecheck + test
-pnpm --filter @netgongbu/desktop test:e2e   # launches the desktop app and checks asking, measuring and packet anatomy (screenshots in e2e/out)
-pnpm --filter @netgongbu/desktop measure -- example.com info.cern.ch   # measures for real with the built app, then takes screenshots
-```
+In "Ask AI", click the connection status (next to the window title) and choose ChatGPT / Claude / Local LLM and how to
+connect.
 
-`measure` uses the build that `test:e2e` made. Options: `--download-geo` (download the location database first if it is
-missing), `--open <measurement id>` (reopen a saved measurement), `--tour` (play with the follow camera and take a
-screenshot every few seconds), `--user-data <folder>` (defaults to the app's data folder, so the measurement history and
-the location database are kept).
-
-- **Connecting an AI:** in "Ask AI", click the connection status (next to the window title) and choose ChatGPT / Claude /
-  Local LLM and how to connect.
-  - **Account sign-in (OAuth):** sign in with the ChatGPT or Claude account you subscribe to. The official CLI runs the
-    sign-in in your browser and keeps the tokens: for ChatGPT, the Codex CLI's app server (`codex app-server`; the one
-    inside the ChatGPT desktop app is found too), for Claude, Claude Code (`claude auth login`). Anthropic does not allow
-    the OAuth tokens of Claude subscription accounts outside Claude Code and Claude.ai, so for Claude the questions are
-    also handled by Claude Code (with no tools, no settings or plugins, in an empty folder).
-  - **API key:** an OpenAI (Responses API) or Anthropic (Messages API) key, stored encrypted with the OS keychain. The
-    `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` environment variables work too.
-  - **CLI:** uses a `codex` or `claude` you have already installed and signed in to, as it is (the path is found
-    automatically or set by hand).
-  - The model list comes from whatever you connected to: Codex `model/list`, Claude Code's `initialize`, the Anthropic
-    Models API (`capabilities.effort`), OpenAI `/v1/models` (Effort levels judged by model family), the local server's
-    `/v1/models`. Only the Effort levels the model accepts are shown, and "Default" follows the model's own default. The
-    chosen AI, model and Effort are remembered in the app settings, and making scenarios uses the same connection.
-- **Location database:** to place routes on the globe, download DB-IP City Lite (about 60 MB) in Settings. Without it the
-  route is drawn flat.
+- **Account sign-in (OAuth):** sign in with the ChatGPT or Claude account you subscribe to. The official CLI runs the
+  sign-in in your browser and keeps the tokens: for ChatGPT, the Codex CLI's app server (`codex app-server`; the one
+  inside the ChatGPT desktop app is found too), for Claude, Claude Code (`claude auth login`). Anthropic does not allow
+  the OAuth tokens of Claude subscription accounts outside Claude Code and Claude.ai, so for Claude the questions are
+  also handled by Claude Code (with no tools, no settings or plugins, in an empty folder).
+- **API key:** an OpenAI (Responses API) or Anthropic (Messages API) key, stored encrypted with the OS keychain. The
+  `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` environment variables work too.
+- **CLI:** uses a `codex` or `claude` you have already installed and signed in to, as it is (the path is found
+  automatically or set by hand).
 - **Local LLM:** any server with an OpenAI-compatible API. For example, `ollama pull qwen2.5:7b` and run Ollama
   (`http://localhost:11434/v1`), LM Studio's local server (`http://localhost:1234/v1`), or `llama-server`
   (`http://localhost:8080/v1`). Turn on the picture of the 3D view only for models that can see images.
-- **Where the calls come from:** the desktop app's main process holds the keys, runs the CLIs and sends every request;
-  the viewer reaches it only over IPC.
 
-## Releases
+The model list comes from whatever you connected to. Only the Effort levels the model accepts are shown, and "Default"
+follows the model's own default. The chosen AI, model and Effort are remembered in the app settings, and making
+scenarios uses the same connection. The desktop app's main process holds the keys, runs the CLIs and sends every
+request; the viewer reaches it only over IPC.
 
-The installers are published as this repository's [Releases](https://github.com/magzogs/netgongbu/releases).
+## Location database
 
-```bash
-pnpm --filter @netgongbu/desktop dist   # builds the installer for this computer's OS in apps/desktop/release/ (does not publish)
-git tag -a v0.2.0 -m "What changed…" && git push origin v0.2.0   # publish
-```
-
-Pushing a `v*` tag makes `.github/workflows/release.yml` build macOS (arm64 and x64 dmg), Windows (x64 installer) and
-Linux (AppImage), and upload them to a release of the same name in this repository. The version comes from the tag (the
-version in `package.json` does not need to change), the tag message becomes the release notes, and a tag with a `-`, like
-`v0.2.0-beta.1`, makes a pre-release. To redo a failed release, run Release in Actions again with the tag name; it
-overwrites the files.
-
-Releases are uploaded with the default Actions `GITHUB_TOKEN`, so no separate token is needed. macOS signing and
-notarization are turned on with this repository's Actions secrets:
-
-- `MAC_CERT_P12_BASE64` and `MAC_CERT_PASSWORD` (optional): a Developer ID Application certificate (.p12, base64) and its
-  password. Without them the app is ad-hoc signed, and macOS asks for permission once, the first time it is opened.
-- `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID` (optional, together with the certificate): notarization.
-
-## What the web browser made hard, and how the desktop app solves it
-
-| Blocked on the web                           | In the desktop app (Electron)                                                                                                                                                                                                |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Watching real browser messages               | A Chromium view inside the app becomes the laptop's browser, and the DevTools protocol records request and response headers, the HTTP version (h2/h3), TLS details, DNS, connect, TLS and wait times, and the real server IP |
-| traceroute, routing table, ARP, DNS settings | The main process runs the OS tools without a shell and parses their output (macOS, Linux)                                                                                                                                    |
-| Opening other sites in an iframe, CORS       | Does not apply: it is a separate web view, not an iframe                                                                                                                                                                     |
-| API keys, a separate server                  | The main process calls the AI directly (API, official CLIs); keys are stored encrypted with the OS keychain                                                                                                                  |
-| Real packet bytes                            | Capturing needs administrator rights, so it is not supported yet → bytes are built to spec from the measured values (packet anatomy), and each value is marked observed/derived/typical/spec                                 |
+To place routes on the globe, download DB-IP City Lite (about 60 MB) in Settings. Without it the route is drawn flat.
 
 ## What happens in one measurement
 
@@ -132,20 +88,10 @@ notarization are turned on with this repository's Actions secrets:
    anycast address, a database error), that coordinate is not used for placement and the reason is written in the
    device's description.
 
+Steps 3 and 4 run the OS's own tools, so they work on macOS and Linux; on Windows they are not supported yet.
+
 Router addresses are never sent to outside web services (locations come from the downloaded database, operators from DNS
 lookups). The measurement history is stored only in the app's data folder on this computer.
-
-## How the AI makes a scenario
-
-1. The viewer sends the question to the main process over IPC.
-2. Fixed instructions, the topology and example scenarios are bundled into the system prompt and sent with the question
-   to the connected AI. The answer comes back as structured output that follows the `ScenarioDraft` JSON schema (Claude
-   API: `output_config.format` and prompt caching, OpenAI API: `text.format`, Codex: `outputSchema`, Claude Code:
-   `--json-schema`).
-3. The answer is checked with `validateScenario`. If any part cannot be played, that list goes back to the AI and a fixed
-   scenario comes back (up to 3 times).
-4. A scenario that passes is saved, added under "Made by the AI" in the list and played right away (share it with
-   `?s=<id>`).
 
 ## Packet anatomy
 
@@ -211,30 +157,18 @@ changes at each step to fit the size of the route, so steps inside the laptop ar
 ocean from high up (a height you change with the wheel is kept). Dragging to pan on the floor plan or the flat map, or
 turning the globe with a right drag, turns Follow off.
 
-## Structure
+## Build from source
 
-```
-packages/schema   topology and scenario schemas and validation, the AI draft format, globe coordinate conversion
-packages/trace    TraceReport (the measurement result), parsers for OS tools and DevTools events, measurement → map and scenario builder
-packages/ai       scenarios from the connected AI, validation and fix-up retries, storage (ScenarioService, called by the desktop app)
-packages/bridge   IPC contract between the desktop main process and the viewer (window.lab)
-packages/protocols scenario packets → bytes encoded to spec, with field explanations (Ethernet·802.11·IPv4·ARP·ICMP·UDP·TCP·DNS·TLS 1.3·HTTP/1.1·HTTP/2·QUIC)
-packages/llm      AI connections: ChatGPT (Codex app server, OpenAI API), Claude (Claude Code, Anthropic API), local LLMs; sign-in, keys, model lists, streamed answers
-                  (the viewer uses only the types; ./node is called by the desktop main process)
-apps/web          Vite + React + React Three Fiber viewer: the desktop app's screen (renderer)
-  public/data     catalog.json, topologies/*.json, scenarios/*.json (trace-demo is a demo generated by the builder)
-apps/desktop      Electron app: app:// protocol, preload, laptop browser, measurement agent (src/main/trace), settings
+Needs Node 22.12 or later and pnpm 9.
+
+```bash
+pnpm install
+pnpm dev
 ```
 
-## Writing scenarios
-
-- A scenario is an array of beats (steps), and one beat can hold several hops (packets) that move at the same time.
-- Every adjacent pair of nodes in a `path` must be joined by a topology link. The tests validate every file in
-  `public/data`.
-- Split the hop at nodes where the headers change (NAT, MAC rewriting, proxies). If a hop with the same protocol and
-  summary in the previous beat ended at that node, the inspector shows the changed fields next to their previous values.
-- To add a scenario, add `scenarios/<id>.json` and register it in `catalog.json`. Rebuild the measured demo with
-  `pnpm --filter @netgongbu/trace build:example`.
+How the code is put together, the other commands, the release steps and the rules for changing it are in
+[AGENTS.md](AGENTS.md); why it is built this way, who it is for and what is still wanted are in
+[INTENT.md](INTENT.md).
 
 ## Data sources
 
